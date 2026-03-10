@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import { useState } from 'react';
 import { auth } from '../lib/firebase';
@@ -23,7 +23,7 @@ export default function Login() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      window.location.href = '/home';
+      window.location.href = '/inicio';
     } catch (e: any) {
       setError(e.message);
     }
@@ -34,7 +34,7 @@ export default function Login() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      window.location.href = '/home';
+      window.location.href = '/inicio';
     } catch (e: any) {
       setError(e.message);
     }
