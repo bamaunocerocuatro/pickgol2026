@@ -56,7 +56,7 @@ function CrearGrupoForm() {
     setCreando(true);
     try {
       const codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
-      await addDoc(collection(db, 'grupos'), {
+      const snap = await addDoc(collection(db, 'grupos'), {
         nombre: nombre.trim(),
         liga: ligaId,
         precio: controlPagos && precio ? parseFloat(precio) : null,
@@ -69,7 +69,7 @@ function CrearGrupoForm() {
         miembros: [user.uid],
         creadoEn: serverTimestamp(),
       });
-      window.location.href = '/inicio';
+      window.location.href = `/grupo/${snap.id}`;
     } catch (e: any) {
       setError('Error al crear el grupo. Intentá de nuevo.');
     }
@@ -189,7 +189,7 @@ function CrearGrupoForm() {
           </div>
         </div>
 
-        {/* PRECIO INTERNO — solo si tiene control de pagos */}
+        {/* PRECIO INTERNO */}
         {controlPagos && (
           <div className="mb-4">
             <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{color:'#8892A4'}}>Precio interno por jugada (opcional)</label>
