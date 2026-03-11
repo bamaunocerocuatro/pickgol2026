@@ -1,9 +1,9 @@
- 'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
 
 const LIGAS: Record<string, string> = {
@@ -20,8 +20,8 @@ export default function GrupoDashboard() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [grupo, setGrupo] = useState<any>(null);
-  const [miembros, setMiembros] = useState<any[]>([]);
-  const [tab, setTab] = useState<'ranking' |'pagos' | 'info'>('ranking');
+  const [tab, setTab] = useState<'ranking' | 'pagos' | 'info'>('ranking');
+  const [guardando, setGuardando] = useState(false);
   const params = useParams();
   const id = params.id as string;
 
@@ -31,9 +31,7 @@ export default function GrupoDashboard() {
       setUser(u);
       try {
         const snap = await getDoc(doc(db, 'grupos', id));
-        if (snap.exists()) {
-          setGrupo({ id: snap.id, ...snap.data() });
-        }
+        if (snap.exists()) setGrupo({ id: snap.id, ...snap.data() });
       } catch (e) {}
       setLoading(false);
     });
@@ -41,6 +39,28 @@ export default function GrupoDashboard() {
   }, [id]);
 
   const esCreador = grupo?.creadorId === user?.uid;
+
+  const toggleChat = async () => {
+    setGuardando(true);
+    try {
+      await updateDoc(doc(db, 'grupos', id), {
+        chatHabilitado: !grupo.chatHabilitado
+      });
+      setGrupo({ ...grupo, chatHabilitado: !grupo.chatHabilitado });
+    } catch (e) {}
+    setGuardando(false);
+  };
+
+  const toggleControlPagos = async () => {
+    setGuardando(true);
+    try {
+      await updateDoc(doc(db, 'grupos', id), {
+        controlPagos: !grupo.controlPagos
+      });
+      setGrupo({ ...grupo, controlPagos: !grupo.controlPagos });
+    } catch (e) {}
+    setGuardando(false);
+  };
 
   if (loading) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
@@ -57,6 +77,28 @@ export default function GrupoDashboard() {
     </main>
   );
 
+  const Toggle = ({ value, onToggle }: { value: boolean; onToggle: () => void }) => (
+    <div
+      onClick={onToggle}
+      className="rounded-full flex-shrink-0 cursor-pointer"
+      style={{
+        width:'41px', height:'22px',
+        background: value ? '#00C853' : 'rgba(255,255,255,0.1)',
+        position:'relative', transition:'background .3s',
+        opacity: guardando ? 0.6 : 1
+      }}
+    >
+      <div style={{
+        position:'absolute', top:'2px',
+        left: value ? '21px' : '2px',
+        width:'18px', height:'18px',
+        background:'white', borderRadius:'50%',
+        transition:'left .3s',
+        boxShadow:'0 2px 5px rgba(0,0,0,.3)'
+      }}/>
+    </div>
+  );
+
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
@@ -64,7 +106,7 @@ export default function GrupoDashboard() {
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
         <div className="flex items-center gap-3 mb-4">
           <button
-            onClick={() => window.location.href = '/inicio'}
+            onClick={() => window.location.href = '/grupos'}
             className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm"
           >←</button>
           <span className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>← <b style={{color:'rgba(255,255,255,0.65)'}}>{grupo.nombre}</b></span>
@@ -75,7 +117,6 @@ export default function GrupoDashboard() {
         <h1 className="font-condensed text-3xl font-black mb-1">{grupo.nombre}</h1>
         <p className="text-xs mb-3" style={{color:'#8892A4'}}>{LIGAS[grupo.liga] || grupo.liga} · {grupo.tipo === 'temporada' ? 'Toda la temporada' : 'Fechas específicas'}</p>
 
-        {/* STATS */}
         <div className="flex gap-2">
           <div className="flex-1 text-center rounded-xl py-2" style={{background:'rgba(255,255,255,0.08)'}}>
             <div className="font-condensed text-xl font-black">{grupo.miembros?.length || 1}</div>
@@ -92,8 +133,9 @@ export default function GrupoDashboard() {
         </div>
       </div>
 
-      {/* CODIGO DE INVITACION */}
       <div className="px-4 pt-4">
+
+        {/* CODIGO */}
         <div className="rounded-2xl p-4 mb-4 text-center" style={{background:'linear-gradient(135deg,#0A1F5C,#0D2870)',border:'1px solid rgba(255,255,255,0.1)'}}>
           <div className="text-xs mb-1" style={{color:'rgba(255,255,255,0.4)'}}>Código de invitación</div>
           <div className="font-condensed text-4xl font-black tracking-widest mb-2" style={{color:'#C9A84C'}}>{grupo.codigo}</div>
@@ -115,7 +157,7 @@ export default function GrupoDashboard() {
             <div
               key={t}
               onClick={() => setTab(t)}
-              className="flex-1 text-center py-2 rounded-xl cursor-pointer font-condensed font-bold text-sm capitalize"
+              className="flex-1 text-center py-2 rounded-xl cursor-pointer font-condensed font-bold text-sm"
               style={{
                 background: tab === t ? '#0D1B3E' : 'transparent',
                 color: tab === t ? '#F5F5F0' : '#8892A4'
@@ -140,26 +182,33 @@ export default function GrupoDashboard() {
         {/* TAB PAGOS */}
         {tab === 'pagos' && (
           <div className="rounded-2xl overflow-hidden" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
-            {grupo.controlPagos ? (
-              <div className="px-4 py-5 text-center">
-                <div className="text-3xl mb-2">💰</div>
-                <div className="font-condensed text-base font-bold mb-1">Control de pagos activo</div>
-                <div className="text-xs mb-3" style={{color:'#8892A4'}}>
-                  {grupo.precio ? `Monto: ${grupo.moneda} ${grupo.precio} por jugada` : 'Sin monto definido'}
-                </div>
-                {esCreador && (
-                  <div className="text-xs px-3 py-2 rounded-xl" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
-                    👑 Como creador podés marcar los pagos de cada jugador cuando haya jugadas creadas
+            <div className="px-4 py-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-sm font-semibold mb-1">Control de pagos internos</div>
+                  <div className="text-xs" style={{color:'#8892A4'}}>
+                    {grupo.precio ? `${grupo.moneda} ${grupo.precio} por jugada` : 'Sin monto definido'}
                   </div>
+                </div>
+                {esCreador ? (
+                  <Toggle value={grupo.controlPagos} onToggle={toggleControlPagos} />
+                ) : (
+                  <span className="text-sm font-bold" style={{color: grupo.controlPagos ? '#00C853' : '#8892A4'}}>
+                    {grupo.controlPagos ? '✅ Activo' : '❌ No'}
+                  </span>
                 )}
               </div>
-            ) : (
-              <div className="px-4 py-5 text-center">
-                <div className="text-3xl mb-2">🔓</div>
-                <div className="font-condensed text-base font-bold mb-1">Sin control de pagos</div>
-                <div className="text-xs" style={{color:'#8892A4'}}>El creador no configuró control de pagos internos</div>
-              </div>
-            )}
+              {esCreador && grupo.controlPagos && (
+                <div className="text-xs px-3 py-2 rounded-xl mt-2" style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',color:'#C9A84C'}}>
+                  👑 Podés marcar los pagos de cada jugador cuando haya jugadas creadas
+                </div>
+              )}
+              {!grupo.controlPagos && (
+                <div className="text-xs px-3 py-2 rounded-xl mt-2" style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',color:'#8892A4'}}>
+                  Sin control de pagos activo
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -183,6 +232,18 @@ export default function GrupoDashboard() {
                 <span className="text-xs" style={{color:'#8892A4'}}>Control de pagos</span>
                 <span className="text-sm font-semibold" style={{color: grupo.controlPagos ? '#00C853' : '#8892A4'}}>{grupo.controlPagos ? '✅ Activo' : '❌ No'}</span>
               </div>
+              <div className="flex justify-between items-center py-3" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                <div>
+                  <div className="text-xs mb-1" style={{color:'#8892A4'}}>Chat del grupo</div>
+                </div>
+                {esCreador ? (
+                  <Toggle value={grupo.chatHabilitado} onToggle={toggleChat} />
+                ) : (
+                  <span className="text-sm font-semibold" style={{color: grupo.chatHabilitado ? '#00C853' : '#8892A4'}}>
+                    {grupo.chatHabilitado ? '✅ Activo' : '❌ No'}
+                  </span>
+                )}
+              </div>
               <div className="flex justify-between items-center py-3">
                 <span className="text-xs" style={{color:'#8892A4'}}>Código</span>
                 <span className="font-condensed text-lg font-black" style={{color:'#C9A84C'}}>{grupo.codigo}</span>
@@ -199,11 +260,11 @@ export default function GrupoDashboard() {
           <span className="text-lg">🏠</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Inicio</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/fixture'}>
           <span className="text-lg">📅</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Fixture</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/grupos'}>
           <span className="text-lg">👥</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
         </div>
@@ -211,7 +272,7 @@ export default function GrupoDashboard() {
           <span className="text-lg">🏆</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Ranking</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => grupo.chatHabilitado ? window.location.href = `/chat/${id}` : null}>
           <span className="text-lg">💬</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Chat</span>
         </div>
