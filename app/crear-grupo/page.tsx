@@ -25,6 +25,7 @@ function CrearGrupoForm() {
   const [moneda, setMoneda] = useState('ARS');
   const [tipo, setTipo] = useState<'temporada' | 'fechas'>('temporada');
   const [controlPagos, setControlPagos] = useState(false);
+  const [chatHabilitado, setChatHabilitado] = useState(false);
   const [error, setError] = useState('');
   const [creando, setCreando] = useState(false);
   const [showAlerta, setShowAlerta] = useState(false);
@@ -63,6 +64,7 @@ function CrearGrupoForm() {
         moneda: controlPagos ? moneda : null,
         tipo,
         controlPagos,
+        chatHabilitado,
         creadorId: user.uid,
         creadorEmail: user.email,
         codigo,
@@ -217,6 +219,35 @@ function CrearGrupoForm() {
             <p className="text-xs mt-2" style={{color:'#8892A4'}}>Monto que cada jugador te paga a vos por fuera de la app. PickGol no lo gestiona.</p>
           </div>
         )}
+
+        {/* CHAT */}
+        <div
+          className="rounded-xl p-4 mb-4 flex items-center justify-between cursor-pointer"
+          style={{background:'rgba(0,0,0,0.35)',border:'1px solid rgba(255,255,255,0.09)'}}
+          onClick={() => setChatHabilitado(!chatHabilitado)}
+        >
+          <div>
+            <div className="text-sm font-semibold mb-1">Chat del grupo</div>
+            <div className="text-xs" style={{color:'#8892A4'}}>Habilitá el chat para que los jugadores puedan hablar</div>
+          </div>
+          <div
+            className="rounded-full flex-shrink-0 ml-3"
+            style={{
+              width:'41px',height:'22px',
+              background: chatHabilitado ? '#00C853' : 'rgba(255,255,255,0.1)',
+              position:'relative',transition:'background .3s'
+            }}
+          >
+            <div style={{
+              position:'absolute',top:'2px',
+              left: chatHabilitado ? '21px' : '2px',
+              width:'18px',height:'18px',
+              background:'white',borderRadius:'50%',
+              transition:'left .3s',
+              boxShadow:'0 2px 5px rgba(0,0,0,.3)'
+            }}/>
+          </div>
+        </div>
 
         {/* ALERTA */}
         <div className="rounded-xl p-3 mb-5 flex gap-2" style={{background:'rgba(201,168,76,0.07)',border:'1px solid rgba(201,168,76,0.18)'}}>
