@@ -1,54 +1,42 @@
- import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const LIGAS_IDS: Record<string, string> = {
-  premier: '2',
-  laliga: '3',
-  seriea: '4',
-  bundesliga: '5',
-  ligue1: '6',
-  ligapro: '128',
-  brasileirao: '13',
+  premier: '47',
+  laliga: '87',
+  seriea: '55',
+  bundesliga: '54',
+  ligue1: '53',
+  ligapro: '329',
+  brasileirao: '325',
 };
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const liga = searchParams.get('liga') || 'premier';
-  const ligaId = LIGAS_IDS[liga] || '2';
+  const ligaId = LIGAS_IDS[liga] || '47';
 
   try {
     const res = await fetch(
-      `https://free-api-live-football-data.p.rapidapi.com/football-get-all-leagues`,
+      `https://free-api-live-football-data.p.rapidapi.com/football-get-all-matches-by-league?leagueid=${ligaId}`,
       {
         headers: {
           'x-rapidapi-host': process.env.RAPIDAPI_HOST!,
           'x-rapidapi-key': process.env.RAPIDAPI_KEY!,
         },
+        next: { revalidate: 300 }
       }
     );
 
     const data = await res.json();
-
-    // Buscar fixture de la liga
-    const res2 = await fetch(
-      `https://free-api-live-football-data.p.rapidapi.com/football-get-matches-by-league?leagueid=${ligaId}`,
-      {
-        headers: {
-          'x-rapidapi-host': process.env.RAPIDAPI_HOST!,
-          'x-rapidapi-key': process.env.RAPIDAPI_KEY!,
-        },
-      }
-    );
-
-    const data2 = await res2.json();
-    const matches = data2?.response || [];
+    const matches = data?.response?.matches || [];
 
     const partidos = matches.map((m: any) => ({
       local: m.home?.name || 'Local',
       visitante: m.away?.name || 'Visitante',
-      fecha: m.date || '',
-      estado: m.status?.short || 'NS',
-      golesLocal: m.score?.home ?? null,
-      golesVisitante: m.score?.away ?? null,
+      fecha: m.status?.utcTime || '',
+      estado: m.notStarted ? 'NS' : m.status?.finished ? 'FT' : m.status?.ongoing ? 'LIVE' : 'NS',
+      golesLocal: m.home?.score ?? null,
+      golesVisitante: m.away?.score ?? null,
     }));
 
     return NextResponse.json({ partidos });
