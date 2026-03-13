@@ -43,9 +43,7 @@ export default function GrupoDashboard() {
   const toggleChat = async () => {
     setGuardando(true);
     try {
-      await updateDoc(doc(db, 'grupos', id), {
-        chatHabilitado: !grupo.chatHabilitado
-      });
+      await updateDoc(doc(db, 'grupos', id), { chatHabilitado: !grupo.chatHabilitado });
       setGrupo({ ...grupo, chatHabilitado: !grupo.chatHabilitado });
     } catch (e) {}
     setGuardando(false);
@@ -54,28 +52,11 @@ export default function GrupoDashboard() {
   const toggleControlPagos = async () => {
     setGuardando(true);
     try {
-      await updateDoc(doc(db, 'grupos', id), {
-        controlPagos: !grupo.controlPagos
-      });
+      await updateDoc(doc(db, 'grupos', id), { controlPagos: !grupo.controlPagos });
       setGrupo({ ...grupo, controlPagos: !grupo.controlPagos });
     } catch (e) {}
     setGuardando(false);
   };
-
-  if (loading) return (
-    <main className="min-h-screen bg-[#020810] flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-5xl mb-3">⚽</div>
-        <p className="text-[#8892A4] text-sm">Cargando...</p>
-      </div>
-    </main>
-  );
-
-  if (!grupo) return (
-    <main className="min-h-screen bg-[#020810] flex items-center justify-center">
-      <p className="text-[#8892A4]">Grupo no encontrado</p>
-    </main>
-  );
 
   const Toggle = ({ value, onToggle }: { value: boolean; onToggle: () => void }) => (
     <div
@@ -97,6 +78,21 @@ export default function GrupoDashboard() {
         boxShadow:'0 2px 5px rgba(0,0,0,.3)'
       }}/>
     </div>
+  );
+
+  if (loading) return (
+    <main className="min-h-screen bg-[#020810] flex items-center justify-center">
+      <div className="text-center">
+        <div className="text-5xl mb-3">⚽</div>
+        <p className="text-[#8892A4] text-sm">Cargando...</p>
+      </div>
+    </main>
+  );
+
+  if (!grupo) return (
+    <main className="min-h-screen bg-[#020810] flex items-center justify-center">
+      <p className="text-[#8892A4]">Grupo no encontrado</p>
+    </main>
   );
 
   return (
@@ -142,14 +138,31 @@ export default function GrupoDashboard() {
           <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Compartí este código para que otros se unan</div>
         </div>
 
-        {/* BOTON CREAR JUGADA */}
+        {/* BOTONES */}
         <button
           onClick={() => window.location.href = `/jugada/crear?grupo=${id}`}
-          className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-4"
+          className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3"
           style={{background:'#E8192C',color:'white'}}
         >
           ⚽ CREAR MI JUGADA
         </button>
+
+        {grupo.chatHabilitado ? (
+          <button
+            onClick={() => window.location.href = `/chat/${id}`}
+            className="w-full py-3 rounded-xl font-condensed font-black text-base mb-4"
+            style={{background:'rgba(0,200,83,0.15)',border:'1px solid rgba(0,200,83,0.3)',color:'#00C853'}}
+          >
+            💬 IR AL CHAT
+          </button>
+        ) : (
+          <div
+            className="w-full py-3 rounded-xl font-condensed font-bold text-base mb-4 text-center"
+            style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',color:'#8892A4'}}
+          >
+            💬 Chat deshabilitado
+          </div>
+        )}
 
         {/* TABS */}
         <div className="flex mb-4" style={{background:'rgba(0,0,0,0.3)',borderRadius:'12px',padding:'3px'}}>
@@ -233,9 +246,7 @@ export default function GrupoDashboard() {
                 <span className="text-sm font-semibold" style={{color: grupo.controlPagos ? '#00C853' : '#8892A4'}}>{grupo.controlPagos ? '✅ Activo' : '❌ No'}</span>
               </div>
               <div className="flex justify-between items-center py-3" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-                <div>
-                  <div className="text-xs mb-1" style={{color:'#8892A4'}}>Chat del grupo</div>
-                </div>
+                <span className="text-xs" style={{color:'#8892A4'}}>Chat del grupo</span>
                 {esCreador ? (
                   <Toggle value={grupo.chatHabilitado} onToggle={toggleChat} />
                 ) : (
@@ -272,9 +283,9 @@ export default function GrupoDashboard() {
           <span className="text-lg">🏆</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Ranking</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => grupo.chatHabilitado ? window.location.href = `/chat/${id}` : null}>
-          <span className="text-lg">💬</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Chat</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
+          <span className="text-lg">👤</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Perfil</span>
         </div>
       </div>
 
