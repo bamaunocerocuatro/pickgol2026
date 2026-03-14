@@ -141,7 +141,7 @@ export default function Fixture() {
           <span className="text-lg">📅</span>
           <span className="text-xs font-semibold" style={{color:'#E8192C'}}>Fixture</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/grupos'}>
           <span className="text-lg">👥</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
         </div>
@@ -149,9 +149,9 @@ export default function Fixture() {
           <span className="text-lg">🏆</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Ranking</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
-          <span className="text-lg">💬</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Chat</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
+          <span className="text-lg">👤</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Perfil</span>
         </div>
       </div>
 

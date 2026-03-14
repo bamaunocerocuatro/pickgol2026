@@ -45,7 +45,7 @@ export default function Inicio() {
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm">🔔</div>
             <div
-              onClick={() => signOut(auth).then(() => window.location.href = '/login')}
+              onClick={() => window.location.href = '/perfil'}
               className="w-8 h-8 rounded-full flex items-center justify-center font-condensed text-xs font-bold cursor-pointer"
               style={{background:'linear-gradient(135deg,#8B0018,#E8192C)'}}
             >
@@ -138,15 +138,15 @@ export default function Inicio() {
 
       {/* BOTTOM NAV */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
           <span className="text-lg">🏠</span>
           <span className="text-xs font-semibold" style={{color:'#E8192C'}}>Inicio</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/fixture'}>
           <span className="text-lg">📅</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Fixture</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/grupos'}>
           <span className="text-lg">👥</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
         </div>
@@ -154,9 +154,9 @@ export default function Inicio() {
           <span className="text-lg">🏆</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Ranking</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
-          <span className="text-lg">💬</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Chat</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
+          <span className="text-lg">👤</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Perfil</span>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
@@ -90,7 +90,7 @@ export default function Grupos() {
           </div>
         )}
 
-        {!cargando && grupos.map((g, i) => (
+        {!cargando && grupos.map((g) => (
           <div
             key={g.id}
             onClick={() => window.location.href = `/grupo/${g.id}`}
@@ -125,7 +125,7 @@ export default function Grupos() {
           <span className="text-lg">📅</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Fixture</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/grupos'}>
           <span className="text-lg">👥</span>
           <span className="text-xs font-semibold" style={{color:'#E8192C'}}>Grupos</span>
         </div>
@@ -133,9 +133,9 @@ export default function Grupos() {
           <span className="text-lg">🏆</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Ranking</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
-          <span className="text-lg">💬</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Chat</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
+          <span className="text-lg">👤</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Perfil</span>
         </div>
       </div>
 
