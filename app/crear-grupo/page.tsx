@@ -5,17 +5,7 @@ import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useSearchParams } from 'next/navigation';
-
-const LIGAS = [
-  { id: 'bundesliga', nombre: 'Bundesliga' },
-  { id: 'ligapro', nombre: 'Liga Profesional' },
-  { id: 'primera-b', nombre: 'Primera B Nacional' },
-  { id: 'brasileirao', nombre: 'Brasileirão' },
-  { id: 'laliga', nombre: 'La Liga' },
-  { id: 'ligue1', nombre: 'Ligue 1' },
-  { id: 'premier', nombre: 'Premier League' },
-  { id: 'seriea', nombre: 'Serie A' },
-];
+import LigaSelector from '../components/LigaSelector';
 
 function CrearGrupoForm() {
   const [user, setUser] = useState<any>(null);
@@ -122,16 +112,7 @@ function CrearGrupoForm() {
         {/* LIGA */}
         <div className="mb-4">
           <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{color:'#8892A4'}}>Liga *</label>
-          <select
-            value={ligaId}
-            onChange={(e) => setLigaId(e.target.value)}
-            className="w-full rounded-xl px-4 py-3 text-white text-sm outline-none"
-            style={{background:'rgba(0,0,0,0.35)',border:'1px solid rgba(255,255,255,0.09)'}}
-          >
-            <option value="">— Elegí una liga —</option>
-            {LIGAS.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
-            <option value="mundial" disabled>🏆 Mundial 2026 — disponible el 1 Abr</option>
-          </select>
+          <LigaSelector value={ligaId} onChange={setLigaId} />
         </div>
 
         {/* TIPO */}
