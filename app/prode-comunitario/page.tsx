@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import { useEffect, useState } from 'react';
 import { auth } from '../lib/firebase';
@@ -15,7 +15,7 @@ const LIGAS = [
   { id: 'seriea', nombre: 'Serie A', pais: 'Italia', bandera: '/flags/ita.png' },
 ];
 
-export default function Inicio() {
+export default function ProdeComunitario() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +30,7 @@ export default function Inicio() {
   if (loading) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
       <div className="text-center">
-        <img src="/logo.png" className="w-16 h-16 mx-auto mb-3" />
+        <div className="text-5xl mb-3">🌍</div>
         <p className="text-[#8892A4] text-sm">Cargando...</p>
       </div>
     </main>
@@ -41,77 +41,30 @@ export default function Inicio() {
 
       {/* HEADER */}
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
-        <div className="flex items-center justify-between mb-3">
-          <img src="/logo.png" className="w-8 h-8 rounded-lg" />
-          <span className="font-condensed text-xl font-black text-[#C9A84C]">PickGol 2026</span>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm">🔔</div>
-            <div
-              onClick={() => window.location.href = '/perfil'}
-              className="w-8 h-8 rounded-full flex items-center justify-center font-condensed text-xs font-bold cursor-pointer"
-              style={{background:'linear-gradient(135deg,#8B0018,#E8192C)'}}
-            >
-              {(user.displayName || user.email || '?')[0].toUpperCase()}
-            </div>
-          </div>
+        <div className="flex items-center gap-3 mb-4">
+          <button
+            onClick={() => window.history.back()}
+            className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm"
+          >←</button>
+          <span className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>← <b style={{color:'rgba(255,255,255,0.65)'}}>Prode Comunitario</b></span>
         </div>
-        <p className="text-[#8892A4] text-xs mb-1">Bienvenido de nuevo,</p>
-        <h1 className="font-condensed text-2xl font-black mb-1">{user.displayName || user.email} ⚽</h1>
-        <p className="text-xs mb-3" style={{color:'rgba(201,168,76,0.7)'}}>🥇 Tu mejor jugada · <span style={{color:'rgba(255,255,255,0.4)'}}>Próximamente</span></p>
-        <div className="flex gap-2">
-          <div className="flex-1 text-center rounded-xl py-2" style={{background:'rgba(255,255,255,0.08)'}}>
-            <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>0</div>
-            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Mis pts</div>
-          </div>
-          <div className="flex-1 text-center rounded-xl py-2" style={{background:'rgba(255,255,255,0.08)'}}>
-            <div className="font-condensed text-xl font-black">—</div>
-            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Posición</div>
-          </div>
-          <div className="flex-1 text-center rounded-xl py-2" style={{background:'rgba(255,255,255,0.08)'}}>
-            <div className="font-condensed text-xl font-black" style={{color:'#00C853'}}>0</div>
-            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Aciertos</div>
-          </div>
-        </div>
+        <h1 className="font-condensed text-3xl font-black mb-1">Prode Comunitario 🌍</h1>
+        <p className="text-xs" style={{color:'#8892A4'}}>Todos contra todos · Elegí una liga</p>
       </div>
 
       <div className="px-4 py-4">
 
-        {/* BANNER MUNDIAL */}
-        <div className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer" style={{background:'linear-gradient(135deg,#E8192C,#8B0018)'}}>
+        {/* MUNDIAL */}
+        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{color:'#8892A4'}}>
+          Mundial
+        </div>
+        <div className="rounded-2xl p-4 mb-4 flex items-center gap-3" style={{background:'rgba(232,25,44,0.08)',border:'1px solid rgba(232,25,44,0.2)'}}>
           <div className="text-3xl">🏆</div>
           <div className="flex-1">
-            <div className="font-condensed text-lg font-black">PRODE MUNDIAL 2026</div>
-            <div className="text-xs" style={{color:'rgba(255,255,255,0.7)'}}>Lanzamiento: 1 Abr 2026 · El más completo</div>
+            <div className="font-condensed text-base font-black">MUNDIAL 2026</div>
+            <div className="text-xs" style={{color:'#8892A4'}}>Disponible el 1 Abr 2026</div>
           </div>
-          <div className="text-white/30 text-lg">›</div>
-        </div>
-
-        {/* CREAR GRUPO */}
-        <div
-          onClick={() => window.location.href = '/crear-grupo'}
-          className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer"
-          style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}
-        >
-          <div className="text-3xl">👥</div>
-          <div className="flex-1">
-            <div className="font-condensed text-lg font-black">CREAR GRUPO</div>
-            <div className="text-xs" style={{color:'#8892A4'}}>Jugá con tus amigos · Elegí la liga</div>
-          </div>
-          <div className="text-white/30 text-lg">›</div>
-        </div>
-
-        {/* PRODE COMUNITARIO */}
-        <div
-          onClick={() => window.location.href = '/prode-comunitario'}
-          className="rounded-2xl p-4 mb-4 flex items-center gap-3 cursor-pointer"
-          style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}
-        >
-          <div className="text-3xl">🌍</div>
-          <div className="flex-1">
-            <div className="font-condensed text-lg font-black">PRODE COMUNITARIO</div>
-            <div className="text-xs" style={{color:'#8892A4'}}>Todos contra todos · Elegí la liga</div>
-          </div>
-          <div className="text-white/30 text-lg">›</div>
+          <span className="text-xs px-2 py-1 rounded-lg font-bold" style={{background:'rgba(232,25,44,0.15)',color:'#E8192C'}}>Próximo</span>
         </div>
 
         {/* LIGAS */}
@@ -119,7 +72,7 @@ export default function Inicio() {
           Ligas disponibles
         </div>
 
-        <div className="rounded-2xl overflow-hidden mb-4" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
+        <div className="rounded-2xl overflow-hidden" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
           {LIGAS.map((liga, i) => (
             <div
               key={liga.id}
@@ -150,7 +103,7 @@ export default function Inicio() {
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
           <span className="text-lg">🏠</span>
-          <span className="text-xs font-semibold" style={{color:'#E8192C'}}>Inicio</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Inicio</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/fixture'}>
           <span className="text-lg">📅</span>

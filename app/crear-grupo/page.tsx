@@ -7,13 +7,14 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useSearchParams } from 'next/navigation';
 
 const LIGAS = [
-  { id: 'premier', nombre: 'Premier League' },
-  { id: 'laliga', nombre: 'La Liga' },
-  { id: 'seriea', nombre: 'Serie A' },
   { id: 'bundesliga', nombre: 'Bundesliga' },
-  { id: 'ligue1', nombre: 'Ligue 1' },
   { id: 'ligapro', nombre: 'Liga Profesional' },
+  { id: 'primera-b', nombre: 'Primera B Nacional' },
   { id: 'brasileirao', nombre: 'Brasileirão' },
+  { id: 'laliga', nombre: 'La Liga' },
+  { id: 'ligue1', nombre: 'Ligue 1' },
+  { id: 'premier', nombre: 'Premier League' },
+  { id: 'seriea', nombre: 'Serie A' },
 ];
 
 function CrearGrupoForm() {
@@ -129,7 +130,7 @@ function CrearGrupoForm() {
           >
             <option value="">— Elegí una liga —</option>
             {LIGAS.map(l => <option key={l.id} value={l.id}>{l.nombre}</option>)}
-            <option value="mundial" disabled>🏆 Mundial 2026 — disponible el 9 Jun</option>
+            <option value="mundial" disabled>🏆 Mundial 2026 — disponible el 1 Abr</option>
           </select>
         </div>
 
