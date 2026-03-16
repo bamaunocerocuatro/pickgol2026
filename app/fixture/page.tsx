@@ -3,16 +3,7 @@
 import { useEffect, useState } from 'react';
 import { auth } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-
-const LIGAS_NOMBRES: Record<string, string> = {
-  premier: 'Premier League',
-  laliga: 'La Liga',
-  seriea: 'Serie A',
-  bundesliga: 'Bundesliga',
-  ligue1: 'Ligue 1',
-  ligapro: 'Liga Profesional',
-  brasileirao: 'Brasileirão',
-};
+import LigaSelector from '../components/LigaSelector';
 
 export default function Fixture() {
   const [user, setUser] = useState<any>(null);
@@ -77,16 +68,7 @@ export default function Fixture() {
 
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-4">
         <h1 className="font-condensed text-3xl font-black mb-3">Fixture 📅</h1>
-        <select
-          value={ligaId}
-          onChange={(e) => setLigaId(e.target.value)}
-          className="w-full rounded-xl px-4 py-3 text-white text-sm outline-none"
-          style={{background:'rgba(0,0,0,0.35)',border:'1px solid rgba(255,255,255,0.15)'}}
-        >
-          {Object.entries(LIGAS_NOMBRES).map(([id, nombre]) => (
-            <option key={id} value={id}>{nombre}</option>
-          ))}
-        </select>
+        <LigaSelector value={ligaId} onChange={(id) => setLigaId(id)} showMundial={false} />
       </div>
 
       <div className="px-4 py-4">
@@ -145,7 +127,7 @@ export default function Fixture() {
           <span className="text-lg">👥</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/ranking'}>
           <span className="text-lg">🏆</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Ranking</span>
         </div>
