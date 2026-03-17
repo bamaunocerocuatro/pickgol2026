@@ -15,6 +15,8 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet" />
+        <link rel="icon" href="/logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
       </head>
       <body className="bg-[#020810] text-white antialiased">
         {children}
