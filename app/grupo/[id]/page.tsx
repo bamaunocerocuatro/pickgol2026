@@ -138,7 +138,7 @@ export default function GrupoDashboard() {
           <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Compartí este código para que otros se unan</div>
         </div>
 
-        {/* BOTONES */}
+        {/* BOTÓN CREAR JUGADA */}
         <button
           onClick={() => window.location.href = `/jugada/crear?grupo=${id}`}
           className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3"
@@ -147,13 +147,14 @@ export default function GrupoDashboard() {
           ⚽ CREAR MI JUGADA
         </button>
 
+        {/* BOTÓN CHAT */}
         {grupo.chatHabilitado ? (
           <button
             onClick={() => window.location.href = `/chat/${id}`}
             className="w-full py-3 rounded-xl font-condensed font-black text-base mb-4"
             style={{background:'rgba(0,200,83,0.15)',border:'1px solid rgba(0,200,83,0.3)',color:'#00C853'}}
           >
-            💬 IR AL CHAT
+            💬 IR AL CHAT DEL GRUPO
           </button>
         ) : (
           <div
@@ -279,9 +280,9 @@ export default function GrupoDashboard() {
           <span className="text-lg">👥</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
-          <span className="text-lg">🏆</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Ranking</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/mis-jugadas'}>
+          <span className="text-lg">🎯</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Jugadas</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
           <span className="text-lg">👤</span>

@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
@@ -48,7 +48,6 @@ export default function Ranking() {
       const q = query(collection(db, 'jugadas'), where('grupoId', '==', gid));
       const snap = await getDocs(q);
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Ordenar por puntos (de momento todos tienen 0)
       data.sort((a: any, b: any) => (b.puntos || 0) - (a.puntos || 0));
       setJugadas(data);
     } catch (e) {}
@@ -69,16 +68,13 @@ export default function Ranking() {
     </main>
   );
 
-  const grupoActual = grupos.find(g => g.id === grupoId);
   const miPosicion = jugadas.findIndex(j => j.userId === user?.uid) + 1;
 
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      {/* HEADER */}
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
         <h1 className="font-condensed text-3xl font-black mb-3">Ranking 🏆</h1>
-
         {grupos.length > 0 && (
           <select
             value={grupoId}
@@ -177,7 +173,6 @@ export default function Ranking() {
 
       </div>
 
-      {/* BOTTOM NAV */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
           <span className="text-lg">🏠</span>
@@ -191,9 +186,9 @@ export default function Ranking() {
           <span className="text-lg">👥</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/ranking'}>
-          <span className="text-lg">🏆</span>
-          <span className="text-xs font-semibold" style={{color:'#E8192C'}}>Ranking</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/mis-jugadas'}>
+          <span className="text-lg">🎯</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Jugadas</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
           <span className="text-lg">👤</span>

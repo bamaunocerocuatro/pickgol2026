@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
@@ -55,7 +55,6 @@ export default function Perfil() {
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      {/* HEADER */}
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-8">
         <h1 className="font-condensed text-3xl font-black mb-6">Mi Perfil 👤</h1>
         <div className="flex items-center gap-4">
@@ -77,7 +76,6 @@ export default function Perfil() {
 
       <div className="px-4 py-4">
 
-        {/* EDITAR NOMBRE */}
         <div className="rounded-2xl overflow-hidden mb-4" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="px-4 py-4">
             <div className="flex items-center justify-between mb-3">
@@ -127,7 +125,6 @@ export default function Perfil() {
           </div>
         </div>
 
-        {/* INFO CUENTA */}
         <div className="rounded-2xl overflow-hidden mb-4" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="px-4 py-4">
             <div className="text-sm font-semibold mb-3">Información de cuenta</div>
@@ -146,7 +143,6 @@ export default function Perfil() {
           </div>
         </div>
 
-        {/* CERRAR SESION */}
         <button
           onClick={cerrarSesion}
           className="w-full py-3 rounded-xl font-condensed font-black text-base"
@@ -157,7 +153,6 @@ export default function Perfil() {
 
       </div>
 
-      {/* BOTTOM NAV */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
           <span className="text-lg">🏠</span>
@@ -171,11 +166,11 @@ export default function Perfil() {
           <span className="text-lg">👥</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
-          <span className="text-lg">🏆</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Ranking</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/mis-jugadas'}>
+          <span className="text-lg">🎯</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Jugadas</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
           <span className="text-lg">👤</span>
           <span className="text-xs font-semibold" style={{color:'#E8192C'}}>Perfil</span>
         </div>

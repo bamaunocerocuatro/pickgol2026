@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
@@ -33,7 +33,6 @@ export default function MisJugadas() {
         const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setJugadas(data);
 
-        // Cargar grupos
         const grupoIds = [...new Set(data.map((j: any) => j.grupoId).filter(Boolean))];
         const gruposData: Record<string, any> = {};
         for (const gid of grupoIds) {
@@ -68,15 +67,8 @@ export default function MisJugadas() {
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      {/* HEADER */}
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
-        <div className="flex items-center gap-3 mb-4">
-          <button
-            onClick={() => window.history.back()}
-            className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm"
-          >←</button>
-        </div>
-        <h1 className="font-condensed text-3xl font-black mb-1">Mis Jugadas ⚽</h1>
+        <h1 className="font-condensed text-3xl font-black mb-1">Mis Jugadas 🎯</h1>
         <p className="text-xs" style={{color:'#8892A4'}}>Todas tus jugadas activas</p>
       </div>
 
@@ -112,7 +104,6 @@ export default function MisJugadas() {
               className="rounded-2xl mb-3 overflow-hidden"
               style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}
             >
-              {/* HEADER JUGADA */}
               <div className="px-4 py-3 flex items-center justify-between" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
                 <div>
                   <div className="font-condensed text-base font-black">{j.nombre}</div>
@@ -126,7 +117,6 @@ export default function MisJugadas() {
                 </div>
               </div>
 
-              {/* VARIABLES */}
               <div className="px-4 py-3">
                 <div className="grid grid-cols-2 gap-2">
                   {[
@@ -148,7 +138,6 @@ export default function MisJugadas() {
                 </div>
               </div>
 
-              {/* ESTADO PAGO */}
               {grupo?.controlPagos && (
                 <div className="px-4 py-2" style={{borderTop:'1px solid rgba(255,255,255,0.05)'}}>
                   <span
@@ -168,7 +157,6 @@ export default function MisJugadas() {
 
       </div>
 
-      {/* BOTTOM NAV */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
           <span className="text-lg">🏠</span>
@@ -182,9 +170,9 @@ export default function MisJugadas() {
           <span className="text-lg">👥</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer">
-          <span className="text-lg">🏆</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Ranking</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/mis-jugadas'}>
+          <span className="text-lg">🎯</span>
+          <span className="text-xs font-semibold" style={{color:'#E8192C'}}>Jugadas</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
           <span className="text-lg">👤</span>

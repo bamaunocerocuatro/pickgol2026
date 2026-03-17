@@ -127,9 +127,9 @@ export default function Fixture() {
           <span className="text-lg">👥</span>
           <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/ranking'}>
-          <span className="text-lg">🏆</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Ranking</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/mis-jugadas'}>
+          <span className="text-lg">🎯</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Jugadas</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
           <span className="text-lg">👤</span>
