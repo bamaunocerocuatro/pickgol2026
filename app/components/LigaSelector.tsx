@@ -1,16 +1,16 @@
- 'use client';
+'use client';
 
 import { useState } from 'react';
 
 const LIGAS = [
-  { id: 'bundesliga', nombre: 'Bundesliga', pais: 'Alemania', bandera: '/flags/ger.png' },
-  { id: 'ligapro', nombre: 'Liga Profesional', pais: 'Argentina', bandera: '/flags/arg.png' },
-  { id: 'primera-b', nombre: 'Primera B Nacional', pais: 'Argentina', bandera: '/flags/arg.png' },
-  { id: 'brasileirao', nombre: 'Brasileirão', pais: 'Brasil', bandera: '/flags/bra.png' },
-  { id: 'laliga', nombre: 'La Liga', pais: 'España', bandera: '/flags/esp.png' },
-  { id: 'ligue1', nombre: 'Ligue 1', pais: 'Francia', bandera: '/flags/fra.png' },
-  { id: 'premier', nombre: 'Premier League', pais: 'Inglaterra', bandera: '/flags/eng.png' },
-  { id: 'seriea', nombre: 'Serie A', pais: 'Italia', bandera: '/flags/ita.png' },
+  { id: 'bundesliga', nombre: 'Bundesliga', pais: 'Alemania', bandera: '/flags/ger.png', proximamente: false },
+  { id: 'ligapro', nombre: 'Liga Profesional', pais: 'Argentina', bandera: '/flags/arg.png', proximamente: true },
+  { id: 'primera-b', nombre: 'Primera B Nacional', pais: 'Argentina', bandera: '/flags/arg.png', proximamente: true },
+  { id: 'brasileirao', nombre: 'Brasileirão', pais: 'Brasil', bandera: '/flags/bra.png', proximamente: false },
+  { id: 'laliga', nombre: 'La Liga', pais: 'España', bandera: '/flags/esp.png', proximamente: false },
+  { id: 'ligue1', nombre: 'Ligue 1', pais: 'Francia', bandera: '/flags/fra.png', proximamente: false },
+  { id: 'premier', nombre: 'Premier League', pais: 'Inglaterra', bandera: '/flags/eng.png', proximamente: false },
+  { id: 'seriea', nombre: 'Serie A', pais: 'Italia', bandera: '/flags/ita.png', proximamente: false },
 ];
 
 interface Props {
@@ -56,11 +56,17 @@ export default function LigaSelector({ value, onChange, showMundial = true }: Pr
           {LIGAS.map((liga, i) => (
             <div
               key={liga.id}
-              onClick={() => { onChange(liga.id); setOpen(false); }}
-              className="flex items-center gap-3 px-4 py-3 cursor-pointer"
+              onClick={() => {
+                if (liga.proximamente) return;
+                onChange(liga.id);
+                setOpen(false);
+              }}
+              className="flex items-center gap-3 px-4 py-3"
               style={{
                 borderBottom: i < LIGAS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                background: value === liga.id ? 'rgba(232,25,44,0.1)' : 'transparent'
+                background: value === liga.id ? 'rgba(232,25,44,0.1)' : 'transparent',
+                cursor: liga.proximamente ? 'default' : 'pointer',
+                opacity: liga.proximamente ? 0.5 : 1,
               }}
             >
               <div className="w-8 h-6 rounded overflow-hidden flex-shrink-0">
@@ -70,7 +76,11 @@ export default function LigaSelector({ value, onChange, showMundial = true }: Pr
                 <div className="text-sm font-semibold text-white">{liga.nombre}</div>
                 <div className="text-xs" style={{color:'#8892A4'}}>{liga.pais}</div>
               </div>
-              {value === liga.id && <span style={{color:'#E8192C'}}>✓</span>}
+              {liga.proximamente ? (
+                <span className="text-xs px-2 py-0.5 rounded-lg" style={{background:'rgba(255,255,255,0.07)',color:'#8892A4'}}>🚧 Próximo</span>
+              ) : value === liga.id ? (
+                <span style={{color:'#E8192C'}}>✓</span>
+              ) : null}
             </div>
           ))}
 
@@ -92,11 +102,15 @@ export default function LigaSelector({ value, onChange, showMundial = true }: Pr
 
       {/* OVERLAY para cerrar */}
       {open && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setOpen(false)}
-        />
+        <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
       )}
     </div>
   );
 }
+```
+
+Push:
+```
+git add .
+git commit -m "ligas argentinas deshabilitadas en LigaSelector"
+git push
