@@ -107,10 +107,3 @@ export default function LigaSelector({ value, onChange, showMundial = true }: Pr
     </div>
   );
 }
-```
-
-Push:
-```
-git add .
-git commit -m "ligas argentinas deshabilitadas en LigaSelector"
-git push
