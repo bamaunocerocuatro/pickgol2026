@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 const LIGAS = [
   { id: 'bundesliga', nombre: 'Bundesliga', pais: 'Alemania', bandera: '/flags/ger.png', proximamente: false },
@@ -17,12 +18,18 @@ const LIGAS = [
 
 export default function Inicio() {
   const [user, setUser] = useState<any>(null);
+  const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (!u) window.location.href = '/login';
-      else { setUser(u); setLoading(false); }
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      if (!u) { window.location.href = '/login'; return; }
+      setUser(u);
+      try {
+        const snap = await getDoc(doc(db, 'usuarios', u.uid));
+        if (snap.exists()) setUserData(snap.data());
+      } catch (e) {}
+      setLoading(false);
     });
     return () => unsub();
   }, []);
@@ -35,6 +42,8 @@ export default function Inicio() {
       </div>
     </main>
   );
+
+  const totalReferidos = userData?.totalReferidos || 0;
 
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
@@ -67,9 +76,13 @@ export default function Inicio() {
             <div className="font-condensed text-xl font-black">—</div>
             <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Posición</div>
           </div>
-          <div className="flex-1 text-center rounded-xl py-2" style={{background:'rgba(255,255,255,0.08)'}}>
-            <div className="font-condensed text-xl font-black" style={{color:'#00C853'}}>0</div>
-            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Aciertos</div>
+          <div
+            className="flex-1 text-center rounded-xl py-2 cursor-pointer"
+            style={{background:'rgba(201,168,76,0.12)',border:'1px solid rgba(201,168,76,0.25)'}}
+            onClick={() => window.location.href = '/referidos'}
+          >
+            <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>{totalReferidos}</div>
+            <div className="text-xs font-bold" style={{color:'#C9A84C'}}>REFERIDOS 🎁</div>
           </div>
         </div>
       </div>
