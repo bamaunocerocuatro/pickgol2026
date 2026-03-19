@@ -5,14 +5,14 @@ import { auth } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 const LIGAS = [
-  { id: 'bundesliga', nombre: 'Bundesliga', pais: 'Alemania', bandera: '/flags/ger.png' },
-  { id: 'ligapro', nombre: 'Liga Profesional', pais: 'Argentina', bandera: '/flags/arg.png' },
-  { id: 'primera-b', nombre: 'Primera B Nacional', pais: 'Argentina', bandera: '/flags/arg.png' },
-  { id: 'brasileirao', nombre: 'Brasileirão', pais: 'Brasil', bandera: '/flags/bra.png' },
-  { id: 'laliga', nombre: 'La Liga', pais: 'España', bandera: '/flags/esp.png' },
-  { id: 'ligue1', nombre: 'Ligue 1', pais: 'Francia', bandera: '/flags/fra.png' },
-  { id: 'premier', nombre: 'Premier League', pais: 'Inglaterra', bandera: '/flags/eng.png' },
-  { id: 'seriea', nombre: 'Serie A', pais: 'Italia', bandera: '/flags/ita.png' },
+  { id: 'bundesliga', nombre: 'Bundesliga', pais: 'Alemania', bandera: '/flags/ger.png', proximamente: false },
+  { id: 'ligapro', nombre: 'Liga Profesional', pais: 'Argentina', bandera: '/flags/arg.png', proximamente: true },
+  { id: 'primera-b', nombre: 'Primera B Nacional', pais: 'Argentina', bandera: '/flags/arg.png', proximamente: true },
+  { id: 'brasileirao', nombre: 'Brasileirão', pais: 'Brasil', bandera: '/flags/bra.png', proximamente: false },
+  { id: 'laliga', nombre: 'La Liga', pais: 'España', bandera: '/flags/esp.png', proximamente: false },
+  { id: 'ligue1', nombre: 'Ligue 1', pais: 'Francia', bandera: '/flags/fra.png', proximamente: false },
+  { id: 'premier', nombre: 'Premier League', pais: 'Inglaterra', bandera: '/flags/eng.png', proximamente: false },
+  { id: 'seriea', nombre: 'Serie A', pais: 'Italia', bandera: '/flags/ita.png', proximamente: false },
 ];
 
 export default function Inicio() {
@@ -123,9 +123,13 @@ export default function Inicio() {
           {LIGAS.map((liga, i) => (
             <div
               key={liga.id}
-              className="flex items-center px-4 py-3 cursor-pointer active:bg-white/5"
-              style={{borderBottom: i < LIGAS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'}}
-              onClick={() => window.location.href = `/liga/${liga.id}`}
+              className="flex items-center px-4 py-3"
+              style={{
+                borderBottom: i < LIGAS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                cursor: liga.proximamente ? 'default' : 'pointer',
+                opacity: liga.proximamente ? 0.6 : 1,
+              }}
+              onClick={() => !liga.proximamente && (window.location.href = `/liga/${liga.id}`)}
             >
               <div className="w-8 h-6 rounded overflow-hidden mr-3 flex-shrink-0">
                 <img
@@ -139,7 +143,13 @@ export default function Inicio() {
                 <div className="font-condensed text-base font-bold">{liga.nombre}</div>
                 <div className="text-xs" style={{color:'#8892A4'}}>{liga.pais}</div>
               </div>
-              <div className="text-white/30">›</div>
+              {liga.proximamente ? (
+                <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{background:'rgba(255,255,255,0.07)',color:'#8892A4'}}>
+                  🚧 Próximamente
+                </span>
+              ) : (
+                <div className="text-white/30">›</div>
+              )}
             </div>
           ))}
         </div>
