@@ -10,6 +10,7 @@ export default function Fixture() {
   const [loading, setLoading] = useState(true);
   const [ligaId, setLigaId] = useState('premier');
   const [partidos, setPartidos] = useState<any[]>([]);
+  const [proximamente, setProximamente] = useState(false);
   const [cargando, setCargando] = useState(false);
 
   useEffect(() => {
@@ -27,10 +28,12 @@ export default function Fixture() {
   const cargarPartidos = async (id: string) => {
     setCargando(true);
     setPartidos([]);
+    setProximamente(false);
     try {
       const res = await fetch(`/api/fixture?liga=${id}`);
       const data = await res.json();
       setPartidos(data.partidos || []);
+      setProximamente(data.proximamente || false);
     } catch (e) {
       setPartidos([]);
     }
@@ -79,14 +82,22 @@ export default function Fixture() {
           </div>
         )}
 
-        {!cargando && partidos.length === 0 && (
+        {!cargando && proximamente && (
+          <div className="rounded-2xl p-6 text-center" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
+            <div className="text-4xl mb-3">🚧</div>
+            <div className="font-condensed text-xl font-black mb-2">Próximamente</div>
+            <p className="text-sm" style={{color:'#8892A4'}}>El fixture de esta liga estará disponible pronto</p>
+          </div>
+        )}
+
+        {!cargando && !proximamente && partidos.length === 0 && (
           <div className="text-center py-10">
             <div className="text-4xl mb-3">📅</div>
             <p className="text-sm" style={{color:'#8892A4'}}>No hay partidos disponibles</p>
           </div>
         )}
 
-        {!cargando && Object.entries(porFecha).map(([fecha, ps]) => (
+        {!cargando && !proximamente && Object.entries(porFecha).map(([fecha, ps]) => (
           <div key={fecha} className="mb-4">
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>{fecha}</div>
             <div className="rounded-2xl overflow-hidden" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const LIGAS_IDS: Record<string, { fotmob?: string; sportsdb?: string }> = {
-  premier:      { fotmob: '47',  sportsdb: '4328' },
-  laliga:       { fotmob: '87',  sportsdb: '4335' },
-  seriea:       { fotmob: '55',  sportsdb: '4332' },
-  bundesliga:   { fotmob: '54',  sportsdb: '4331' },
-  ligue1:       { fotmob: '53',  sportsdb: '4334' },
-  ligapro:      { sportsdb: '4406' },
-  'primera-b':  { sportsdb: '4616' },
-  brasileirao:  { fotmob: '268', sportsdb: '4351' },
+const LIGAS_IDS: Record<string, { fotmob?: string; proximamente?: boolean }> = {
+  premier:      { fotmob: '47' },
+  laliga:       { fotmob: '87' },
+  seriea:       { fotmob: '55' },
+  bundesliga:   { fotmob: '54' },
+  ligue1:       { fotmob: '53' },
+  ligapro:      { proximamente: true },
+  'primera-b':  { proximamente: true },
+  brasileirao:  { fotmob: '268' },
 };
 
 async function getFromFotmob(ligaId: string) {
@@ -34,39 +34,20 @@ async function getFromFotmob(ligaId: string) {
   }));
 }
 
-async function getFromSportsDB(ligaId: string) {
-  const res = await fetch(
-    `https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=${ligaId}`,
-    { next: { revalidate: 3600 } }
-  );
-  const data = await res.json();
-  const events = data?.events || [];
-  return events.map((e: any) => ({
-    local: e.strHomeTeam || 'Local',
-    visitante: e.strAwayTeam || 'Visitante',
-    fecha: e.strTimestamp || e.dateEvent || '',
-    estado: 'NS',
-    golesLocal: e.intHomeScore ? parseInt(e.intHomeScore) : null,
-    golesVisitante: e.intAwayScore ? parseInt(e.intAwayScore) : null,
-  }));
-}
-
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const liga = searchParams.get('liga') || 'premier';
   const ids = LIGAS_IDS[liga] || LIGAS_IDS['premier'];
 
+  if (ids.proximamente) {
+    return NextResponse.json({ partidos: [], proximamente: true });
+  }
+
   try {
     let partidos: any[] = [];
-
     if (ids.fotmob) {
       partidos = await getFromFotmob(ids.fotmob);
     }
-
-    if (partidos.length === 0 && ids.sportsdb) {
-      partidos = await getFromSportsDB(ids.sportsdb);
-    }
-
     return NextResponse.json({ partidos });
   } catch (e) {
     return NextResponse.json({ partidos: [] });
