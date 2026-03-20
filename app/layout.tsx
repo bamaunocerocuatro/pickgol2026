@@ -4,7 +4,7 @@ import PWARegister from "./components/PWARegister";
 
 export const metadata: Metadata = {
   title: "PickGol 2026",
-  description: "El prode del mundial",
+  description: "Jugá, acertá y liderá el ranking ⚽🔥",
 };
 
 export default function RootLayout({
