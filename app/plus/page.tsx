@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
@@ -29,7 +29,7 @@ export default function Plus() {
     const script = document.createElement('script');
     script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
     script.onload = () => {
-      window.Paddle.Initialize({ token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN! });
+      window.Paddle.Initialize({ token: 'live_dc281cbb836bab390f6cb2c282e' });
     };
     document.head.appendChild(script);
 
@@ -39,7 +39,7 @@ export default function Plus() {
   const handleComprar = () => {
     if (!user || !window.Paddle) return;
     window.Paddle.Checkout.open({
-      items: [{ priceId: process.env.NEXT_PUBLIC_PADDLE_PRICE_PLUS, quantity: 1 }],
+      items: [{ priceId: 'pri_01km4nm17rfbe8g8r3h45kgvkp', quantity: 1 }],
       customer: { email: user.email },
       settings: { successUrl: 'https://pickgol2026.vercel.app/plus?success=true' },
     });
