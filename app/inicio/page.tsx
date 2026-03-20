@@ -20,6 +20,8 @@ export default function Inicio() {
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [yaInstalada, setYaInstalada] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -31,8 +33,32 @@ export default function Inicio() {
       } catch (e) {}
       setLoading(false);
     });
-    return () => unsub();
+
+    // Detectar si ya está instalada
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setYaInstalada(true);
+    }
+
+    // Capturar el evento de instalación
+    const handler = (e: any) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      unsub();
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
   }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') setYaInstalada(true);
+    setInstallPrompt(null);
+  };
 
   if (loading) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
@@ -88,6 +114,22 @@ export default function Inicio() {
       </div>
 
       <div className="px-4 py-4">
+
+        {/* BANNER DESCARGA */}
+        {!yaInstalada && installPrompt && (
+          <div
+            onClick={handleInstall}
+            className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer"
+            style={{background:'linear-gradient(135deg,#0A1F5C,#0D2870)',border:'1px solid rgba(201,168,76,0.3)'}}
+          >
+            <div className="text-3xl">📲</div>
+            <div className="flex-1">
+              <div className="font-condensed text-lg font-black">DESCARGAR PICKGOL</div>
+              <div className="text-xs" style={{color:'rgba(255,255,255,0.6)'}}>Instalá la app en tu celular · Gratis</div>
+            </div>
+            <div className="text-[#C9A84C] text-lg">↓</div>
+          </div>
+        )}
 
         {/* BANNER MUNDIAL */}
         <div className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer" style={{background:'linear-gradient(135deg,#E8192C,#8B0018)'}}>
