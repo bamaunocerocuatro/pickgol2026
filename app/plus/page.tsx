@@ -25,7 +25,6 @@ export default function Plus() {
       setLoading(false);
     });
 
-    // Cargar Paddle.js
     const script = document.createElement('script');
     script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
     script.onload = () => {
@@ -112,7 +111,10 @@ export default function Plus() {
             </button>
 
             <p className="text-center text-xs" style={{color:'#8892A4'}}>
-              Procesado por Paddle · Pago seguro
+              Procesado por Paddle · Pago seguro ·{' '}
+              <span className="cursor-pointer underline" onClick={() => window.location.href = '/terms'}>
+                Términos · Privacidad · Reembolsos
+              </span>
             </p>
           </>
         )}
