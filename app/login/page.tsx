@@ -11,6 +11,12 @@ import {
 import { doc, setDoc, getDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { useSearchParams } from 'next/navigation';
 
+const NIVELES_REFERIDOS = [
+  { referidos: 3, jugadas: 1, campo: 'nivel1' },
+  { referidos: 6, jugadas: 2, campo: 'nivel2' },
+  { referidos: 10, jugadas: 6, campo: 'nivel3' },
+];
+
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,12 +38,33 @@ function LoginForm() {
 
   const generarCodigo = (uid: string) => uid.substring(0, 8).toUpperCase();
 
+  const acreditarJugadasGratis = async (referidorId: string, nuevoTotal: number) => {
+    try {
+      const snap = await getDoc(doc(db, 'usuarios', referidorId));
+      if (!snap.exists()) return;
+      const data = snap.data();
+
+      const updates: Record<string, any> = {};
+
+      for (const nivel of NIVELES_REFERIDOS) {
+        // Si alcanzó el nivel y todavía no fue acreditado
+        if (nuevoTotal >= nivel.referidos && !data[nivel.campo]) {
+          updates[nivel.campo] = true;
+          updates.jugadasGratis = (updates.jugadasGratis ?? (data.jugadasGratis || 0)) + nivel.jugadas;
+        }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await updateDoc(doc(db, 'usuarios', referidorId), updates);
+      }
+    } catch (e) {}
+  };
+
   const procesarReferido = async (uid: string) => {
     const ref = refCode || localStorage.getItem('pickgol_ref');
     if (!ref || ref === generarCodigo(uid)) return;
 
     try {
-      // Buscar quién tiene ese código
       const { collection, query, where, getDocs } = await import('firebase/firestore');
       const q = query(collection(db, 'usuarios'), where('codigoRef', '==', ref));
       const snap = await getDocs(q);
@@ -45,18 +72,21 @@ function LoginForm() {
 
       const referidorDoc = snap.docs[0];
       const referidorId = referidorDoc.id;
+      const totalActual = referidorDoc.data().totalReferidos || 0;
+      const nuevoTotal = totalActual + 1;
 
-      // Registrar referido
       await setDoc(doc(db, 'referidos', uid), {
         referidoPor: referidorId,
         codigoUsado: ref,
         creadoEn: serverTimestamp(),
       });
 
-      // Sumar +1 al referidor
       await updateDoc(doc(db, 'usuarios', referidorId), {
         totalReferidos: increment(1),
       });
+
+      // Acreditar jugadas gratis si corresponde
+      await acreditarJugadasGratis(referidorId, nuevoTotal);
 
       localStorage.removeItem('pickgol_ref');
     } catch (e) {}
@@ -74,6 +104,9 @@ function LoginForm() {
         codigoRef: codigo,
         totalReferidos: 0,
         jugadasGratis: 0,
+        nivel1: false,
+        nivel2: false,
+        nivel3: false,
         creadoEn: serverTimestamp(),
       });
       await procesarReferido(uid);
