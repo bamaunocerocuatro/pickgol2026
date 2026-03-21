@@ -1,0 +1,65 @@
+ {
+  "inicio": {
+    "bienvenido": "Bem-vindo de volta,",
+    "misPts": "Meus pts",
+    "posicion": "Posição",
+    "referidos": "INDICADOS",
+    "mundialTitulo": "PRODE COPA DO MUNDO 2026",
+    "mundialSub": "Lançamento: 1 Abr 2026 · O mais completo",
+    "crearGrupo": "CRIAR GRUPO",
+    "crearGrupoSub": "Jogue com seus amigos · Escolha a liga",
+    "prodeComunitario": "PRODE COMUNITÁRIO",
+    "prodeComunitarioSub": "Todos contra todos · Escolha a liga",
+    "ligasDisponibles": "Ligas disponíveis",
+    "proximamente": "Em breve",
+    "descargar": "BAIXAR PICKGOL",
+    "descargarSub": "Instale o app no seu celular · Grátis"
+  },
+  "nav": {
+    "inicio": "Início",
+    "fixture": "Jogos",
+    "grupos": "Grupos",
+    "jugadas": "Apostas",
+    "perfil": "Perfil"
+  },
+  "login": {
+    "titulo": "O prode da copa do mundo",
+    "iniciarSesion": "ENTRAR",
+    "crearCuenta": "CRIAR CONTA",
+    "email": "Email",
+    "password": "Senha",
+    "entrar": "ENTRAR",
+    "google": "CONTINUAR COM GOOGLE",
+    "yaTenes": "Já tem uma conta?",
+    "noTenes": "Não tem uma conta?",
+    "iniciaSesion": "Entrar",
+    "registrate": "Cadastre-se",
+    "invitado": "Você foi convidado — vai receber benefícios ao se cadastrar"
+  },
+  "referidos": {
+    "titulo": "Indicados",
+    "sub": "Indique amigos e ganhe apostas grátis para a Copa",
+    "totalReferidos": "Indicados",
+    "jugadasGratis": "Apostas grátis",
+    "proximoNivel": "Próximo nível",
+    "faltan": "Faltam",
+    "paraGanar": "indicados para ganhar",
+    "jugadaGratis": "aposta grátis",
+    "jugadasGratisPlural": "apostas grátis",
+    "ganado": "Conquistado!",
+    "tuLink": "Seu link de convite",
+    "copiar": "Copiar",
+    "invitar": "CONVIDAR AMIGOS",
+    "recompensas": "Recompensas"
+  },
+  "plus": {
+    "titulo": "PICKGOL PLUS",
+    "sub": "Personalize sua experiência ao máximo",
+    "precio": "Pagamento único · Para sempre",
+    "activar": "ATIVAR PLUS — USD 2.59",
+    "procesado": "Processado por Paddle · Pagamento seguro",
+    "yaEsPlus": "Você já é Plus!",
+    "yaEsPlusSub": "Você tem acesso a todas as funções premium",
+    "terminos": "Termos · Privacidade · Reembolsos"
+  }
+}

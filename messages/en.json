@@ -1,0 +1,66 @@
+ {
+  "inicio": {
+    "bienvenido": "Welcome back,",
+    "misPts": "My pts",
+    "posicion": "Position",
+    "referidos": "REFERRALS",
+    "mundialTitulo": "WORLD CUP 2026 PREDICTIONS",
+    "mundialSub": "Launch: Apr 1, 2026 · The most complete",
+    "crearGrupo": "CREATE GROUP",
+    "crearGrupoSub": "Play with your friends · Choose a league",
+    "prodeComunitario": "COMMUNITY PREDICTIONS",
+    "prodeComunitarioSub": "Everyone vs everyone · Choose a league",
+    "ligasDisponibles": "Available leagues",
+    "proximamente": "Coming soon",
+    "descargar": "DOWNLOAD PICKGOL",
+    "descargarSub": "Install the app on your phone · Free"
+  },
+  "nav": {
+    "inicio": "Home",
+    "fixture": "Fixture",
+    "grupos": "Groups",
+    "jugadas": "Predictions",
+    "perfil": "Profile"
+  },
+  "login": {
+    "titulo": "The World Cup prediction app",
+    "iniciarSesion": "SIGN IN",
+    "crearCuenta": "CREATE ACCOUNT",
+    "email": "Email",
+    "password": "Password",
+    "entrar": "SIGN IN",
+    "google": "CONTINUE WITH GOOGLE",
+    "yaTenes": "Already have an account?",
+    "noTenes": "Don't have an account?",
+    "iniciaSesion": "Sign in",
+    "registrate": "Sign up",
+    "invitado": "You were invited — you'll receive benefits when you sign up"
+  },
+  "referidos": {
+    "titulo": "Referrals",
+    "sub": "Invite friends and earn free predictions for the World Cup",
+    "totalReferidos": "Referrals",
+    "jugadasGratis": "Free predictions",
+    "proximoNivel": "Next level",
+    "faltan": "You need",
+    "paraGanar": "more referrals to earn",
+    "jugadaGratis": "free prediction",
+    "jugadasGratisPlural": "free predictions",
+    "ganado": "Earned!",
+    "tuLink": "Your invite link",
+    "copiar": "Copy",
+    "invitar": "INVITE FRIENDS",
+    "recompensas": "Rewards"
+  },
+  "plus": {
+    "titulo": "PICKGOL PLUS",
+    "sub": "Customize your experience to the fullest",
+    "precio": "One-time payment · Forever",
+    "activar": "ACTIVATE PLUS — USD 2.59",
+    "procesado": "Processed by Paddle · Secure payment",
+    "yaEsPlus": "You're already Plus!",
+    "yaEsPlusSub": "You have access to all premium features",
+    "terminos": "Terms · Privacy · Refunds"
+  }
+}
+

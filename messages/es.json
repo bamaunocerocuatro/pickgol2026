@@ -1,0 +1,65 @@
+ {
+  "inicio": {
+    "bienvenido": "Bienvenido de nuevo,",
+    "misPts": "Mis pts",
+    "posicion": "Posición",
+    "referidos": "REFERIDOS",
+    "mundialTitulo": "PRODE MUNDIAL 2026",
+    "mundialSub": "Lanzamiento: 1 Abr 2026 · El más completo",
+    "crearGrupo": "CREAR GRUPO",
+    "crearGrupoSub": "Jugá con tus amigos · Elegí la liga",
+    "prodeComunitario": "PRODE COMUNITARIO",
+    "prodeComunitarioSub": "Todos contra todos · Elegí la liga",
+    "ligasDisponibles": "Ligas disponibles",
+    "proximamente": "Próximamente",
+    "descargar": "DESCARGAR PICKGOL",
+    "descargarSub": "Instalá la app en tu celular · Gratis"
+  },
+  "nav": {
+    "inicio": "Inicio",
+    "fixture": "Fixture",
+    "grupos": "Grupos",
+    "jugadas": "Jugadas",
+    "perfil": "Perfil"
+  },
+  "login": {
+    "titulo": "El prode del mundial",
+    "iniciarSesion": "INICIAR SESIÓN",
+    "crearCuenta": "CREAR CUENTA",
+    "email": "Email",
+    "password": "Contraseña",
+    "entrar": "ENTRAR",
+    "google": "CONTINUAR CON GOOGLE",
+    "yaTenes": "¿Ya tenés cuenta?",
+    "noTenes": "¿No tenés cuenta?",
+    "iniciaSesion": "Iniciá sesión",
+    "registrate": "Registrate",
+    "invitado": "Fuiste invitado — vas a recibir beneficios al registrarte"
+  },
+  "referidos": {
+    "titulo": "Referidos",
+    "sub": "Invitá amigos y ganá jugadas gratis para el Mundial",
+    "totalReferidos": "Referidos",
+    "jugadasGratis": "Jugadas gratis",
+    "proximoNivel": "Próximo nivel",
+    "faltan": "Faltán",
+    "paraGanar": "referidos para ganar",
+    "jugadaGratis": "jugada gratis",
+    "jugadasGratisPlural": "jugadas gratis",
+    "ganado": "¡Ganado!",
+    "tuLink": "Tu link de invitación",
+    "copiar": "Copiar",
+    "invitar": "INVITAR AMIGOS",
+    "recompensas": "Recompensas"
+  },
+  "plus": {
+    "titulo": "PICKGOL PLUS",
+    "sub": "Personalizá tu experiencia al máximo",
+    "precio": "Pago único · Para siempre",
+    "activar": "ACTIVAR PLUS — USD 2.59",
+    "procesado": "Procesado por Paddle · Pago seguro",
+    "yaEsPlus": "¡Ya sos Plus!",
+    "yaEsPlusSub": "Tenés acceso a todas las funciones premium",
+    "terminos": "Términos · Privacidad · Reembolsos"
+  }
+}

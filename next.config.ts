@@ -1,12 +1,11 @@
-import type { NextConfig } from "next";
+import createNextIntlPlugin from 'next-intl/plugin';
 
-const nextConfig: NextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+const withNextIntl = createNextIntlPlugin();
+
+const nextConfig = {
+  typescript: { ignoreBuildErrors: true },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
+```
+
