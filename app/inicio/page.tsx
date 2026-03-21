@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { useTranslations } from 'next-intl';
 
 const LIGAS = [
   { id: 'bundesliga', nombre: 'Bundesliga', pais: 'Alemania', bandera: '/flags/ger.png', proximamente: false },
@@ -17,6 +18,8 @@ const LIGAS = [
 ];
 
 export default function Inicio() {
+  const t = useTranslations('inicio');
+  const nav = useTranslations('nav');
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -34,12 +37,10 @@ export default function Inicio() {
       setLoading(false);
     });
 
-    // Detectar si ya está instalada
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setYaInstalada(true);
     }
 
-    // Capturar el evento de instalación
     const handler = (e: any) => {
       e.preventDefault();
       setInstallPrompt(e);
@@ -90,17 +91,17 @@ export default function Inicio() {
             </div>
           </div>
         </div>
-        <p className="text-[#8892A4] text-xs mb-1">Bienvenido de nuevo,</p>
+        <p className="text-[#8892A4] text-xs mb-1">{t('bienvenido')}</p>
         <h1 className="font-condensed text-2xl font-black mb-1">{user.displayName || user.email} ⚽</h1>
         <p className="text-xs mb-3" style={{color:'rgba(201,168,76,0.7)'}}>🥇 Tu mejor jugada · <span style={{color:'rgba(255,255,255,0.4)'}}>Próximamente</span></p>
         <div className="flex gap-2">
           <div className="flex-1 text-center rounded-xl py-2" style={{background:'rgba(255,255,255,0.08)'}}>
             <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>0</div>
-            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Mis pts</div>
+            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{t('misPts')}</div>
           </div>
           <div className="flex-1 text-center rounded-xl py-2" style={{background:'rgba(255,255,255,0.08)'}}>
             <div className="font-condensed text-xl font-black">—</div>
-            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Posición</div>
+            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{t('posicion')}</div>
           </div>
           <div
             className="flex-1 text-center rounded-xl py-2 cursor-pointer"
@@ -108,7 +109,7 @@ export default function Inicio() {
             onClick={() => window.location.href = '/referidos'}
           >
             <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>{totalReferidos}</div>
-            <div className="text-xs font-bold" style={{color:'#C9A84C'}}>REFERIDOS 🎁</div>
+            <div className="text-xs font-bold" style={{color:'#C9A84C'}}>{t('referidos')} 🎁</div>
           </div>
         </div>
       </div>
@@ -124,8 +125,8 @@ export default function Inicio() {
           >
             <div className="text-3xl">📲</div>
             <div className="flex-1">
-              <div className="font-condensed text-lg font-black">DESCARGAR PICKGOL</div>
-              <div className="text-xs" style={{color:'rgba(255,255,255,0.6)'}}>Instalá la app en tu celular · Gratis</div>
+              <div className="font-condensed text-lg font-black">{t('descargar')}</div>
+              <div className="text-xs" style={{color:'rgba(255,255,255,0.6)'}}>{t('descargarSub')}</div>
             </div>
             <div className="text-[#C9A84C] text-lg">↓</div>
           </div>
@@ -135,8 +136,8 @@ export default function Inicio() {
         <div className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer" style={{background:'linear-gradient(135deg,#E8192C,#8B0018)'}}>
           <div className="text-3xl">🏆</div>
           <div className="flex-1">
-            <div className="font-condensed text-lg font-black">PRODE MUNDIAL 2026</div>
-            <div className="text-xs" style={{color:'rgba(255,255,255,0.7)'}}>Lanzamiento: 1 Abr 2026 · El más completo</div>
+            <div className="font-condensed text-lg font-black">{t('mundialTitulo')}</div>
+            <div className="text-xs" style={{color:'rgba(255,255,255,0.7)'}}>{t('mundialSub')}</div>
           </div>
           <div className="text-white/30 text-lg">›</div>
         </div>
@@ -149,8 +150,8 @@ export default function Inicio() {
         >
           <div className="text-3xl">👥</div>
           <div className="flex-1">
-            <div className="font-condensed text-lg font-black">CREAR GRUPO</div>
-            <div className="text-xs" style={{color:'#8892A4'}}>Jugá con tus amigos · Elegí la liga</div>
+            <div className="font-condensed text-lg font-black">{t('crearGrupo')}</div>
+            <div className="text-xs" style={{color:'#8892A4'}}>{t('crearGrupoSub')}</div>
           </div>
           <div className="text-white/30 text-lg">›</div>
         </div>
@@ -163,15 +164,15 @@ export default function Inicio() {
         >
           <div className="text-3xl">🌍</div>
           <div className="flex-1">
-            <div className="font-condensed text-lg font-black">PRODE COMUNITARIO</div>
-            <div className="text-xs" style={{color:'#8892A4'}}>Todos contra todos · Elegí la liga</div>
+            <div className="font-condensed text-lg font-black">{t('prodeComunitario')}</div>
+            <div className="text-xs" style={{color:'#8892A4'}}>{t('prodeComunitarioSub')}</div>
           </div>
           <div className="text-white/30 text-lg">›</div>
         </div>
 
         {/* LIGAS */}
         <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{color:'#8892A4'}}>
-          Ligas disponibles
+          {t('ligasDisponibles')}
         </div>
 
         <div className="rounded-2xl overflow-hidden mb-4" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
@@ -200,7 +201,7 @@ export default function Inicio() {
               </div>
               {liga.proximamente ? (
                 <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{background:'rgba(255,255,255,0.07)',color:'#8892A4'}}>
-                  🚧 Próximamente
+                  🚧 {t('proximamente')}
                 </span>
               ) : (
                 <div className="text-white/30">›</div>
@@ -215,23 +216,23 @@ export default function Inicio() {
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
           <span className="text-lg">🏠</span>
-          <span className="text-xs font-semibold" style={{color:'#E8192C'}}>Inicio</span>
+          <span className="text-xs font-semibold" style={{color:'#E8192C'}}>{nav('inicio')}</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/fixture'}>
           <span className="text-lg">📅</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Fixture</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>{nav('fixture')}</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/grupos'}>
           <span className="text-lg">👥</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>{nav('grupos')}</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/mis-jugadas'}>
           <span className="text-lg">🎯</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Jugadas</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>{nav('jugadas')}</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
           <span className="text-lg">👤</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Perfil</span>
+          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>{nav('perfil')}</span>
         </div>
       </div>
 
