@@ -10,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 const NIVELES_REFERIDOS = [
   { referidos: 3, jugadas: 1, campo: 'nivel1' },
@@ -18,6 +19,7 @@ const NIVELES_REFERIDOS = [
 ];
 
 function LoginForm() {
+  const t = useTranslations('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
@@ -43,17 +45,13 @@ function LoginForm() {
       const snap = await getDoc(doc(db, 'usuarios', referidorId));
       if (!snap.exists()) return;
       const data = snap.data();
-
       const updates: Record<string, any> = {};
-
       for (const nivel of NIVELES_REFERIDOS) {
-        // Si alcanzó el nivel y todavía no fue acreditado
         if (nuevoTotal >= nivel.referidos && !data[nivel.campo]) {
           updates[nivel.campo] = true;
           updates.jugadasGratis = (updates.jugadasGratis ?? (data.jugadasGratis || 0)) + nivel.jugadas;
         }
       }
-
       if (Object.keys(updates).length > 0) {
         await updateDoc(doc(db, 'usuarios', referidorId), updates);
       }
@@ -63,31 +61,24 @@ function LoginForm() {
   const procesarReferido = async (uid: string) => {
     const ref = refCode || localStorage.getItem('pickgol_ref');
     if (!ref || ref === generarCodigo(uid)) return;
-
     try {
       const { collection, query, where, getDocs } = await import('firebase/firestore');
       const q = query(collection(db, 'usuarios'), where('codigoRef', '==', ref));
       const snap = await getDocs(q);
       if (snap.empty) return;
-
       const referidorDoc = snap.docs[0];
       const referidorId = referidorDoc.id;
       const totalActual = referidorDoc.data().totalReferidos || 0;
       const nuevoTotal = totalActual + 1;
-
       await setDoc(doc(db, 'referidos', uid), {
         referidoPor: referidorId,
         codigoUsado: ref,
         creadoEn: serverTimestamp(),
       });
-
       await updateDoc(doc(db, 'usuarios', referidorId), {
         totalReferidos: increment(1),
       });
-
-      // Acreditar jugadas gratis si corresponde
       await acreditarJugadasGratis(referidorId, nuevoTotal);
-
       localStorage.removeItem('pickgol_ref');
     } catch (e) {}
   };
@@ -98,15 +89,12 @@ function LoginForm() {
     const snap = await getDoc(ref);
     if (!snap.exists()) {
       await setDoc(ref, {
-        uid,
-        email,
+        uid, email,
         displayName: displayName || '',
         codigoRef: codigo,
         totalReferidos: 0,
         jugadasGratis: 0,
-        nivel1: false,
-        nivel2: false,
-        nivel3: false,
+        nivel1: false, nivel2: false, nivel3: false,
         creadoEn: serverTimestamp(),
       });
       await procesarReferido(uid);
@@ -146,29 +134,29 @@ function LoginForm() {
         <div className="text-center mb-8">
           <h1 className="font-condensed text-5xl font-black text-[#C9A84C] mb-1">PickGol</h1>
           <p className="font-condensed text-2xl font-bold text-white">2026 ⚽</p>
-          <p className="text-[#8892A4] text-sm mt-2">El prode del mundial</p>
+          <p className="text-[#8892A4] text-sm mt-2">{t('titulo')}</p>
         </div>
 
         {refCode && (
           <div className="mb-4 rounded-xl px-4 py-3 text-center text-sm font-semibold" style={{background:'rgba(0,200,83,0.1)',border:'1px solid rgba(0,200,83,0.3)',color:'#00C853'}}>
-            🎁 Fuiste invitado — vas a recibir beneficios al registrarte
+            🎁 {t('invitado')}
           </div>
         )}
 
         <div className="bg-[#0D1B3E] border border-white/10 rounded-2xl p-6">
           <h2 className="font-condensed text-xl font-bold mb-5">
-            {isRegister ? 'CREAR CUENTA' : 'INICIAR SESIÓN'}
+            {isRegister ? t('crearCuenta') : t('iniciarSesion')}
           </h2>
 
           <div className="mb-4">
-            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">Email</label>
+            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{t('email')}</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E8192C]/50"
               placeholder="tu@email.com" />
           </div>
 
           <div className="mb-5">
-            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">Contraseña</label>
+            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{t('password')}</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E8192C]/50"
               placeholder="••••••••" />
@@ -178,7 +166,7 @@ function LoginForm() {
 
           <button onClick={handleEmail}
             className="w-full bg-[#E8192C] text-white font-condensed font-black text-lg py-3 rounded-xl mb-3 tracking-wide">
-            {isRegister ? 'CREAR CUENTA' : 'ENTRAR'}
+            {isRegister ? t('crearCuenta') : t('entrar')}
           </button>
 
           <div className="flex items-center gap-3 mb-3">
@@ -189,13 +177,13 @@ function LoginForm() {
 
           <button onClick={handleGoogle}
             className="w-full bg-white/5 border border-white/10 text-white font-condensed font-bold text-base py-3 rounded-xl mb-4">
-            🔵 CONTINUAR CON GOOGLE
+            🔵 {t('google')}
           </button>
 
           <p className="text-center text-xs text-[#8892A4]">
-            {isRegister ? '¿Ya tenés cuenta?' : '¿No tenés cuenta?'}{' '}
+            {isRegister ? t('yaTenes') : t('noTenes')}{' '}
             <span onClick={() => setIsRegister(!isRegister)} className="text-[#C9A84C] cursor-pointer font-semibold">
-              {isRegister ? 'Iniciá sesión' : 'Registrate'}
+              {isRegister ? t('iniciaSesion') : t('registrate')}
             </span>
           </p>
         </div>
