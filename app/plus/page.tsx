@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { useTranslations } from 'next-intl';
 
 declare global {
   interface Window { Paddle: any; }
 }
 
 export default function Plus() {
+  const t = useTranslations('plus');
+  const nav = useTranslations('nav');
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -64,8 +67,8 @@ export default function Plus() {
         </div>
         <div className="text-center">
           <div className="text-5xl mb-3">⭐</div>
-          <h1 className="font-condensed text-4xl font-black mb-1" style={{color:'#C9A84C'}}>PICKGOL PLUS</h1>
-          <p className="text-sm" style={{color:'#8892A4'}}>Personalizá tu experiencia al máximo</p>
+          <h1 className="font-condensed text-4xl font-black mb-1" style={{color:'#C9A84C'}}>{t('titulo')}</h1>
+          <p className="text-sm" style={{color:'#8892A4'}}>{t('sub')}</p>
         </div>
       </div>
 
@@ -74,15 +77,15 @@ export default function Plus() {
         {yaEsPlus ? (
           <div className="rounded-2xl p-6 text-center mb-4" style={{background:'rgba(0,200,83,0.1)',border:'1px solid rgba(0,200,83,0.3)'}}>
             <div className="text-4xl mb-3">✅</div>
-            <div className="font-condensed text-2xl font-black mb-1" style={{color:'#00C853'}}>¡Ya sos Plus!</div>
-            <p className="text-sm" style={{color:'#8892A4'}}>Tenés acceso a todas las funciones premium</p>
+            <div className="font-condensed text-2xl font-black mb-1" style={{color:'#00C853'}}>{t('yaEsPlus')}</div>
+            <p className="text-sm" style={{color:'#8892A4'}}>{t('yaEsPlusSub')}</p>
           </div>
         ) : (
           <>
             {/* PRECIO */}
             <div className="rounded-2xl p-5 mb-4 text-center" style={{background:'#0D1B3E',border:'1px solid rgba(201,168,76,0.3)'}}>
               <div className="font-condensed text-5xl font-black mb-1" style={{color:'#C9A84C'}}>USD 2.59</div>
-              <div className="text-sm" style={{color:'#8892A4'}}>Pago único · Para siempre</div>
+              <div className="text-sm" style={{color:'#8892A4'}}>{t('precio')}</div>
             </div>
 
             {/* BENEFICIOS */}
@@ -107,13 +110,13 @@ export default function Plus() {
             <button onClick={handleComprar}
               className="w-full py-4 rounded-xl font-condensed font-black text-xl mb-3"
               style={{background:'linear-gradient(135deg,#C9A84C,#8B6914)',color:'#020810'}}>
-              ⭐ ACTIVAR PLUS — USD 2.59
+              ⭐ {t('activar')}
             </button>
 
             <p className="text-center text-xs" style={{color:'#8892A4'}}>
-              Procesado por Paddle · Pago seguro ·{' '}
+              {t('procesado')} ·{' '}
               <span className="cursor-pointer underline" onClick={() => window.location.href = '/terms'}>
-                Términos · Privacidad · Reembolsos
+                {t('terminos')}
               </span>
             </p>
           </>
@@ -124,19 +127,19 @@ export default function Plus() {
       {/* BOTTOM NAV */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
-          <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>Inicio</span>
+          <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{nav('inicio')}</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/fixture'}>
-          <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>Fixture</span>
+          <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{nav('fixture')}</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/grupos'}>
-          <span className="text-lg">👥</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
+          <span className="text-lg">👥</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{nav('grupos')}</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/mis-jugadas'}>
-          <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>Jugadas</span>
+          <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{nav('jugadas')}</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
-          <span className="text-lg">👤</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>Perfil</span>
+          <span className="text-lg">👤</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{nav('perfil')}</span>
         </div>
       </div>
 
