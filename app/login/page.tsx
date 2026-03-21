@@ -15,7 +15,7 @@ import { useTranslations } from 'next-intl';
 const NIVELES_REFERIDOS = [
   { referidos: 3, jugadas: 1, campo: 'nivel1' },
   { referidos: 6, jugadas: 2, campo: 'nivel2' },
-  { referidos: 10, jugadas: 6, campo: 'nivel3' },
+  { referidos: 10, jugadas: , campo: 'nivel3' },
 ];
 
 function LoginForm() {
