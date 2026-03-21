@@ -6,15 +6,17 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { useSearchParams } from 'next/navigation';
 
-const LIGAS_MAP: Record<string, string> = {
-  premier: 'premier',
-  laliga: 'laliga',
-  seriea: 'seriea',
-  bundesliga: 'bundesliga',
-  ligue1: 'ligue1',
-  ligapro: 'ligapro',
-  brasileirao: 'brasileirao',
-};
+const VARIABLES_DEFAULT = [
+  { key: 'amarillas', label: '¿Cuántas amarillas habrá?', pts: 12, tipo: 'numero' },
+  { key: 'rojas', label: '¿Cuántas rojas habrá?', pts: 10, tipo: 'numero' },
+  { key: 'goles', label: '¿Cuántos goles habrá en la fecha?', pts: 8, tipo: 'numero' },
+  { key: 'golesMax', label: '¿Cuántos goles tendrá el partido con más goles?', pts: 10, tipo: 'numero' },
+  { key: 'penales', label: '¿Cuántos penales habrá?', pts: 10, tipo: 'numero' },
+  { key: 'hayGolAntes5', label: '¿Habrá un gol antes del min 5?', pts: 5, tipo: 'sino' },
+  { key: 'hayGolAlargue', label: '¿Habrá gol en el alargue del 2do tiempo?', pts: 6, tipo: 'sino' },
+  { key: 'hayCeroCero', label: '¿Habrá algún resultado 0-0?', pts: 2, tipo: 'sino' },
+  { key: 'varAnulaGol', label: '¿El VAR anulará algún gol?', pts: 5, tipo: 'sino' },
+];
 
 function CrearJugadaForm() {
   const [user, setUser] = useState<any>(null);
@@ -27,16 +29,9 @@ function CrearJugadaForm() {
   const searchParams = useSearchParams();
   const grupoId = searchParams.get('grupo');
 
-  // Variables globales
-  const [amarillas, setAmarillas] = useState('');
-  const [rojas, setRojas] = useState('');
-  const [goles, setGoles] = useState('');
-  const [golesMax, setGolesMax] = useState('');
-  const [penales, setPenales] = useState('');
-  const [hayGolAntes5, setHayGolAntes5] = useState('');
-  const [hayGolAlargue, setHayGolAlargue] = useState('');
-  const [hayCeroCero, setHayCeroCero] = useState('');
-  const [varAnulaGol, setVarAnulaGol] = useState('');
+  // Variables — se cargan del grupo o se usan las default
+  const [variables, setVariables] = useState<any[]>(VARIABLES_DEFAULT);
+  const [respuestas, setRespuestas] = useState<Record<string, string>>({});
 
   // Partidos y predicciones
   const [partidos, setPartidos] = useState<any[]>([]);
@@ -49,14 +44,20 @@ function CrearJugadaForm() {
       setUser(u);
       if (grupoId) {
         const snap = await getDoc(doc(db, 'grupos', grupoId));
-        if (snap.exists()) setGrupo({ id: snap.id, ...snap.data() });
+        if (snap.exists()) {
+          const grupoData = { id: snap.id, ...snap.data() } as any;
+          setGrupo(grupoData);
+          // Si el grupo tiene variables custom, usarlas
+          if (grupoData.variablesCustom && grupoData.variablesCustom.length > 0) {
+            setVariables(grupoData.variablesCustom);
+          }
+        }
       }
       setLoading(false);
     });
     return () => unsub();
   }, [grupoId]);
 
-  // Cargar partidos cuando llega al step 3
   useEffect(() => {
     if (step === 3 && grupo?.liga) {
       cargarPartidos(grupo.liga);
@@ -69,8 +70,6 @@ function CrearJugadaForm() {
       const res = await fetch(`/api/fixture?liga=${liga}`);
       const data = await res.json();
       const todos = data.partidos || [];
-
-      // Filtrar solo NS (no jugados) y agrupar por fecha
       const noJugados = todos.filter((p: any) => p.estado === 'NS');
 
       if (noJugados.length === 0) {
@@ -79,11 +78,8 @@ function CrearJugadaForm() {
         return;
       }
 
-      // Obtener la fecha más próxima
       const fechas = noJugados.map((p: any) => p.fecha.substring(0, 10));
       const fechaMin = fechas.sort()[0];
-
-      // Tomar todos los partidos de esa fecha (o hasta 3 días después para cubrir toda la jornada)
       const fechaMinDate = new Date(fechaMin);
       const fechaMaxDate = new Date(fechaMin);
       fechaMaxDate.setDate(fechaMaxDate.getDate() + 4);
@@ -95,7 +91,6 @@ function CrearJugadaForm() {
 
       setPartidos(proximaFecha);
 
-      // Inicializar predicciones vacías
       const init: Record<string, { local: string; visitante: string }> = {};
       proximaFecha.forEach((_: any, i: number) => {
         init[i] = { local: '', visitante: '' };
@@ -113,8 +108,10 @@ function CrearJugadaForm() {
   };
 
   const validarStep2 = () => {
-    if (!amarillas || !rojas || !goles || !golesMax || !penales || !hayGolAntes5 || !hayGolAlargue || !hayCeroCero || !varAnulaGol) {
-      setError('Completá todas las variables antes de continuar'); return false;
+    for (const v of variables) {
+      if (!respuestas[v.key]) {
+        setError('Completá todas las variables antes de continuar'); return false;
+      }
     }
     setError(''); return true;
   };
@@ -144,22 +141,19 @@ function CrearJugadaForm() {
         golesVisitantePredichos: parseInt(predicciones[i]?.visitante || '0'),
       }));
 
+      // Construir objeto de variables con respuestas
+      const variablesGuardadas: Record<string, any> = {};
+      variables.forEach(v => {
+        variablesGuardadas[v.key] = v.tipo === 'numero' ? parseInt(respuestas[v.key] || '0') : respuestas[v.key];
+      });
+
       await addDoc(collection(db, 'jugadas'), {
         nombre: nombre.trim(),
         grupoId,
         userId: user.uid,
         userEmail: user.email,
-        variables: {
-          amarillas: parseInt(amarillas),
-          rojas: parseInt(rojas),
-          goles: parseInt(goles),
-          golesMax: parseInt(golesMax),
-          penales: parseInt(penales),
-          hayGolAntes5,
-          hayGolAlargue,
-          hayCeroCero,
-          varAnulaGol,
-        },
+        variables: variablesGuardadas,
+        variablesMeta: variables, // guarda labels y pts usados
         predicciones: prediccionesGuardadas,
         pagado: false,
         pagadoInterno: false,
@@ -170,6 +164,10 @@ function CrearJugadaForm() {
       setError('Error al guardar. Intentá de nuevo.');
     }
     setGuardando(false);
+  };
+
+  const setRespuesta = (key: string, valor: string) => {
+    setRespuestas(prev => ({ ...prev, [key]: valor }));
   };
 
   const setPrediccion = (i: number, tipo: 'local' | 'visitante', valor: string) => {
@@ -187,28 +185,16 @@ function CrearJugadaForm() {
     return d.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
   };
 
-  const YN = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+  const YN = ({ varKey }: { varKey: string }) => (
     <div className="flex gap-2">
-      <div onClick={() => onChange('si')} className="flex-1 rounded-xl py-3 text-center cursor-pointer font-condensed font-bold text-sm"
-        style={{ background: value === 'si' ? 'rgba(0,200,83,0.15)' : 'rgba(0,0,0,0.35)', border: value === 'si' ? '1px solid #00C853' : '1px solid rgba(255,255,255,0.09)', color: value === 'si' ? '#00C853' : '#8892A4' }}>
+      <div onClick={() => setRespuesta(varKey, 'si')} className="flex-1 rounded-xl py-3 text-center cursor-pointer font-condensed font-bold text-sm"
+        style={{ background: respuestas[varKey] === 'si' ? 'rgba(0,200,83,0.15)' : 'rgba(0,0,0,0.35)', border: respuestas[varKey] === 'si' ? '1px solid #00C853' : '1px solid rgba(255,255,255,0.09)', color: respuestas[varKey] === 'si' ? '#00C853' : '#8892A4' }}>
         ✅ SÍ
       </div>
-      <div onClick={() => onChange('no')} className="flex-1 rounded-xl py-3 text-center cursor-pointer font-condensed font-bold text-sm"
-        style={{ background: value === 'no' ? 'rgba(232,25,44,0.15)' : 'rgba(0,0,0,0.35)', border: value === 'no' ? '1px solid #E8192C' : '1px solid rgba(255,255,255,0.09)', color: value === 'no' ? '#E8192C' : '#8892A4' }}>
+      <div onClick={() => setRespuesta(varKey, 'no')} className="flex-1 rounded-xl py-3 text-center cursor-pointer font-condensed font-bold text-sm"
+        style={{ background: respuestas[varKey] === 'no' ? 'rgba(232,25,44,0.15)' : 'rgba(0,0,0,0.35)', border: respuestas[varKey] === 'no' ? '1px solid #E8192C' : '1px solid rgba(255,255,255,0.09)', color: respuestas[varKey] === 'no' ? '#E8192C' : '#8892A4' }}>
         ❌ NO
       </div>
-    </div>
-  );
-
-  const Input = ({ label, pts, value, onChange, placeholder }: any) => (
-    <div className="mb-4">
-      <div className="flex justify-between items-center mb-2">
-        <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8892A4' }}>{label}</label>
-        <span className="text-xs font-black" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', padding: '2px 8px', borderRadius: '6px' }}>{pts} pts</span>
-      </div>
-      <input type="number" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full rounded-xl px-4 py-3 text-white text-sm outline-none"
-        style={{ background: 'rgba(0,0,0,0.35)', border: value ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)' }} />
     </div>
   );
 
@@ -232,7 +218,6 @@ function CrearJugadaForm() {
         </div>
         <h1 className="font-condensed text-3xl font-black mb-1">Crear Jugada</h1>
         <p className="text-xs mb-4" style={{ color: '#8892A4' }}>Paso {step} de 4</p>
-
         <div className="flex items-center gap-2">
           {[1, 2, 3, 4].map(s => (
             <div key={s} className="flex items-center gap-2 flex-1">
@@ -267,6 +252,12 @@ function CrearJugadaForm() {
                 </div>
               </div>
             )}
+            {grupo?.variablesCustom && (
+              <div className="rounded-xl p-3 mb-4 flex gap-2" style={{ background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.2)' }}>
+                <span>⭐</span>
+                <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Este grupo usa <b style={{ color: '#C9A84C' }}>variables personalizadas</b> definidas por el creador.</p>
+              </div>
+            )}
             <div className="rounded-xl p-3 mb-5 flex gap-2" style={{ background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.18)' }}>
               <span>ℹ️</span>
               <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Completá las variables globales, luego predecís el resultado de cada partido. Una vez enviada no se puede modificar.</p>
@@ -279,43 +270,30 @@ function CrearJugadaForm() {
           </>
         )}
 
-        {/* STEP 2 — VARIABLES GLOBALES */}
+        {/* STEP 2 — VARIABLES */}
         {step === 2 && (
           <>
-            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#8892A4' }}>Variables de la fecha</div>
-            <Input label="¿Cuántas amarillas habrá?" pts={12} value={amarillas} onChange={setAmarillas} placeholder="Ej: 8" />
-            <Input label="¿Cuántas rojas habrá?" pts={10} value={rojas} onChange={setRojas} placeholder="Ej: 2" />
-            <Input label="¿Cuántos goles habrá en la fecha?" pts={8} value={goles} onChange={setGoles} placeholder="Ej: 12" />
-            <Input label="¿Cuántos goles tendrá el partido con más goles?" pts={10} value={golesMax} onChange={setGolesMax} placeholder="Ej: 4" />
-            <Input label="¿Cuántos penales habrá?" pts={10} value={penales} onChange={setPenales} placeholder="Ej: 2" />
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8892A4' }}>¿Habrá un gol antes del min 5?</label>
-                <span className="text-xs font-black" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', padding: '2px 8px', borderRadius: '6px' }}>5 pts</span>
-              </div>
-              <YN value={hayGolAntes5} onChange={setHayGolAntes5} />
+            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#8892A4' }}>
+              Variables de la fecha
+              {grupo?.variablesCustom && <span className="ml-2 text-xs px-2 py-0.5 rounded-lg" style={{background:'rgba(201,168,76,0.15)',color:'#C9A84C'}}>⭐ Custom</span>}
             </div>
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8892A4' }}>¿Habrá gol en el alargue del 2do tiempo?</label>
-                <span className="text-xs font-black" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', padding: '2px 8px', borderRadius: '6px' }}>6 pts</span>
+
+            {variables.map((v) => (
+              <div key={v.key} className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8892A4' }}>{v.label}</label>
+                  <span className="text-xs font-black" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', padding: '2px 8px', borderRadius: '6px' }}>{v.pts} pts</span>
+                </div>
+                {v.tipo === 'numero' ? (
+                  <input type="number" value={respuestas[v.key] || ''} onChange={(e) => setRespuesta(v.key, e.target.value)} placeholder="Ej: 0"
+                    className="w-full rounded-xl px-4 py-3 text-white text-sm outline-none"
+                    style={{ background: 'rgba(0,0,0,0.35)', border: respuestas[v.key] ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)' }} />
+                ) : (
+                  <YN varKey={v.key} />
+                )}
               </div>
-              <YN value={hayGolAlargue} onChange={setHayGolAlargue} />
-            </div>
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8892A4' }}>¿Habrá algún resultado 0-0?</label>
-                <span className="text-xs font-black" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', padding: '2px 8px', borderRadius: '6px' }}>2 pts</span>
-              </div>
-              <YN value={hayCeroCero} onChange={setHayCeroCero} />
-            </div>
-            <div className="mb-5">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8892A4' }}>¿El VAR anulará algún gol?</label>
-                <span className="text-xs font-black" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', padding: '2px 8px', borderRadius: '6px' }}>5 pts</span>
-              </div>
-              <YN value={varAnulaGol} onChange={setVarAnulaGol} />
-            </div>
+            ))}
+
             <div className="rounded-xl p-3 mb-4 flex gap-2" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
               <span>⚠️</span>
               <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Todas las respuestas aplican sobre tiempo reglamentario y alargue. No cuenta definición por penales.</p>
@@ -366,36 +344,18 @@ function CrearJugadaForm() {
                     <div className="flex items-center gap-2">
                       <div className="flex-1 text-right">
                         <div className="text-sm font-bold mb-2">{p.local}</div>
-                        <input
-                          type="number"
-                          min="0"
-                          max="20"
-                          value={predicciones[i]?.local || ''}
-                          onChange={(e) => setPrediccion(i, 'local', e.target.value)}
-                          placeholder="0"
+                        <input type="number" min="0" max="20" value={predicciones[i]?.local || ''}
+                          onChange={(e) => setPrediccion(i, 'local', e.target.value)} placeholder="0"
                           className="w-full rounded-xl px-3 py-2 text-white text-lg font-black text-center outline-none"
-                          style={{
-                            background: predicciones[i]?.local !== '' && predicciones[i]?.local !== undefined ? 'rgba(0,200,83,0.1)' : 'rgba(0,0,0,0.35)',
-                            border: predicciones[i]?.local !== '' && predicciones[i]?.local !== undefined ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)'
-                          }}
-                        />
+                          style={{ background: predicciones[i]?.local !== '' && predicciones[i]?.local !== undefined ? 'rgba(0,200,83,0.1)' : 'rgba(0,0,0,0.35)', border: predicciones[i]?.local !== '' && predicciones[i]?.local !== undefined ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)' }} />
                       </div>
                       <div className="font-condensed text-xl font-black px-2" style={{ color: '#8892A4' }}>—</div>
                       <div className="flex-1 text-left">
                         <div className="text-sm font-bold mb-2">{p.visitante}</div>
-                        <input
-                          type="number"
-                          min="0"
-                          max="20"
-                          value={predicciones[i]?.visitante || ''}
-                          onChange={(e) => setPrediccion(i, 'visitante', e.target.value)}
-                          placeholder="0"
+                        <input type="number" min="0" max="20" value={predicciones[i]?.visitante || ''}
+                          onChange={(e) => setPrediccion(i, 'visitante', e.target.value)} placeholder="0"
                           className="w-full rounded-xl px-3 py-2 text-white text-lg font-black text-center outline-none"
-                          style={{
-                            background: predicciones[i]?.visitante !== '' && predicciones[i]?.visitante !== undefined ? 'rgba(0,200,83,0.1)' : 'rgba(0,0,0,0.35)',
-                            border: predicciones[i]?.visitante !== '' && predicciones[i]?.visitante !== undefined ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)'
-                          }}
-                        />
+                          style={{ background: predicciones[i]?.visitante !== '' && predicciones[i]?.visitante !== undefined ? 'rgba(0,200,83,0.1)' : 'rgba(0,0,0,0.35)', border: predicciones[i]?.visitante !== '' && predicciones[i]?.visitante !== undefined ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)' }} />
                       </div>
                     </div>
                   </div>
@@ -427,29 +387,19 @@ function CrearJugadaForm() {
               <div className="text-xs" style={{ color: '#8892A4' }}>{grupo?.nombre || 'Sin grupo'}</div>
             </div>
 
-            {/* Variables */}
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{ color: '#8892A4' }}>Variables</div>
             <div className="rounded-2xl overflow-hidden mb-4" style={{ background: '#0D1B3E', border: '1px solid rgba(255,255,255,0.07)' }}>
-              {[
-                { label: '🟨 Amarillas', value: amarillas },
-                { label: '🟥 Rojas', value: rojas },
-                { label: '⚽ Goles totales', value: goles },
-                { label: '🎯 Goles partido máx', value: golesMax },
-                { label: '🎽 Penales', value: penales },
-                { label: '⚡ Gol antes min 5', value: hayGolAntes5 === 'si' ? 'SÍ' : 'NO' },
-                { label: '⏱️ Gol en alargue', value: hayGolAlargue === 'si' ? 'SÍ' : 'NO' },
-                { label: '🥅 Resultado 0-0', value: hayCeroCero === 'si' ? 'SÍ' : 'NO' },
-                { label: '📺 VAR anula gol', value: varAnulaGol === 'si' ? 'SÍ' : 'NO' },
-              ].map((item, i, arr) => (
-                <div key={i} className="flex justify-between items-center px-4 py-3"
-                  style={{ borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                  <span className="text-xs" style={{ color: '#8892A4' }}>{item.label}</span>
-                  <span className="text-sm font-bold">{item.value}</span>
+              {variables.map((v, i) => (
+                <div key={v.key} className="flex justify-between items-center px-4 py-3"
+                  style={{ borderBottom: i < variables.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                  <span className="text-xs" style={{ color: '#8892A4' }}>{v.label}</span>
+                  <span className="text-sm font-bold">
+                    {v.tipo === 'sino' ? (respuestas[v.key] === 'si' ? 'SÍ' : 'NO') : respuestas[v.key]}
+                  </span>
                 </div>
               ))}
             </div>
 
-            {/* Predicciones */}
             {partidos.length > 0 && (
               <>
                 <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{ color: '#8892A4' }}>Predicciones</div>
