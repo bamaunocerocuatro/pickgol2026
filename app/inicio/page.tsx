@@ -81,7 +81,7 @@ export default function Inicio() {
         </div>
         <p className="text-[#8892A4] text-xs mb-1">{t.bienvenido}</p>
         <h1 className="font-condensed text-2xl font-black mb-1">{user.displayName || user.email} ⚽</h1>
-        <p className="text-xs mb-3" style={{color:'rgba(201,168,76,0.7)'}}>🥇 Tu mejor jugada · <span style={{color:'rgba(255,255,255,0.4)'}}>Próximamente</span></p>
+        <p className="text-xs mb-3" style={{color:'rgba(201,168,76,0.7)'}}>🥇 {t.tuMejorJugada} · <span style={{color:'rgba(255,255,255,0.4)'}}>{t.proximamente}</span></p>
         <div className="flex gap-2">
           <div className="flex-1 text-center rounded-xl py-2" style={{background:'rgba(255,255,255,0.08)'}}>
             <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>0</div>
