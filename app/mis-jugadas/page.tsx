@@ -63,22 +63,22 @@ export default function MisJugadas() {
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
-        <h1 className="font-condensed text-3xl font-black mb-1">Mis {t.jugadas} 🎯</h1>
-        <p className="text-xs" style={{color:'#8892A4'}}>Todas tus jugadas activas</p>
+        <h1 className="font-condensed text-3xl font-black mb-1">{t.jugadas} 🎯</h1>
+        <p className="text-xs" style={{color:'#8892A4'}}>{t.misJugadasSub}</p>
       </div>
 
       <div className="px-4 py-4">
-        {cargando && <div className="text-center py-10"><div className="text-4xl mb-3">⏳</div><p className="text-sm" style={{color:'#8892A4'}}>Cargando jugadas...</p></div>}
+        {cargando && <div className="text-center py-10"><div className="text-4xl mb-3">⏳</div><p className="text-sm" style={{color:'#8892A4'}}>{t.cargandoJugadas}</p></div>}
 
         {!cargando && jugadas.length === 0 && (
           <div className="rounded-2xl p-6 text-center" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
             <div className="text-4xl mb-3">⚽</div>
-            <div className="font-condensed text-lg font-bold mb-2">No tenés jugadas todavía</div>
-            <div className="text-xs mb-4" style={{color:'#8892A4'}}>Entrá a un grupo y creá tu primera jugada</div>
+            <div className="font-condensed text-lg font-bold mb-2">{t.noJugadas}</div>
+            <div className="text-xs mb-4" style={{color:'#8892A4'}}>{t.noJugadasSub}</div>
             <button onClick={() => router.push('/grupos')}
               className="w-full py-3 rounded-xl font-condensed font-black text-base"
               style={{background:'#E8192C',color:'white'}}>
-              IR A MIS GRUPOS
+              {t.irGrupos}
             </button>
           </div>
         )}
@@ -92,7 +92,7 @@ export default function MisJugadas() {
                 <div>
                   <div className="font-condensed text-base font-black">{j.nombre}</div>
                   <div className="text-xs" style={{color:'#8892A4'}}>
-                    {grupo ? `${grupo.nombre} · ${LIGAS_NOMBRES[grupo.liga] || grupo.liga}` : 'Sin grupo'}
+                    {grupo ? `${grupo.nombre} · ${LIGAS_NOMBRES[grupo.liga] || grupo.liga}` : t.sinGrupo}
                   </div>
                 </div>
                 <div className="text-right">
@@ -124,7 +124,7 @@ export default function MisJugadas() {
                 <div className="px-4 py-2" style={{borderTop:'1px solid rgba(255,255,255,0.05)'}}>
                   <span className="text-xs px-2 py-1 rounded-lg font-bold"
                     style={{background: j.pagadoInterno ? 'rgba(0,200,83,0.1)' : 'rgba(255,179,0,0.1)', color: j.pagadoInterno ? '#00C853' : '#FFB300'}}>
-                    {j.pagadoInterno ? '✅ Pago confirmado' : '⏳ Pago pendiente'}
+                    {j.pagadoInterno ? t.pagadoConfirmado : t.pagoPendiente}
                   </span>
                 </div>
               )}
@@ -153,4 +153,3 @@ export default function MisJugadas() {
     </main>
   );
 }
-
