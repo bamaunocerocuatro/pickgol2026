@@ -1,21 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useIdioma } from '../context/IdiomaContext';
 
 const LIGAS_NOMBRES: Record<string, string> = {
-  premier: 'Premier League',
-  laliga: 'La Liga',
-  seriea: 'Serie A',
-  bundesliga: 'Bundesliga',
-  ligue1: 'Ligue 1',
-  ligapro: 'Liga Profesional',
+  premier: 'Premier League', laliga: 'La Liga', seriea: 'Serie A',
+  bundesliga: 'Bundesliga', ligue1: 'Ligue 1', ligapro: 'Liga Profesional',
   brasileirao: 'Brasileirão',
 };
 
 export default function MisJugadas() {
+  const router = useRouter();
+  const { t } = useIdioma();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [jugadas, setJugadas] = useState<any[]>([]);
@@ -24,7 +24,7 @@ export default function MisJugadas() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u) { window.location.href = '/login'; return; }
+      if (!u) { router.push('/login'); return; }
       setUser(u);
       setCargando(true);
       try {
@@ -32,7 +32,6 @@ export default function MisJugadas() {
         const snap = await getDocs(q);
         const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setJugadas(data);
-
         const grupoIds = [...new Set(data.map((j: any) => j.grupoId).filter(Boolean))];
         const gruposData: Record<string, any> = {};
         for (const gid of grupoIds) {
@@ -57,40 +56,28 @@ export default function MisJugadas() {
 
   if (loading) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-5xl mb-3">⚽</div>
-        <p className="text-[#8892A4] text-sm">Cargando...</p>
-      </div>
+      <div className="text-center"><div className="text-5xl mb-3">⚽</div><p className="text-[#8892A4] text-sm">Cargando...</p></div>
     </main>
   );
 
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
-
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
-        <h1 className="font-condensed text-3xl font-black mb-1">Mis Jugadas 🎯</h1>
+        <h1 className="font-condensed text-3xl font-black mb-1">Mis {t.jugadas} 🎯</h1>
         <p className="text-xs" style={{color:'#8892A4'}}>Todas tus jugadas activas</p>
       </div>
 
       <div className="px-4 py-4">
-
-        {cargando && (
-          <div className="text-center py-10">
-            <div className="text-4xl mb-3">⏳</div>
-            <p className="text-sm" style={{color:'#8892A4'}}>Cargando jugadas...</p>
-          </div>
-        )}
+        {cargando && <div className="text-center py-10"><div className="text-4xl mb-3">⏳</div><p className="text-sm" style={{color:'#8892A4'}}>Cargando jugadas...</p></div>}
 
         {!cargando && jugadas.length === 0 && (
           <div className="rounded-2xl p-6 text-center" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
             <div className="text-4xl mb-3">⚽</div>
             <div className="font-condensed text-lg font-bold mb-2">No tenés jugadas todavía</div>
             <div className="text-xs mb-4" style={{color:'#8892A4'}}>Entrá a un grupo y creá tu primera jugada</div>
-            <button
-              onClick={() => window.location.href = '/grupos'}
+            <button onClick={() => router.push('/grupos')}
               className="w-full py-3 rounded-xl font-condensed font-black text-base"
-              style={{background:'#E8192C',color:'white'}}
-            >
+              style={{background:'#E8192C',color:'white'}}>
               IR A MIS GRUPOS
             </button>
           </div>
@@ -99,11 +86,8 @@ export default function MisJugadas() {
         {!cargando && jugadas.map((j) => {
           const grupo = grupos[j.grupoId];
           return (
-            <div
-              key={j.id}
-              className="rounded-2xl mb-3 overflow-hidden"
-              style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}
-            >
+            <div key={j.id} className="rounded-2xl mb-3 overflow-hidden"
+              style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
               <div className="px-4 py-3 flex items-center justify-between" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
                 <div>
                   <div className="font-condensed text-base font-black">{j.nombre}</div>
@@ -116,7 +100,6 @@ export default function MisJugadas() {
                   <div className="text-xs" style={{color:'#8892A4'}}>{formatFecha(j.creadoEn)}</div>
                 </div>
               </div>
-
               <div className="px-4 py-3">
                 <div className="grid grid-cols-2 gap-2">
                   {[
@@ -137,16 +120,10 @@ export default function MisJugadas() {
                   ))}
                 </div>
               </div>
-
               {grupo?.controlPagos && (
                 <div className="px-4 py-2" style={{borderTop:'1px solid rgba(255,255,255,0.05)'}}>
-                  <span
-                    className="text-xs px-2 py-1 rounded-lg font-bold"
-                    style={{
-                      background: j.pagadoInterno ? 'rgba(0,200,83,0.1)' : 'rgba(255,179,0,0.1)',
-                      color: j.pagadoInterno ? '#00C853' : '#FFB300'
-                    }}
-                  >
+                  <span className="text-xs px-2 py-1 rounded-lg font-bold"
+                    style={{background: j.pagadoInterno ? 'rgba(0,200,83,0.1)' : 'rgba(255,179,0,0.1)', color: j.pagadoInterno ? '#00C853' : '#FFB300'}}>
                     {j.pagadoInterno ? '✅ Pago confirmado' : '⏳ Pago pendiente'}
                   </span>
                 </div>
@@ -154,32 +131,41 @@ export default function MisJugadas() {
             </div>
           );
         })}
-
       </div>
 
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
-          <span className="text-lg">🏠</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Inicio</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/inicio')}>
+          <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.inicio}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/fixture'}>
-          <span className="text-lg">📅</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Fixture</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/fixture')}>
+          <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.fixture}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/grupos'}>
-          <span className="text-lg">👥</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/grupos')}>
+          <span className="text-lg">👥</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.grupos}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/mis-jugadas'}>
-          <span className="text-lg">🎯</span>
-          <span className="text-xs font-semibold" style={{color:'#E8192C'}}>Jugadas</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mis-jugadas')}>
+          <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{color:'#E8192C'}}>{t.jugadas}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
-          <span className="text-lg">👤</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Perfil</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/perfil')}>
+          <span className="text-lg">👤</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.perfil}</span>
         </div>
       </div>
-
     </main>
   );
 }
+```
+
+**`app/crear-grupo/page.tsx`** — solo cambiá los `window.location.href` y `window.history.back()`:
+- Agregá `import { useRouter } from 'next/navigation';`
+- Agregá `const router = useRouter();` dentro del componente
+- Reemplazá `window.location.href = '/login'` por `router.push('/login')`
+- Reemplazá `window.location.href = '/grupos'` por `router.push('/grupos')`
+- Reemplazá `window.location.href = '/plus'` por `router.push('/plus')`
+- Reemplazá `window.history.back()` por `router.back()`
+
+**`app/unirse/page.tsx`** — mismo proceso:
+- Agregá `import { useRouter } from 'next/navigation';`
+- Agregá `const router = useRouter();`
+- Reemplazá `window.location.href = '/login'` por `router.push('/login')`
+- Reemplazá `window.location.href = /grupo/${grupo.id}`` por `router.push(/grupo/${grupo.id}``)`
+- Reemplazá `window.history.back()` por `router.back()`
