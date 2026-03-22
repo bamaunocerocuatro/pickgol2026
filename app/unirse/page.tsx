@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs, updateDoc, doc, arrayUnion } from 'firebase/firestore';
+import { useIdioma } from '../context/IdiomaContext';
 
 export default function Unirse() {
   const router = useRouter();
+  const { t } = useIdioma();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [codigo, setCodigo] = useState('');
@@ -28,20 +30,20 @@ export default function Unirse() {
   const buscarGrupo = async () => {
     setError('');
     setGrupo(null);
-    if (!codigo.trim()) { setError('Ingresá un código de grupo'); return; }
+    if (!codigo.trim()) { setError(t.ingresaCodigo); return; }
     setBuscando(true);
     try {
       const q = query(collection(db, 'grupos'), where('codigo', '==', codigo.trim().toUpperCase()));
       const snap = await getDocs(q);
       if (snap.empty) {
-        setError('Código incorrecto. Verificá e intentá de nuevo.');
+        setError(t.codigoIncorrecto);
       } else {
         const data = { id: snap.docs[0].id, ...snap.docs[0].data() };
         setGrupo(data);
         if ((data as any).precio) setShowAlerta(true);
       }
     } catch (e) {
-      setError('Error al buscar el grupo. Intentá de nuevo.');
+      setError(t.errorBuscar);
     }
     setBuscando(false);
   };
@@ -53,7 +55,7 @@ export default function Unirse() {
       await updateDoc(doc(db, 'grupos', grupo.id), { miembros: arrayUnion(user.uid) });
       router.push(`/grupo/${grupo.id}`);
     } catch (e) {
-      setError('Error al unirse al grupo. Intentá de nuevo.');
+      setError(t.errorUnirse);
     }
     setUniendose(false);
   };
@@ -77,15 +79,15 @@ export default function Unirse() {
         <div className="flex items-center gap-3 mb-4">
           <button onClick={() => router.back()}
             className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm">←</button>
-          <span className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>← <b style={{color:'rgba(255,255,255,0.65)'}}>Unirse a un grupo</b></span>
+          <span className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>← <b style={{color:'rgba(255,255,255,0.65)'}}>{t.unirseGrupo}</b></span>
         </div>
-        <h1 className="font-condensed text-3xl font-black mb-1">Unirse a un grupo</h1>
-        <p className="text-xs" style={{color:'#8892A4'}}>Ingresá el código que te compartió el creador</p>
+        <h1 className="font-condensed text-3xl font-black mb-1">{t.unirseGrupo}</h1>
+        <p className="text-xs" style={{color:'#8892A4'}}>{t.unirseDesc}</p>
       </div>
 
       <div className="px-4 py-4">
         <div className="mb-4">
-          <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{color:'#8892A4'}}>Código del grupo</label>
+          <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{color:'#8892A4'}}>{t.codigoGrupo}</label>
           <input type="text" value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())}
             placeholder="Ej: AB12CD" maxLength={6}
             className="w-full rounded-xl px-4 py-3 text-white text-sm outline-none text-center font-condensed font-black text-2xl tracking-widest"
@@ -97,7 +99,7 @@ export default function Unirse() {
         <button onClick={buscarGrupo} disabled={buscando}
           className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-4"
           style={{background:'#E8192C',color:'white',opacity: buscando ? 0.7 : 1}}>
-          {buscando ? 'BUSCANDO...' : 'BUSCAR GRUPO'}
+          {buscando ? t.buscando : t.buscarGrupo}
         </button>
 
         {grupo && (
@@ -107,22 +109,26 @@ export default function Unirse() {
                 <div className="text-2xl">👥</div>
                 <div>
                   <div className="font-condensed text-lg font-black">{grupo.nombre}</div>
-                  <div className="text-xs" style={{color:'#8892A4'}}>{LIGAS[grupo.liga] || grupo.liga} · {grupo.tipo === 'temporada' ? 'Toda la temporada' : 'Fechas específicas'}</div>
+                  <div className="text-xs" style={{color:'#8892A4'}}>{LIGAS[grupo.liga] || grupo.liga} · {grupo.tipo === 'temporada' ? t.todaLaTemporada : t.fechasEsp}</div>
                 </div>
               </div>
               {grupo.precio && (
                 <div className="rounded-xl p-3 mb-3 flex gap-2" style={{background:'rgba(255,179,0,0.07)',border:'1px solid rgba(255,179,0,0.2)'}}>
                   <span>💰</span>
-                  <p className="text-xs" style={{color:'rgba(255,255,255,0.6)'}}>Este grupo tiene un costo interno de <b style={{color:'white'}}>{grupo.moneda} {grupo.precio}</b> por jugada, a pagar por fuera de la app al creador del grupo.</p>
+                  <p className="text-xs" style={{color:'rgba(255,255,255,0.6)'}}>
+                    {t.grupoCostoDesc} <b style={{color:'white'}}>{grupo.moneda} {grupo.precio}</b> {t.grupoCostoDesc2}
+                  </p>
                 </div>
               )}
               <div className="flex items-center gap-2 mb-4">
-                <div className="text-xs" style={{color:'#8892A4'}}>👥 {grupo.miembros?.length || 1} miembro{grupo.miembros?.length !== 1 ? 's' : ''}</div>
+                <div className="text-xs" style={{color:'#8892A4'}}>
+                  👥 {grupo.miembros?.length || 1} {grupo.miembros?.length !== 1 ? t.miembros : t.miembro}
+                </div>
               </div>
               <button onClick={() => grupo.precio ? setShowAlerta(true) : unirse()} disabled={uniendose}
                 className="w-full py-3 rounded-xl font-condensed font-black text-base"
                 style={{background:'#00C853',color:'white',opacity: uniendose ? 0.7 : 1}}>
-                {uniendose ? 'UNIÉNDOSE...' : '✅ UNIRME A ESTE GRUPO'}
+                {uniendose ? t.uniendose : t.unirmeBtn}
               </button>
             </div>
           </div>
@@ -135,20 +141,20 @@ export default function Unirse() {
           <div className="w-full max-w-sm rounded-2xl p-6" style={{background:'#0D1B3E'}}>
             <div className="text-center mb-4">
               <div className="text-4xl mb-3">💰</div>
-              <div className="font-condensed text-xl font-black mb-2">Grupo con costo</div>
+              <div className="font-condensed text-xl font-black mb-2">{t.grupoCosto}</div>
               <p className="text-xs" style={{color:'#8892A4',lineHeight:'1.6'}}>
-                Este grupo tiene un costo interno de <b style={{color:'white'}}>{grupo.moneda} {grupo.precio}</b> por jugada, a pagar por fuera de la app al creador del grupo. ¿Deseas unirte?
+                {t.grupoCostoDesc} <b style={{color:'white'}}>{grupo.moneda} {grupo.precio}</b> {t.grupoCostoDesc2}
               </p>
             </div>
             <button onClick={unirse}
               className="w-full py-3 rounded-xl font-condensed font-black text-base mb-2"
               style={{background:'#E8192C',color:'white'}}>
-              SÍ, UNIRME AL GRUPO
+              {t.siUnirme}
             </button>
             <button onClick={() => setShowAlerta(false)}
               className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
               style={{background:'transparent',border:'1px solid rgba(255,255,255,0.12)',color:'#F5F5F0'}}>
-              CANCELAR
+              {t.cancelar}
             </button>
           </div>
         </div>
