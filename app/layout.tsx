@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import PWARegister from "./components/PWARegister";
+import { IdiomaProvider } from "./context/IdiomaContext";
 
 export const metadata: Metadata = {
   title: "PickGol 2026",
@@ -26,8 +27,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="PickGol 2026" />
       </head>
       <body className="bg-[#020810] text-white antialiased">
-        <PWARegister />
-        {children}
+        <IdiomaProvider>
+          <PWARegister />
+          {children}
+        </IdiomaProvider>
       </body>
     </html>
   );

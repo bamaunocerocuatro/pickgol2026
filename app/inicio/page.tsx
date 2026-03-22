@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { useIdioma } from '../context/IdiomaContext';
 
 const LIGAS = [
   { id: 'bundesliga', nombre: 'Bundesliga', pais: 'Alemania', bandera: '/flags/ger.png', proximamente: false },
@@ -16,64 +17,21 @@ const LIGAS = [
   { id: 'seriea', nombre: 'Serie A', pais: 'Italia', bandera: '/flags/ita.png', proximamente: false },
 ];
 
-const TEXTOS: Record<string, any> = {
-  es: {
-    bienvenido: 'Bienvenido de nuevo,', misPts: 'Mis pts', posicion: 'Posición', referidos: 'REFERIDOS',
-    mundialTitulo: 'PRODE MUNDIAL 2026', mundialSub: 'Lanzamiento: 1 May 2026 · El más completo',
-    crearGrupo: 'CREAR GRUPO', crearGrupoSub: 'Jugá con tus amigos · Elegí la liga',
-    prodeComunitario: 'PRODE COMUNITARIO', prodeComunitarioSub: 'Todos contra todos · Elegí la liga',
-    ligasDisponibles: 'Ligas disponibles', proximamente: 'Próximamente',
-    descargar: 'DESCARGAR PICKGOL', descargarSub: 'Instalá la app en tu celular · Gratis',
-    inicio: 'Inicio', fixture: 'Fixture', grupos: 'Grupos', jugadas: 'Jugadas', perfil: 'Perfil',
-  },
-  pt: {
-    bienvenido: 'Bem-vindo de volta,', misPts: 'Meus pts', posicion: 'Posição', referidos: 'INDICADOS',
-    mundialTitulo: 'PRODE COPA DO MUNDO 2026', mundialSub: 'Lançamento: 1 Mai 2026 · O mais completo',
-    crearGrupo: 'CRIAR GRUPO', crearGrupoSub: 'Jogue com seus amigos · Escolha a liga',
-    prodeComunitario: 'PRODE COMUNITÁRIO', prodeComunitarioSub: 'Todos contra todos · Escolha a liga',
-    ligasDisponibles: 'Ligas disponíveis', proximamente: 'Em breve',
-    descargar: 'BAIXAR PICKGOL', descargarSub: 'Instale o app no seu celular · Grátis',
-    inicio: 'Início', fixture: 'Jogos', grupos: 'Grupos', jugadas: 'Apostas', perfil: 'Perfil',
-  },
-  en: {
-    bienvenido: 'Welcome back,', misPts: 'My pts', posicion: 'Position', referidos: 'REFERRALS',
-    mundialTitulo: 'WORLD CUP 2026 PREDICTIONS', mundialSub: 'Launch: May 1, 2026 · The most complete',
-    crearGrupo: 'CREATE GROUP', crearGrupoSub: 'Play with your friends · Choose a league',
-    prodeComunitario: 'COMMUNITY PREDICTIONS', prodeComunitarioSub: 'Everyone vs everyone · Choose a league',
-    ligasDisponibles: 'Available leagues', proximamente: 'Coming soon',
-    descargar: 'DOWNLOAD PICKGOL', descargarSub: 'Install the app on your phone · Free',
-    inicio: 'Home', fixture: 'Fixture', grupos: 'Groups', jugadas: 'Predictions', perfil: 'Profile',
-  },
-};
-
 export default function Inicio() {
+  const { t } = useIdioma();
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [yaInstalada, setYaInstalada] = useState(false);
-  const [locale, setLocale] = useState('es');
 
   useEffect(() => {
-    // Leer idioma del parámetro URL primero, luego localStorage
-    const params = new URLSearchParams(window.location.search);
-    const langParam = params.get('lang');
-    if (langParam) {
-      setLocale(langParam);
-      localStorage.setItem('pickgol_idioma', langParam);
-    } else {
-      const idiomaGuardado = localStorage.getItem('pickgol_idioma');
-      if (idiomaGuardado) setLocale(idiomaGuardado);
-    }
-
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) { window.location.href = '/login'; return; }
       setUser(u);
       try {
         const snap = await getDoc(doc(db, 'usuarios', u.uid));
-        if (snap.exists()) {
-          setUserData(snap.data());
-        }
+        if (snap.exists()) setUserData(snap.data());
       } catch (e) {}
       setLoading(false);
     });
@@ -101,7 +59,6 @@ export default function Inicio() {
     </main>
   );
 
-  const t = TEXTOS[locale] || TEXTOS.es;
   const totalReferidos = userData?.totalReferidos || 0;
 
   return (
