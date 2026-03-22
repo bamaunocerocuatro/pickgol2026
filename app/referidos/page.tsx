@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { useIdioma } from '../context/IdiomaContext';
 
 const NIVELES = [
   { referidos: 3, jugadas: 1 },
@@ -12,6 +14,8 @@ const NIVELES = [
 ];
 
 export default function Referidos() {
+  const router = useRouter();
+  const { t } = useIdioma();
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -19,7 +23,7 @@ export default function Referidos() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u) { window.location.href = '/login'; return; }
+      if (!u) { router.push('/login'); return; }
       setUser(u);
       try {
         const snap = await getDoc(doc(db, 'usuarios', u.uid));
@@ -61,24 +65,23 @@ export default function Referidos() {
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      {/* HEADER */}
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-6">
         <div className="flex items-center gap-3 mb-4">
-          <button onClick={() => window.location.href = '/inicio'}
+          <button onClick={() => router.push('/inicio')}
             className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm">←</button>
-          <span className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Invitar amigos</span>
+          <span className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{t.invitarAmigos}</span>
         </div>
-        <h1 className="font-condensed text-3xl font-black mb-1">🎁 Referidos</h1>
-        <p className="text-xs" style={{color:'#8892A4'}}>Invitá amigos y ganá jugadas gratis para el Mundial</p>
+        <h1 className="font-condensed text-3xl font-black mb-1">🎁 {t.totalReferidos}</h1>
+        <p className="text-xs" style={{color:'#8892A4'}}>{t.referidosSub}</p>
 
         <div className="flex gap-2 mt-4">
           <div className="flex-1 text-center rounded-xl py-3" style={{background:'rgba(255,255,255,0.08)'}}>
             <div className="font-condensed text-2xl font-black" style={{color:'#C9A84C'}}>{totalReferidos}</div>
-            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Referidos</div>
+            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{t.totalReferidos}</div>
           </div>
           <div className="flex-1 text-center rounded-xl py-3" style={{background:'rgba(255,255,255,0.08)'}}>
             <div className="font-condensed text-2xl font-black" style={{color:'#00C853'}}>{jugadasGratis}</div>
-            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>Jugadas gratis</div>
+            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{t.jugadasGratis}</div>
           </div>
         </div>
       </div>
@@ -88,19 +91,19 @@ export default function Referidos() {
         {proximoNivel && (
           <div className="rounded-2xl p-4 mb-4" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Próximo nivel</span>
-              <span className="text-xs font-bold" style={{color:'#C9A84C'}}>{totalReferidos}/{proximoNivel.referidos} referidos</span>
+              <span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.proximoNivel}</span>
+              <span className="text-xs font-bold" style={{color:'#C9A84C'}}>{totalReferidos}/{proximoNivel.referidos} {t.totalReferidos.toLowerCase()}</span>
             </div>
             <div className="rounded-full overflow-hidden mb-2" style={{background:'rgba(255,255,255,0.07)',height:'8px'}}>
               <div className="h-full rounded-full" style={{background:'linear-gradient(90deg,#E8192C,#C9A84C)',width:`${progreso}%`,transition:'width .5s'}} />
             </div>
             <div className="text-xs" style={{color:'#8892A4'}}>
-              Faltán <b style={{color:'white'}}>{proximoNivel.referidos - totalReferidos}</b> referidos para ganar <b style={{color:'#00C853'}}>{proximoNivel.jugadas} jugada{proximoNivel.jugadas > 1 ? 's' : ''} gratis</b>
+              {t.faltan} <b style={{color:'white'}}>{proximoNivel.referidos - totalReferidos}</b> {t.paraGanar} <b style={{color:'#00C853'}}>{proximoNivel.jugadas} {proximoNivel.jugadas > 1 ? t.jugadasGratis : t.jugadasGratis}</b>
             </div>
           </div>
         )}
 
-        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{color:'#8892A4'}}>Recompensas</div>
+        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{color:'#8892A4'}}>{t.recompensas}</div>
         <div className="rounded-2xl overflow-hidden mb-4" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
           {NIVELES.map((nivel, i) => {
             const alcanzado = totalReferidos >= nivel.referidos;
@@ -112,51 +115,50 @@ export default function Referidos() {
                   <span className="text-lg">{alcanzado ? '✅' : '🎁'}</span>
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-bold">{nivel.referidos} referidos</div>
+                  <div className="text-sm font-bold">{nivel.referidos} {t.totalReferidos.toLowerCase()}</div>
                   <div className="text-xs" style={{color: alcanzado ? '#00C853' : '#8892A4'}}>
-                    {nivel.jugadas} jugada{nivel.jugadas > 1 ? 's' : ''} gratis para el Mundial
+                    {nivel.jugadas} {t.jugadasGratis}
                   </div>
                 </div>
-                {alcanzado && <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{background:'rgba(0,200,83,0.1)',color:'#00C853'}}>¡Ganado!</span>}
+                {alcanzado && <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{background:'rgba(0,200,83,0.1)',color:'#00C853'}}>{t.ganado}</span>}
               </div>
             );
           })}
         </div>
 
-        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{color:'#8892A4'}}>Tu link de invitación</div>
+        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{color:'#8892A4'}}>{t.tuLink}</div>
         <div className="rounded-xl p-3 mb-4 flex items-center gap-2" style={{background:'rgba(0,0,0,0.35)',border:'1px solid rgba(255,255,255,0.09)'}}>
           <div className="flex-1 text-xs font-mono truncate" style={{color:'#8892A4'}}>{link}</div>
           <button onClick={() => { navigator.clipboard.writeText(link); setCopiado(true); setTimeout(() => setCopiado(false), 2000); }}
             className="text-xs px-3 py-1 rounded-lg font-bold flex-shrink-0"
             style={{background:'rgba(201,168,76,0.15)',color:'#C9A84C'}}>
-            {copiado ? '✅' : 'Copiar'}
+            {copiado ? '✅' : t.copiar}
           </button>
         </div>
 
         <button onClick={compartir}
           className="w-full py-4 rounded-xl font-condensed font-black text-lg"
           style={{background:'linear-gradient(135deg,#E8192C,#8B0018)',color:'white'}}>
-          🚀 INVITAR AMIGOS
+          🚀 {t.invitar}
         </button>
 
       </div>
 
-      {/* BOTTOM NAV */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
-          <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>Inicio</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/inicio')}>
+          <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.inicio}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/fixture'}>
-          <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>Fixture</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/fixture')}>
+          <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.fixture}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/grupos'}>
-          <span className="text-lg">👥</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/grupos')}>
+          <span className="text-lg">👥</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.grupos}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/mis-jugadas'}>
-          <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>Jugadas</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mis-jugadas')}>
+          <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.jugadas}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
-          <span className="text-lg">👤</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>Perfil</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/perfil')}>
+          <span className="text-lg">👤</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.perfil}</span>
         </div>
       </div>
 
