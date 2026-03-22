@@ -55,9 +55,16 @@ export default function Inicio() {
   const [locale, setLocale] = useState('es');
 
   useEffect(() => {
-    // Leer idioma del localStorage primero
-    const idiomaGuardado = localStorage.getItem('pickgol_idioma');
-    if (idiomaGuardado) setLocale(idiomaGuardado);
+    // Leer idioma del parámetro URL primero, luego localStorage
+    const params = new URLSearchParams(window.location.search);
+    const langParam = params.get('lang');
+    if (langParam) {
+      setLocale(langParam);
+      localStorage.setItem('pickgol_idioma', langParam);
+    } else {
+      const idiomaGuardado = localStorage.getItem('pickgol_idioma');
+      if (idiomaGuardado) setLocale(idiomaGuardado);
+    }
 
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) { window.location.href = '/login'; return; }
