@@ -64,10 +64,9 @@ export default function Inicio() {
   const [loading, setLoading] = useState(true);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [yaInstalada, setYaInstalada] = useState(false);
-  const [locale, setLocale] = useState('es');
+  const [locale, setLocale] = useState(getLocale);
 
   useEffect(() => {
-    setLocale(getLocale());
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) { window.location.href = '/login'; return; }
       setUser(u);
@@ -75,11 +74,6 @@ export default function Inicio() {
         const snap = await getDoc(doc(db, 'usuarios', u.uid));
         if (snap.exists()) {
           setUserData(snap.data());
-          const idiomaGuardado = snap.data().idioma;
-          if (idiomaGuardado) {
-            setLocale(idiomaGuardado);
-            localStorage.setItem('pickgol_idioma', idiomaGuardado);
-          }
         }
       } catch (e) {}
       setLoading(false);
