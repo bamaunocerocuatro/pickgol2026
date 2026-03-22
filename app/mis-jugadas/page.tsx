@@ -153,19 +153,4 @@ export default function MisJugadas() {
     </main>
   );
 }
-```
 
-**`app/crear-grupo/page.tsx`** — solo cambiá los `window.location.href` y `window.history.back()`:
-- Agregá `import { useRouter } from 'next/navigation';`
-- Agregá `const router = useRouter();` dentro del componente
-- Reemplazá `window.location.href = '/login'` por `router.push('/login')`
-- Reemplazá `window.location.href = '/grupos'` por `router.push('/grupos')`
-- Reemplazá `window.location.href = '/plus'` por `router.push('/plus')`
-- Reemplazá `window.history.back()` por `router.back()`
-
-**`app/unirse/page.tsx`** — mismo proceso:
-- Agregá `import { useRouter } from 'next/navigation';`
-- Agregá `const router = useRouter();`
-- Reemplazá `window.location.href = '/login'` por `router.push('/login')`
-- Reemplazá `window.location.href = /grupo/${grupo.id}`` por `router.push(/grupo/${grupo.id}``)`
-- Reemplazá `window.history.back()` por `router.back()`
