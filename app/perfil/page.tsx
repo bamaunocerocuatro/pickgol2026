@@ -22,6 +22,9 @@ export default function Perfil() {
   const [idioma, setIdioma] = useState('es');
 
   useEffect(() => {
+    const saved = localStorage.getItem('pickgol_idioma');
+    if (saved) setIdioma(saved);
+
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) { window.location.href = '/login'; return; }
       setUser(u);
@@ -30,8 +33,11 @@ export default function Perfil() {
         const snap = await getDoc(doc(db, 'usuarios', u.uid));
         if (snap.exists()) {
           setUserData(snap.data());
-          const idiomaGuardado = snap.data().idioma || localStorage.getItem('pickgol_idioma') || 'es';
-          setIdioma(idiomaGuardado);
+          const idiomaGuardado = snap.data().idioma;
+          if (idiomaGuardado) {
+            setIdioma(idiomaGuardado);
+            localStorage.setItem('pickgol_idioma', idiomaGuardado);
+          }
         }
       } catch (e) {}
       setLoading(false);
@@ -59,7 +65,9 @@ export default function Perfil() {
       await updateDoc(doc(db, 'usuarios', user.uid), { idioma: code });
     } catch (e) {}
     setMensaje('Idioma actualizado ✅');
-    setTimeout(() => setMensaje(''), 2000);
+    setTimeout(() => {
+      window.location.href = '/inicio';
+    }, 1000);
   };
 
   const cerrarSesion = async () => {
@@ -104,7 +112,6 @@ export default function Perfil() {
 
       <div className="px-4 py-4">
 
-        {/* NOMBRE */}
         <div className="rounded-2xl overflow-hidden mb-4" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="px-4 py-4">
             <div className="flex items-center justify-between mb-3">
@@ -143,7 +150,6 @@ export default function Perfil() {
           </div>
         </div>
 
-        {/* IDIOMA */}
         <div className="rounded-2xl overflow-hidden mb-4" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="px-4 py-4">
             <div className="text-sm font-semibold mb-3">🌍 Idioma</div>
@@ -163,7 +169,6 @@ export default function Perfil() {
           </div>
         </div>
 
-        {/* PLUS */}
         {!esPlus && (
           <div onClick={() => window.location.href = '/plus'}
             className="rounded-2xl p-4 mb-4 flex items-center gap-3 cursor-pointer"
@@ -177,7 +182,6 @@ export default function Perfil() {
           </div>
         )}
 
-        {/* INFO */}
         <div className="rounded-2xl overflow-hidden mb-4" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="px-4 py-4">
             <div className="text-sm font-semibold mb-3">Información de cuenta</div>
