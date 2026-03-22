@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import {
   signInWithEmailAndPassword,
@@ -10,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { useSearchParams } from 'next/navigation';
+import { useIdioma } from '../context/IdiomaContext';
 
 const NIVELES_REFERIDOS = [
   { referidos: 3, jugadas: 1, campo: 'nivel1' },
@@ -17,13 +19,53 @@ const NIVELES_REFERIDOS = [
   { referidos: 10, jugadas: 5, campo: 'nivel3' },
 ];
 
+const IDIOMAS = [
+  { code: 'es', label: '🇦🇷 ES' },
+  { code: 'pt', label: '🇧🇷 PT' },
+  { code: 'en', label: '🌍 EN' },
+];
+
+const TEXTOS_LOGIN: Record<string, any> = {
+  es: {
+    titulo: 'Jugá, acertá y liderá el ranking ⚽🔥',
+    iniciarSesion: 'INICIAR SESIÓN', crearCuenta: 'CREAR CUENTA',
+    email: 'Email', password: 'Contraseña', entrar: 'ENTRAR',
+    google: 'CONTINUAR CON GOOGLE',
+    yaTenes: '¿Ya tenés cuenta?', noTenes: '¿No tenés cuenta?',
+    iniciaSesion: 'Iniciá sesión', registrate: 'Registrate',
+    invitado: 'Fuiste invitado — vas a recibir beneficios al registrarte',
+  },
+  pt: {
+    titulo: 'Jogue, acerte e lidere o ranking ⚽🔥',
+    iniciarSesion: 'ENTRAR', crearCuenta: 'CRIAR CONTA',
+    email: 'Email', password: 'Senha', entrar: 'ENTRAR',
+    google: 'CONTINUAR COM GOOGLE',
+    yaTenes: 'Já tem uma conta?', noTenes: 'Não tem uma conta?',
+    iniciaSesion: 'Entrar', registrate: 'Cadastre-se',
+    invitado: 'Você foi convidado — vai receber benefícios ao se cadastrar',
+  },
+  en: {
+    titulo: 'Play, predict and lead the ranking ⚽🔥',
+    iniciarSesion: 'SIGN IN', crearCuenta: 'CREATE ACCOUNT',
+    email: 'Email', password: 'Password', entrar: 'SIGN IN',
+    google: 'CONTINUE WITH GOOGLE',
+    yaTenes: 'Already have an account?', noTenes: "Don't have an account?",
+    iniciaSesion: 'Sign in', registrate: 'Sign up',
+    invitado: 'You were invited — you\'ll receive benefits when you sign up',
+  },
+};
+
 function LoginForm() {
+  const router = useRouter();
+  const { locale, setLocale } = useIdioma();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState('');
   const [refCode, setRefCode] = useState('');
   const searchParams = useSearchParams();
+
+  const tl = TEXTOS_LOGIN[locale] || TEXTOS_LOGIN.es;
 
   useEffect(() => {
     const ref = searchParams.get('ref');
@@ -93,6 +135,7 @@ function LoginForm() {
         totalReferidos: 0,
         jugadasGratis: 0,
         nivel1: false, nivel2: false, nivel3: false,
+        idioma: locale,
         creadoEn: serverTimestamp(),
       });
       await procesarReferido(uid);
@@ -108,7 +151,7 @@ function LoginForm() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      window.location.href = '/inicio';
+      router.push('/inicio');
     } catch (e: any) {
       setError(e.message);
     }
@@ -120,7 +163,7 @@ function LoginForm() {
       const provider = new GoogleAuthProvider();
       const cred = await signInWithPopup(auth, provider);
       await crearUsuario(cred.user.uid, cred.user.email || '', cred.user.displayName || '');
-      window.location.href = '/inicio';
+      router.push('/inicio');
     } catch (e: any) {
       setError(e.message);
     }
@@ -129,32 +172,48 @@ function LoginForm() {
   return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center px-5">
       <div className="w-full max-w-sm">
+
+        {/* SELECTOR IDIOMA */}
+        <div className="flex justify-center gap-2 mb-6">
+          {IDIOMAS.map(i => (
+            <div key={i.code} onClick={() => setLocale(i.code)}
+              className="px-3 py-1 rounded-lg cursor-pointer text-xs font-bold"
+              style={{
+                background: locale === i.code ? 'rgba(232,25,44,0.2)' : 'rgba(255,255,255,0.05)',
+                border: locale === i.code ? '1px solid #E8192C' : '1px solid rgba(255,255,255,0.1)',
+                color: locale === i.code ? '#F5F5F0' : '#8892A4'
+              }}>
+              {i.label}
+            </div>
+          ))}
+        </div>
+
         <div className="text-center mb-8">
           <h1 className="font-condensed text-5xl font-black text-[#C9A84C] mb-1">PickGol</h1>
           <p className="font-condensed text-2xl font-bold text-white">2026 ⚽</p>
-          <p className="text-[#8892A4] text-sm mt-2">Jugá, acertá y liderá el ranking ⚽🔥</p>
+          <p className="text-[#8892A4] text-sm mt-2">{tl.titulo}</p>
         </div>
 
         {refCode && (
           <div className="mb-4 rounded-xl px-4 py-3 text-center text-sm font-semibold" style={{background:'rgba(0,200,83,0.1)',border:'1px solid rgba(0,200,83,0.3)',color:'#00C853'}}>
-            🎁 Fuiste invitado — vas a recibir beneficios al registrarte
+            🎁 {tl.invitado}
           </div>
         )}
 
         <div className="bg-[#0D1B3E] border border-white/10 rounded-2xl p-6">
           <h2 className="font-condensed text-xl font-bold mb-5">
-            {isRegister ? 'CREAR CUENTA' : 'INICIAR SESIÓN'}
+            {isRegister ? tl.crearCuenta : tl.iniciarSesion}
           </h2>
 
           <div className="mb-4">
-            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">Email</label>
+            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{tl.email}</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
               placeholder="tu@email.com" />
           </div>
 
           <div className="mb-5">
-            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">Contraseña</label>
+            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{tl.password}</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
               placeholder="••••••••" />
@@ -164,7 +223,7 @@ function LoginForm() {
 
           <button onClick={handleEmail}
             className="w-full bg-[#E8192C] text-white font-condensed font-black text-lg py-3 rounded-xl mb-3 tracking-wide">
-            {isRegister ? 'CREAR CUENTA' : 'ENTRAR'}
+            {isRegister ? tl.crearCuenta : tl.entrar}
           </button>
 
           <div className="flex items-center gap-3 mb-3">
@@ -175,13 +234,13 @@ function LoginForm() {
 
           <button onClick={handleGoogle}
             className="w-full bg-white/5 border border-white/10 text-white font-condensed font-bold text-base py-3 rounded-xl mb-4">
-            🔵 CONTINUAR CON GOOGLE
+            🔵 {tl.google}
           </button>
 
           <p className="text-center text-xs text-[#8892A4]">
-            {isRegister ? '¿Ya tenés cuenta?' : '¿No tenés cuenta?'}{' '}
+            {isRegister ? tl.yaTenes : tl.noTenes}{' '}
             <span onClick={() => setIsRegister(!isRegister)} className="text-[#C9A84C] cursor-pointer font-semibold">
-              {isRegister ? 'Iniciá sesión' : 'Registrate'}
+              {isRegister ? tl.iniciaSesion : tl.registrate}
             </span>
           </p>
         </div>
