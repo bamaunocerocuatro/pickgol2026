@@ -1,21 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { useIdioma } from '../context/IdiomaContext';
 
 const LIGAS_NOMBRES: Record<string, string> = {
-  premier: 'Premier League',
-  laliga: 'La Liga',
-  seriea: 'Serie A',
-  bundesliga: 'Bundesliga',
-  ligue1: 'Ligue 1',
-  ligapro: 'Liga Profesional',
+  premier: 'Premier League', laliga: 'La Liga', seriea: 'Serie A',
+  bundesliga: 'Bundesliga', ligue1: 'Ligue 1', ligapro: 'Liga Profesional',
   brasileirao: 'Brasileirão',
 };
 
 export default function Grupos() {
+  const router = useRouter();
+  const { t } = useIdioma();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [grupos, setGrupos] = useState<any[]>([]);
@@ -23,7 +23,7 @@ export default function Grupos() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u) { window.location.href = '/login'; return; }
+      if (!u) { router.push('/login'); return; }
       setUser(u);
       setCargando(true);
       try {
@@ -39,46 +39,32 @@ export default function Grupos() {
 
   if (loading) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-5xl mb-3">⚽</div>
-        <p className="text-[#8892A4] text-sm">Cargando...</p>
-      </div>
+      <div className="text-center"><div className="text-5xl mb-3">⚽</div><p className="text-[#8892A4] text-sm">Cargando...</p></div>
     </main>
   );
 
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
-
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
-        <h1 className="font-condensed text-3xl font-black mb-1">Mis Grupos 👥</h1>
+        <h1 className="font-condensed text-3xl font-black mb-1">Mis {t.grupos} 👥</h1>
         <p className="text-xs" style={{color:'#8892A4'}}>Todos tus grupos activos</p>
       </div>
 
       <div className="px-4 py-4">
-
         <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => window.location.href = '/crear-grupo'}
+          <button onClick={() => router.push('/crear-grupo')}
             className="flex-1 py-3 rounded-xl font-condensed font-black text-sm"
-            style={{background:'#E8192C',color:'white'}}
-          >
-            + CREAR GRUPO
+            style={{background:'#E8192C',color:'white'}}>
+            + {t.crearGrupo}
           </button>
-          <button
-            onClick={() => window.location.href = '/unirse'}
+          <button onClick={() => router.push('/unirse')}
             className="flex-1 py-3 rounded-xl font-condensed font-bold text-sm"
-            style={{background:'transparent',border:'1px solid rgba(255,255,255,0.12)',color:'#F5F5F0'}}
-          >
+            style={{background:'transparent',border:'1px solid rgba(255,255,255,0.12)',color:'#F5F5F0'}}>
             🔗 UNIRME
           </button>
         </div>
 
-        {cargando && (
-          <div className="text-center py-10">
-            <div className="text-4xl mb-3">⏳</div>
-            <p className="text-sm" style={{color:'#8892A4'}}>Cargando grupos...</p>
-          </div>
-        )}
+        {cargando && <div className="text-center py-10"><div className="text-4xl mb-3">⏳</div><p className="text-sm" style={{color:'#8892A4'}}>Cargando grupos...</p></div>}
 
         {!cargando && grupos.length === 0 && (
           <div className="rounded-2xl p-6 text-center" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
@@ -89,12 +75,9 @@ export default function Grupos() {
         )}
 
         {!cargando && grupos.map((g) => (
-          <div
-            key={g.id}
-            onClick={() => window.location.href = `/grupo/${g.id}`}
+          <div key={g.id} onClick={() => router.push(`/grupo/${g.id}`)}
             className="rounded-2xl p-4 mb-3 cursor-pointer"
-            style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}
-          >
+            style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
             <div className="flex items-center justify-between mb-2">
               <div className="font-condensed text-lg font-black">{g.nombre}</div>
               {g.creadorId === user?.uid && (
@@ -110,32 +93,25 @@ export default function Grupos() {
             </div>
           </div>
         ))}
-
       </div>
 
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
-          <span className="text-lg">🏠</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Inicio</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/inicio')}>
+          <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.inicio}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/fixture'}>
-          <span className="text-lg">📅</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Fixture</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/fixture')}>
+          <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.fixture}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/grupos'}>
-          <span className="text-lg">👥</span>
-          <span className="text-xs font-semibold" style={{color:'#E8192C'}}>Grupos</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/grupos')}>
+          <span className="text-lg">👥</span><span className="text-xs font-semibold" style={{color:'#E8192C'}}>{t.grupos}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/mis-jugadas'}>
-          <span className="text-lg">🎯</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Jugadas</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mis-jugadas')}>
+          <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.jugadas}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
-          <span className="text-lg">👤</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Perfil</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/perfil')}>
+          <span className="text-lg">👤</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.perfil}</span>
         </div>
       </div>
-
     </main>
   );
 }

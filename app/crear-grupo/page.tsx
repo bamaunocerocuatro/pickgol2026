@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
@@ -20,6 +21,7 @@ const VARIABLES_DEFAULT = [
 ];
 
 function CrearGrupoForm() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ function CrearGrupoForm() {
     const ligaParam = searchParams.get('liga');
     if (ligaParam) setLigaId(ligaParam);
     const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u) { window.location.href = '/login'; return; }
+      if (!u) { router.push('/login'); return; }
       setUser(u);
       try {
         const snap = await getDoc(doc(db, 'usuarios', u.uid));
@@ -58,10 +60,7 @@ function CrearGrupoForm() {
     setError('');
     if (!nombre.trim()) { setError('El nombre del grupo es obligatorio'); return; }
     if (!ligaId) { setError('Elegí una liga'); return; }
-    if (!controlPagos) {
-      setShowAlerta(true);
-      return;
-    }
+    if (!controlPagos) { setShowAlerta(true); return; }
     crearGrupo();
   };
 
@@ -85,7 +84,7 @@ function CrearGrupoForm() {
         variablesCustom: esPlus && opcionVariables === 'custom' ? variablesCustom : null,
         creadoEn: serverTimestamp(),
       });
-      window.location.href = '/grupos';
+      router.push('/grupos');
     } catch (e: any) {
       setError('Error al crear el grupo. Intentá de nuevo.');
     }
@@ -102,20 +101,16 @@ function CrearGrupoForm() {
 
   if (loading) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-5xl mb-3">⚽</div>
-        <p className="text-[#8892A4] text-sm">Cargando...</p>
-      </div>
+      <div className="text-center"><div className="text-5xl mb-3">⚽</div><p className="text-[#8892A4] text-sm">Cargando...</p></div>
     </main>
   );
 
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      {/* HEADER */}
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
         <div className="flex items-center gap-3 mb-4">
-          <button onClick={() => window.history.back()}
+          <button onClick={() => router.back()}
             className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm">←</button>
           <span className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>← <b style={{color:'rgba(255,255,255,0.65)'}}>Crear Grupo</b></span>
         </div>
@@ -125,7 +120,6 @@ function CrearGrupoForm() {
 
       <div className="px-4 py-4">
 
-        {/* NOMBRE */}
         <div className="mb-4">
           <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{color:'#8892A4'}}>Nombre del grupo *</label>
           <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)}
@@ -134,13 +128,11 @@ function CrearGrupoForm() {
             style={{background:'rgba(0,0,0,0.35)',border:'1px solid rgba(255,255,255,0.09)'}} />
         </div>
 
-        {/* LIGA */}
         <div className="mb-4">
           <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{color:'#8892A4'}}>Liga *</label>
           <LigaSelector value={ligaId} onChange={setLigaId} />
         </div>
 
-        {/* TIPO */}
         <div className="mb-4">
           <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{color:'#8892A4'}}>Duración del torneo *</label>
           <div className="flex gap-2">
@@ -155,7 +147,6 @@ function CrearGrupoForm() {
           </div>
         </div>
 
-        {/* VARIABLES — PLUS */}
         {esPlus ? (
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-3">
@@ -163,66 +154,40 @@ function CrearGrupoForm() {
               <span className="text-xs px-2 py-0.5 rounded-lg font-bold" style={{background:'rgba(201,168,76,0.15)',color:'#C9A84C'}}>⭐ PLUS</span>
             </div>
             <div className="flex gap-2 mb-3">
-              <div
-                onClick={() => setOpcionVariables('predeterminadas')}
-                className="flex-1 rounded-xl px-3 py-3 text-center cursor-pointer text-sm font-semibold"
-                style={{
-                  background: opcionVariables === 'predeterminadas' ? 'rgba(0,200,83,0.15)' : 'rgba(0,0,0,0.35)',
-                  border: opcionVariables === 'predeterminadas' ? '1px solid #00C853' : '1px solid rgba(255,255,255,0.09)',
-                  color: opcionVariables === 'predeterminadas' ? '#00C853' : '#8892A4'
-                }}
-              >
+              <div onClick={() => setOpcionVariables('predeterminadas')} className="flex-1 rounded-xl px-3 py-3 text-center cursor-pointer text-sm font-semibold"
+                style={{ background: opcionVariables === 'predeterminadas' ? 'rgba(0,200,83,0.15)' : 'rgba(0,0,0,0.35)', border: opcionVariables === 'predeterminadas' ? '1px solid #00C853' : '1px solid rgba(255,255,255,0.09)', color: opcionVariables === 'predeterminadas' ? '#00C853' : '#8892A4' }}>
                 ✅ Predeterminadas
               </div>
-              <div
-                onClick={() => setOpcionVariables('custom')}
-                className="flex-1 rounded-xl px-3 py-3 text-center cursor-pointer text-sm font-semibold"
-                style={{
-                  background: opcionVariables === 'custom' ? 'rgba(201,168,76,0.15)' : 'rgba(0,0,0,0.35)',
-                  border: opcionVariables === 'custom' ? '1px solid #C9A84C' : '1px solid rgba(255,255,255,0.09)',
-                  color: opcionVariables === 'custom' ? '#C9A84C' : '#8892A4'
-                }}
-              >
+              <div onClick={() => setOpcionVariables('custom')} className="flex-1 rounded-xl px-3 py-3 text-center cursor-pointer text-sm font-semibold"
+                style={{ background: opcionVariables === 'custom' ? 'rgba(201,168,76,0.15)' : 'rgba(0,0,0,0.35)', border: opcionVariables === 'custom' ? '1px solid #C9A84C' : '1px solid rgba(255,255,255,0.09)', color: opcionVariables === 'custom' ? '#C9A84C' : '#8892A4' }}>
                 ✏️ Las defino yo
               </div>
             </div>
-
             {opcionVariables === 'custom' && (
               <div className="rounded-2xl overflow-hidden" style={{background:'#0D1B3E',border:'1px solid rgba(201,168,76,0.2)'}}>
                 {variablesCustom.map((v, i) => (
                   <div key={i} className="px-4 py-3" style={{borderBottom: i < variablesCustom.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'}}>
-                    <input
-                      type="text"
-                      value={v.label}
-                      onChange={(e) => actualizarVariable(i, 'label', e.target.value)}
+                    <input type="text" value={v.label} onChange={(e) => actualizarVariable(i, 'label', e.target.value)}
                       className="w-full rounded-lg px-3 py-2 text-white text-xs outline-none mb-2"
-                      style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(255,255,255,0.07)'}}
-                    />
+                      style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(255,255,255,0.07)'}} />
                     <div className="flex items-center gap-2">
                       <span className="text-xs" style={{color:'#8892A4'}}>Puntos:</span>
-                      <input
-                        type="number"
-                        value={v.pts}
-                        onChange={(e) => actualizarVariable(i, 'pts', e.target.value)}
+                      <input type="number" value={v.pts} onChange={(e) => actualizarVariable(i, 'pts', e.target.value)}
                         className="w-16 rounded-lg px-2 py-1 text-white text-xs outline-none text-center"
-                        style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C'}}
-                      />
+                        style={{background:'rgba(0,0,0,0.3)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C'}} />
                     </div>
                   </div>
                 ))}
               </div>
             )}
-
             {opcionVariables === 'predeterminadas' && (
               <p className="text-xs mt-2" style={{color:'#8892A4'}}>Se usarán las variables estándar de PickGol con sus puntos originales.</p>
             )}
           </div>
         ) : (
-          <div
-            className="rounded-xl p-4 mb-4 flex items-center gap-3 cursor-pointer"
+          <div className="rounded-xl p-4 mb-4 flex items-center gap-3 cursor-pointer"
             style={{background:'rgba(201,168,76,0.07)',border:'1px solid rgba(201,168,76,0.2)'}}
-            onClick={() => window.location.href = '/plus'}
-          >
+            onClick={() => router.push('/plus')}>
             <div className="text-2xl">⭐</div>
             <div className="flex-1">
               <div className="text-sm font-bold" style={{color:'#C9A84C'}}>Variables personalizadas</div>
@@ -232,7 +197,6 @@ function CrearGrupoForm() {
           </div>
         )}
 
-        {/* CONTROL DE PAGOS */}
         <div className="rounded-xl p-4 mb-4 flex items-center justify-between cursor-pointer"
           style={{background:'rgba(0,0,0,0.35)',border:'1px solid rgba(255,255,255,0.09)'}}
           onClick={() => setControlPagos(!controlPagos)}>
@@ -253,10 +217,7 @@ function CrearGrupoForm() {
               <select value={moneda} onChange={(e) => setMoneda(e.target.value)}
                 className="rounded-xl px-3 py-3 text-white text-sm outline-none"
                 style={{background:'rgba(0,0,0,0.35)',border:'1px solid rgba(255,255,255,0.09)',width:'90px'}}>
-                <option>ARS</option>
-                <option>USD</option>
-                <option>BRL</option>
-                <option>MXN</option>
+                <option>ARS</option><option>USD</option><option>BRL</option><option>MXN</option>
               </select>
               <input type="number" value={precio} onChange={(e) => setPrecio(e.target.value)}
                 placeholder="Ej: 5000"
@@ -267,7 +228,6 @@ function CrearGrupoForm() {
           </div>
         )}
 
-        {/* CHAT */}
         <div className="rounded-xl p-4 mb-4 flex items-center justify-between cursor-pointer"
           style={{background:'rgba(0,0,0,0.35)',border:'1px solid rgba(255,255,255,0.09)'}}
           onClick={() => setChatHabilitado(!chatHabilitado)}>
@@ -294,7 +254,7 @@ function CrearGrupoForm() {
           {creando ? 'CREANDO...' : 'CREAR GRUPO'}
         </button>
 
-        <button onClick={() => window.history.back()}
+        <button onClick={() => router.back()}
           className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
           style={{background:'transparent',border:'1px solid rgba(255,255,255,0.12)',color:'#F5F5F0'}}>
           CANCELAR
@@ -334,9 +294,5 @@ function CrearGrupoForm() {
 }
 
 export default function CrearGrupo() {
-  return (
-    <Suspense>
-      <CrearGrupoForm />
-    </Suspense>
-  );
+  return <Suspense><CrearGrupoForm /></Suspense>;
 }

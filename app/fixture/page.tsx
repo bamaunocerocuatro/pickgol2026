@@ -1,11 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { auth } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import LigaSelector from '../components/LigaSelector';
+import { useIdioma } from '../context/IdiomaContext';
 
 export default function Fixture() {
+  const router = useRouter();
+  const { t } = useIdioma();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [ligaId, setLigaId] = useState('premier');
@@ -15,7 +19,7 @@ export default function Fixture() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
-      if (!u) window.location.href = '/login';
+      if (!u) router.push('/login');
       else { setUser(u); setLoading(false); }
     });
     return () => unsub();
@@ -34,9 +38,7 @@ export default function Fixture() {
       const data = await res.json();
       setPartidos(data.partidos || []);
       setProximamente(data.proximamente || false);
-    } catch (e) {
-      setPartidos([]);
-    }
+    } catch (e) { setPartidos([]); }
     setCargando(false);
   };
 
@@ -52,10 +54,7 @@ export default function Fixture() {
 
   if (loading) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-5xl mb-3">⚽</div>
-        <p className="text-[#8892A4] text-sm">Cargando...</p>
-      </div>
+      <div className="text-center"><div className="text-5xl mb-3">⚽</div><p className="text-[#8892A4] text-sm">Cargando...</p></div>
     </main>
   );
 
@@ -68,35 +67,23 @@ export default function Fixture() {
 
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
-
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-4">
-        <h1 className="font-condensed text-3xl font-black mb-3">Fixture 📅</h1>
+        <h1 className="font-condensed text-3xl font-black mb-3">{t.fixture} 📅</h1>
         <LigaSelector value={ligaId} onChange={(id) => setLigaId(id)} showMundial={false} />
       </div>
 
       <div className="px-4 py-4">
-        {cargando && (
-          <div className="text-center py-10">
-            <div className="text-4xl mb-3">⏳</div>
-            <p className="text-sm" style={{color:'#8892A4'}}>Cargando partidos...</p>
-          </div>
-        )}
-
+        {cargando && <div className="text-center py-10"><div className="text-4xl mb-3">⏳</div><p className="text-sm" style={{color:'#8892A4'}}>Cargando partidos...</p></div>}
         {!cargando && proximamente && (
           <div className="rounded-2xl p-6 text-center" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
             <div className="text-4xl mb-3">🚧</div>
-            <div className="font-condensed text-xl font-black mb-2">Próximamente</div>
+            <div className="font-condensed text-xl font-black mb-2">{t.proximamente}</div>
             <p className="text-sm" style={{color:'#8892A4'}}>El fixture de esta liga estará disponible pronto</p>
           </div>
         )}
-
         {!cargando && !proximamente && partidos.length === 0 && (
-          <div className="text-center py-10">
-            <div className="text-4xl mb-3">📅</div>
-            <p className="text-sm" style={{color:'#8892A4'}}>No hay partidos disponibles</p>
-          </div>
+          <div className="text-center py-10"><div className="text-4xl mb-3">📅</div><p className="text-sm" style={{color:'#8892A4'}}>No hay partidos disponibles</p></div>
         )}
-
         {!cargando && !proximamente && Object.entries(porFecha).map(([fecha, ps]) => (
           <div key={fecha} className="mb-4">
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>{fecha}</div>
@@ -126,28 +113,22 @@ export default function Fixture() {
       </div>
 
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
-          <span className="text-lg">🏠</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Inicio</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/inicio')}>
+          <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.inicio}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/fixture'}>
-          <span className="text-lg">📅</span>
-          <span className="text-xs font-semibold" style={{color:'#E8192C'}}>Fixture</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/fixture')}>
+          <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{color:'#E8192C'}}>{t.fixture}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/grupos'}>
-          <span className="text-lg">👥</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Grupos</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/grupos')}>
+          <span className="text-lg">👥</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.grupos}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/mis-jugadas'}>
-          <span className="text-lg">🎯</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Jugadas</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mis-jugadas')}>
+          <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.jugadas}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
-          <span className="text-lg">👤</span>
-          <span className="text-xs font-semibold" style={{color:'#8892A4'}}>Perfil</span>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/perfil')}>
+          <span className="text-lg">👤</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.perfil}</span>
         </div>
       </div>
-
     </main>
   );
 }
