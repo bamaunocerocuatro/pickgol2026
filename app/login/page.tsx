@@ -10,7 +10,6 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 
 const NIVELES_REFERIDOS = [
   { referidos: 3, jugadas: 1, campo: 'nivel1' },
@@ -19,7 +18,6 @@ const NIVELES_REFERIDOS = [
 ];
 
 function LoginForm() {
-  const t = useTranslations('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
@@ -134,31 +132,31 @@ function LoginForm() {
         <div className="text-center mb-8">
           <h1 className="font-condensed text-5xl font-black text-[#C9A84C] mb-1">PickGol</h1>
           <p className="font-condensed text-2xl font-bold text-white">2026 ⚽</p>
-          <p className="text-[#8892A4] text-sm mt-2">{t('titulo')}</p>
+          <p className="text-[#8892A4] text-sm mt-2">El prode del mundial</p>
         </div>
 
         {refCode && (
           <div className="mb-4 rounded-xl px-4 py-3 text-center text-sm font-semibold" style={{background:'rgba(0,200,83,0.1)',border:'1px solid rgba(0,200,83,0.3)',color:'#00C853'}}>
-            🎁 {t('invitado')}
+            🎁 Fuiste invitado — vas a recibir beneficios al registrarte
           </div>
         )}
 
         <div className="bg-[#0D1B3E] border border-white/10 rounded-2xl p-6">
           <h2 className="font-condensed text-xl font-bold mb-5">
-            {isRegister ? t('crearCuenta') : t('iniciarSesion')}
+            {isRegister ? 'CREAR CUENTA' : 'INICIAR SESIÓN'}
           </h2>
 
           <div className="mb-4">
-            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{t('email')}</label>
+            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">Email</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E8192C]/50"
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
               placeholder="tu@email.com" />
           </div>
 
           <div className="mb-5">
-            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{t('password')}</label>
+            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">Contraseña</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#E8192C]/50"
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
               placeholder="••••••••" />
           </div>
 
@@ -166,7 +164,7 @@ function LoginForm() {
 
           <button onClick={handleEmail}
             className="w-full bg-[#E8192C] text-white font-condensed font-black text-lg py-3 rounded-xl mb-3 tracking-wide">
-            {isRegister ? t('crearCuenta') : t('entrar')}
+            {isRegister ? 'CREAR CUENTA' : 'ENTRAR'}
           </button>
 
           <div className="flex items-center gap-3 mb-3">
@@ -177,13 +175,13 @@ function LoginForm() {
 
           <button onClick={handleGoogle}
             className="w-full bg-white/5 border border-white/10 text-white font-condensed font-bold text-base py-3 rounded-xl mb-4">
-            🔵 {t('google')}
+            🔵 CONTINUAR CON GOOGLE
           </button>
 
           <p className="text-center text-xs text-[#8892A4]">
-            {isRegister ? t('yaTenes') : t('noTenes')}{' '}
+            {isRegister ? '¿Ya tenés cuenta?' : '¿No tenés cuenta?'}{' '}
             <span onClick={() => setIsRegister(!isRegister)} className="text-[#C9A84C] cursor-pointer font-semibold">
-              {isRegister ? t('iniciaSesion') : t('registrate')}
+              {isRegister ? 'Iniciá sesión' : 'Registrate'}
             </span>
           </p>
         </div>
