@@ -1,6 +1,6 @@
- 'use client';
+'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 export const TEXTOS: Record<string, any> = {
   es: {
@@ -78,13 +78,16 @@ const IdiomaContext = createContext<{
   setLocale: () => {},
 });
 
-export function IdiomaProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState('es');
-
-  useEffect(() => {
+function getInitialLocale() {
+  if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('pickgol_idioma');
-    if (saved && TEXTOS[saved]) setLocaleState(saved);
-  }, []);
+    if (saved && TEXTOS[saved]) return saved;
+  }
+  return 'es';
+}
+
+export function IdiomaProvider({ children }: { children: React.ReactNode }) {
+  const [locale, setLocaleState] = useState(getInitialLocale);
 
   const setLocale = (l: string) => {
     setLocaleState(l);
