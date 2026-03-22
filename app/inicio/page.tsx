@@ -47,10 +47,10 @@ const TEXTOS: Record<string, any> = {
 };
 
 function getLocale() {
-  if (typeof localStorage !== 'undefined') {
+  try {
     const saved = localStorage.getItem('pickgol_idioma');
     if (saved) return saved;
-  }
+  } catch (e) {}
   if (typeof navigator === 'undefined') return 'es';
   const lang = navigator.language || 'es';
   if (lang.startsWith('pt')) return 'pt';
@@ -76,17 +76,18 @@ export default function Inicio() {
         if (snap.exists()) {
           setUserData(snap.data());
           const idiomaGuardado = snap.data().idioma;
-          if (idiomaGuardado) setLocale(idiomaGuardado);
+          if (idiomaGuardado) {
+            setLocale(idiomaGuardado);
+            localStorage.setItem('pickgol_idioma', idiomaGuardado);
+          }
         }
       } catch (e) {}
       setLoading(false);
     });
 
     if (window.matchMedia('(display-mode: standalone)').matches) setYaInstalada(true);
-
     const handler = (e: any) => { e.preventDefault(); setInstallPrompt(e); };
     window.addEventListener('beforeinstallprompt', handler);
-
     return () => { unsub(); window.removeEventListener('beforeinstallprompt', handler); };
   }, []);
 
@@ -113,7 +114,6 @@ export default function Inicio() {
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      {/* HEADER */}
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
         <div className="flex items-center justify-between mb-3">
           <img src="/logo.png" className="w-8 h-8 rounded-lg" />
@@ -223,7 +223,6 @@ export default function Inicio() {
 
       </div>
 
-      {/* BOTTOM NAV */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
           <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{color:'#E8192C'}}>{t.inicio}</span>
