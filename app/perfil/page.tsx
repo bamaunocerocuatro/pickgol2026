@@ -184,7 +184,7 @@ export default function Perfil() {
               <span className="text-xs font-semibold">{user?.email}</span>
             </div>
             <div className="flex justify-between items-center py-2" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-              <span className="text-xs" style={{color:'#8892A4'}}>Método de acceso</span>
+              <span className="text-xs" style={{color:'#8892A4'}}>{t.metodoPago}</span>
               <span className="text-xs font-semibold">{user?.providerData?.[0]?.providerId === 'google.com' ? 'Google' : 'Email'}</span>
             </div>
             <div className="flex justify-between items-center py-2">

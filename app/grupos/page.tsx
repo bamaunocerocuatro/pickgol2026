@@ -46,8 +46,8 @@ export default function Grupos() {
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
-        <h1 className="font-condensed text-3xl font-black mb-1">Mis {t.grupos} 👥</h1>
-        <p className="text-xs" style={{color:'#8892A4'}}>Todos tus grupos activos</p>
+        <h1 className="font-condensed text-3xl font-black mb-1">{t.grupos} 👥</h1>
+        <p className="text-xs" style={{color:'#8892A4'}}>{t.misGruposSub}</p>
       </div>
 
       <div className="px-4 py-4">
@@ -60,17 +60,17 @@ export default function Grupos() {
           <button onClick={() => router.push('/unirse')}
             className="flex-1 py-3 rounded-xl font-condensed font-bold text-sm"
             style={{background:'transparent',border:'1px solid rgba(255,255,255,0.12)',color:'#F5F5F0'}}>
-            🔗 UNIRME
+            {t.unirme}
           </button>
         </div>
 
-        {cargando && <div className="text-center py-10"><div className="text-4xl mb-3">⏳</div><p className="text-sm" style={{color:'#8892A4'}}>Cargando grupos...</p></div>}
+        {cargando && <div className="text-center py-10"><div className="text-4xl mb-3">⏳</div><p className="text-sm" style={{color:'#8892A4'}}>{t.cargandoGrupos}</p></div>}
 
         {!cargando && grupos.length === 0 && (
           <div className="rounded-2xl p-6 text-center" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
             <div className="text-4xl mb-3">👥</div>
-            <div className="font-condensed text-lg font-bold mb-2">No tenés grupos todavía</div>
-            <div className="text-xs mb-4" style={{color:'#8892A4'}}>Creá un grupo o unite con un código</div>
+            <div className="font-condensed text-lg font-bold mb-2">{t.noGrupos}</div>
+            <div className="text-xs mb-4" style={{color:'#8892A4'}}>{t.noGruposSub}</div>
           </div>
         )}
 
@@ -81,13 +81,13 @@ export default function Grupos() {
             <div className="flex items-center justify-between mb-2">
               <div className="font-condensed text-lg font-black">{g.nombre}</div>
               {g.creadorId === user?.uid && (
-                <span className="text-xs px-2 py-1 rounded-lg font-bold" style={{background:'rgba(201,168,76,0.15)',color:'#C9A84C'}}>👑 Creador</span>
+                <span className="text-xs px-2 py-1 rounded-lg font-bold" style={{background:'rgba(201,168,76,0.15)',color:'#C9A84C'}}>👑 {t.creador}</span>
               )}
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xs" style={{color:'#8892A4'}}>{LIGAS_NOMBRES[g.liga] || g.liga}</span>
               <span className="text-xs" style={{color:'#8892A4'}}>·</span>
-              <span className="text-xs" style={{color:'#8892A4'}}>👥 {g.miembros?.length || 1} jugadores</span>
+              <span className="text-xs" style={{color:'#8892A4'}}>👥 {g.miembros?.length || 1} {t.jugadores}</span>
               <span className="text-xs" style={{color:'#8892A4'}}>·</span>
               <span className="text-xs font-black" style={{color:'#C9A84C'}}>{g.codigo}</span>
             </div>
