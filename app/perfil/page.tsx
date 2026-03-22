@@ -15,7 +15,7 @@ const IDIOMAS = [
 
 export default function Perfil() {
   const router = useRouter();
-  const { t, locale, setLocale } = useIdioma();
+  const { t, locale, setLocale, ready } = useIdioma();
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +69,7 @@ export default function Perfil() {
     router.push('/login');
   };
 
-  if (loading) return (
+  if (loading || !ready) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
       <div className="text-center">
         <div className="text-5xl mb-3">👤</div>

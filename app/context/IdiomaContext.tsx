@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 export const TEXTOS: Record<string, any> = {
   es: {
@@ -72,22 +72,23 @@ const IdiomaContext = createContext<{
   locale: string;
   t: Record<string, string>;
   setLocale: (l: string) => void;
+  ready: boolean;
 }>({
   locale: 'es',
   t: TEXTOS.es,
   setLocale: () => {},
+  ready: false,
 });
 
-function getInitialLocale() {
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('pickgol_idioma');
-    if (saved && TEXTOS[saved]) return saved;
-  }
-  return 'es';
-}
-
 export function IdiomaProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState(getInitialLocale);
+  const [locale, setLocaleState] = useState('es');
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('pickgol_idioma');
+    if (saved && TEXTOS[saved]) setLocaleState(saved);
+    setReady(true);
+  }, []);
 
   const setLocale = (l: string) => {
     setLocaleState(l);
@@ -95,7 +96,7 @@ export function IdiomaProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <IdiomaContext.Provider value={{ locale, t: TEXTOS[locale] || TEXTOS.es, setLocale }}>
+    <IdiomaContext.Provider value={{ locale, t: TEXTOS[locale] || TEXTOS.es, setLocale, ready }}>
       {children}
     </IdiomaContext.Provider>
   );

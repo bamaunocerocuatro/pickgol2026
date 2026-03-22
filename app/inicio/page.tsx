@@ -20,7 +20,7 @@ const LIGAS = [
 
 export default function Inicio() {
   const router = useRouter();
-  const { t } = useIdioma();
+  const { t, ready } = useIdioma();
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -52,7 +52,7 @@ export default function Inicio() {
     setInstallPrompt(null);
   };
 
-  if (loading) return (
+  if (loading || !ready) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
       <div className="text-center">
         <img src="/logo.png" className="w-16 h-16 mx-auto mb-3" />
