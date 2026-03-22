@@ -64,7 +64,7 @@ export default function Inicio() {
   const [loading, setLoading] = useState(true);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [yaInstalada, setYaInstalada] = useState(false);
-  const [locale, setLocale] = useState(getLocale);
+  setLocale(getLocale());
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
