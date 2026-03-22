@@ -47,6 +47,10 @@ const TEXTOS: Record<string, any> = {
 };
 
 function getLocale() {
+  if (typeof localStorage !== 'undefined') {
+    const saved = localStorage.getItem('pickgol_idioma');
+    if (saved) return saved;
+  }
   if (typeof navigator === 'undefined') return 'es';
   const lang = navigator.language || 'es';
   if (lang.startsWith('pt')) return 'pt';
@@ -69,7 +73,11 @@ export default function Inicio() {
       setUser(u);
       try {
         const snap = await getDoc(doc(db, 'usuarios', u.uid));
-        if (snap.exists()) setUserData(snap.data());
+        if (snap.exists()) {
+          setUserData(snap.data());
+          const idiomaGuardado = snap.data().idioma;
+          if (idiomaGuardado) setLocale(idiomaGuardado);
+        }
       } catch (e) {}
       setLoading(false);
     });
