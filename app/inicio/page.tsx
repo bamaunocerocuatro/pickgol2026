@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -18,6 +19,7 @@ const LIGAS = [
 ];
 
 export default function Inicio() {
+  const router = useRouter();
   const { t } = useIdioma();
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
@@ -27,7 +29,7 @@ export default function Inicio() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u) { window.location.href = '/login'; return; }
+      if (!u) { router.push('/login'); return; }
       setUser(u);
       try {
         const snap = await getDoc(doc(db, 'usuarios', u.uid));
@@ -70,7 +72,7 @@ export default function Inicio() {
           <span className="font-condensed text-xl font-black text-[#C9A84C]">PickGol 2026</span>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm">🔔</div>
-            <div onClick={() => window.location.href = '/perfil'}
+            <div onClick={() => router.push('/perfil')}
               className="w-8 h-8 rounded-full flex items-center justify-center font-condensed text-xs font-bold cursor-pointer"
               style={{background:'linear-gradient(135deg,#8B0018,#E8192C)'}}>
               {(user.displayName || user.email || '?')[0].toUpperCase()}
@@ -91,7 +93,7 @@ export default function Inicio() {
           </div>
           <div className="flex-1 text-center rounded-xl py-2 cursor-pointer"
             style={{background:'rgba(201,168,76,0.12)',border:'1px solid rgba(201,168,76,0.25)'}}
-            onClick={() => window.location.href = '/referidos'}>
+            onClick={() => router.push('/referidos')}>
             <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>{totalReferidos}</div>
             <div className="text-xs font-bold" style={{color:'#C9A84C'}}>{t.referidos} 🎁</div>
           </div>
@@ -121,7 +123,7 @@ export default function Inicio() {
           <div className="text-white/30 text-lg">›</div>
         </div>
 
-        <div onClick={() => window.location.href = '/crear-grupo'}
+        <div onClick={() => router.push('/crear-grupo')}
           className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer"
           style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="text-3xl">👥</div>
@@ -132,7 +134,7 @@ export default function Inicio() {
           <div className="text-white/30 text-lg">›</div>
         </div>
 
-        <div onClick={() => window.location.href = '/prode-comunitario'}
+        <div onClick={() => router.push('/prode-comunitario')}
           className="rounded-2xl p-4 mb-4 flex items-center gap-3 cursor-pointer"
           style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="text-3xl">🌍</div>
@@ -151,7 +153,7 @@ export default function Inicio() {
           {LIGAS.map((liga, i) => (
             <div key={liga.id} className="flex items-center px-4 py-3"
               style={{borderBottom: i < LIGAS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', cursor: liga.proximamente ? 'default' : 'pointer', opacity: liga.proximamente ? 0.6 : 1}}
-              onClick={() => !liga.proximamente && (window.location.href = `/liga/${liga.id}`)}>
+              onClick={() => !liga.proximamente && router.push(`/liga/${liga.id}`)}>
               <div className="w-8 h-6 rounded overflow-hidden mr-3 flex-shrink-0">
                 <img src={liga.bandera} alt={liga.pais} className="w-full h-full object-cover"
                   onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
@@ -174,19 +176,19 @@ export default function Inicio() {
       </div>
 
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/inicio')}>
           <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{color:'#E8192C'}}>{t.inicio}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/fixture'}>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/fixture')}>
           <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.fixture}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/grupos'}>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/grupos')}>
           <span className="text-lg">👥</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.grupos}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/mis-jugadas'}>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mis-jugadas')}>
           <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.jugadas}</span>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/perfil'}>
+        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/perfil')}>
           <span className="text-lg">👤</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.perfil}</span>
         </div>
       </div>
