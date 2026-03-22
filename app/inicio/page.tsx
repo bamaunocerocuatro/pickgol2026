@@ -46,27 +46,19 @@ const TEXTOS: Record<string, any> = {
   },
 };
 
-function getLocale() {
-  try {
-    const saved = localStorage.getItem('pickgol_idioma');
-    if (saved) return saved;
-  } catch (e) {}
-  if (typeof navigator === 'undefined') return 'es';
-  const lang = navigator.language || 'es';
-  if (lang.startsWith('pt')) return 'pt';
-  if (lang.startsWith('en')) return 'en';
-  return 'es';
-}
-
 export default function Inicio() {
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [yaInstalada, setYaInstalada] = useState(false);
-  setLocale(getLocale());
+  const [locale, setLocale] = useState('es');
 
   useEffect(() => {
+    // Leer idioma del localStorage primero
+    const idiomaGuardado = localStorage.getItem('pickgol_idioma');
+    if (idiomaGuardado) setLocale(idiomaGuardado);
+
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) { window.location.href = '/login'; return; }
       setUser(u);
