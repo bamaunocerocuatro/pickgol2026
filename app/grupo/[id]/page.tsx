@@ -113,16 +113,22 @@ export default function GrupoDashboard() {
         <div className="rounded-2xl p-4 mb-4 text-center" style={{background:'linear-gradient(135deg,#0A1F5C,#0D2870)',border:'1px solid rgba(255,255,255,0.1)'}}>
           <div className="text-xs mb-1" style={{color:'rgba(255,255,255,0.4)'}}>{t.codigoGrupo}</div>
           <div className="font-condensed text-4xl font-black tracking-widest mb-2" style={{color:'#C9A84C'}}>{grupo.codigo}</div>
-          <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>
-            {t.unirseDesc}
-          </div>
+          <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{t.unirseDesc}</div>
         </div>
 
         <button onClick={() => router.push(`/jugada/crear?grupo=${id}`)}
           className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3"
           style={{background:'#E8192C',color:'white'}}>
-          ⚽ {t.crearGrupo.replace('GRUPO', t.jugadas.toUpperCase())}
+          ⚽ CREAR JUGADA
         </button>
+
+        {esCreador && (
+          <button onClick={() => router.push(`/resultados/${id}`)}
+            className="w-full py-3 rounded-xl font-condensed font-black text-base mb-3"
+            style={{background:'rgba(201,168,76,0.15)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C'}}>
+            📊 CARGAR RESULTADOS
+          </button>
+        )}
 
         {grupo.chatHabilitado ? (
           <button onClick={() => router.push(`/chat/${id}`)}
