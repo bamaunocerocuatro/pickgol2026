@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
+import { useRouter } from 'next/navigation';
 import { auth, db } from '../../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
@@ -19,6 +20,7 @@ const VARIABLES_DEFAULT = [
 ];
 
 function CrearJugadaForm() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [grupo, setGrupo] = useState<any>(null);
@@ -26,28 +28,25 @@ function CrearJugadaForm() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1);
+  const [fechaBloqueada, setFechaBloqueada] = useState(false);
   const searchParams = useSearchParams();
   const grupoId = searchParams.get('grupo');
 
-  // Variables — se cargan del grupo o se usan las default
   const [variables, setVariables] = useState<any[]>(VARIABLES_DEFAULT);
   const [respuestas, setRespuestas] = useState<Record<string, string>>({});
-
-  // Partidos y predicciones
   const [partidos, setPartidos] = useState<any[]>([]);
   const [predicciones, setPredicciones] = useState<Record<string, { local: string; visitante: string }>>({});
   const [cargandoPartidos, setCargandoPartidos] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      if (!u) { window.location.href = '/login'; return; }
+      if (!u) { router.push('/login'); return; }
       setUser(u);
       if (grupoId) {
         const snap = await getDoc(doc(db, 'grupos', grupoId));
         if (snap.exists()) {
           const grupoData = { id: snap.id, ...snap.data() } as any;
           setGrupo(grupoData);
-          // Si el grupo tiene variables custom, usarlas
           if (grupoData.variablesCustom && grupoData.variablesCustom.length > 0) {
             setVariables(grupoData.variablesCustom);
           }
@@ -66,12 +65,14 @@ function CrearJugadaForm() {
 
   const cargarPartidos = async (liga: string) => {
     setCargandoPartidos(true);
+    setFechaBloqueada(false);
     try {
       const res = await fetch(`/api/fixture?liga=${liga}`);
       const data = await res.json();
       const todos = data.partidos || [];
-      const noJugados = todos.filter((p: any) => p.estado === 'NS');
 
+      // Encontrar la próxima fecha (partidos NS)
+      const noJugados = todos.filter((p: any) => p.estado === 'NS');
       if (noJugados.length === 0) {
         setPartidos([]);
         setCargandoPartidos(false);
@@ -84,11 +85,23 @@ function CrearJugadaForm() {
       const fechaMaxDate = new Date(fechaMin);
       fechaMaxDate.setDate(fechaMaxDate.getDate() + 4);
 
-      const proximaFecha = noJugados.filter((p: any) => {
+      // Todos los partidos de esa fecha (incluidos los ya iniciados)
+      const todosEnFecha = todos.filter((p: any) => {
         const d = new Date(p.fecha);
         return d >= fechaMinDate && d <= fechaMaxDate;
       });
 
+      // Si algún partido de la fecha ya comenzó → bloquear
+      const hayPartidoIniciado = todosEnFecha.some((p: any) => p.estado !== 'NS');
+      if (hayPartidoIniciado) {
+        setFechaBloqueada(true);
+        setPartidos([]);
+        setCargandoPartidos(false);
+        return;
+      }
+
+      // Solo los NS para mostrar
+      const proximaFecha = todosEnFecha.filter((p: any) => p.estado === 'NS');
       setPartidos(proximaFecha);
 
       const init: Record<string, { local: string; visitante: string }> = {};
@@ -117,6 +130,7 @@ function CrearJugadaForm() {
   };
 
   const validarStep3 = () => {
+    if (fechaBloqueada) { setError('La fecha ya comenzó, no podés crear una jugada'); return false; }
     if (partidos.length === 0) { setError(''); return true; }
     for (let i = 0; i < partidos.length; i++) {
       const p = predicciones[i];
@@ -134,32 +148,26 @@ function CrearJugadaForm() {
     setGuardando(true);
     try {
       const prediccionesGuardadas = partidos.map((p: any, i: number) => ({
-        local: p.local,
-        visitante: p.visitante,
-        fecha: p.fecha,
+        local: p.local, visitante: p.visitante, fecha: p.fecha,
         golesLocalPredichos: parseInt(predicciones[i]?.local || '0'),
         golesVisitantePredichos: parseInt(predicciones[i]?.visitante || '0'),
       }));
 
-      // Construir objeto de variables con respuestas
       const variablesGuardadas: Record<string, any> = {};
       variables.forEach(v => {
         variablesGuardadas[v.key] = v.tipo === 'numero' ? parseInt(respuestas[v.key] || '0') : respuestas[v.key];
       });
 
       await addDoc(collection(db, 'jugadas'), {
-        nombre: nombre.trim(),
-        grupoId,
-        userId: user.uid,
-        userEmail: user.email,
+        nombre: nombre.trim(), grupoId,
+        userId: user.uid, userEmail: user.email,
         variables: variablesGuardadas,
-        variablesMeta: variables, // guarda labels y pts usados
+        variablesMeta: variables,
         predicciones: prediccionesGuardadas,
-        pagado: false,
-        pagadoInterno: false,
+        pagado: false, pagadoInterno: false,
         creadoEn: serverTimestamp(),
       });
-      window.location.href = grupoId ? `/grupo/${grupoId}` : '/inicio';
+      router.push(grupoId ? `/grupo/${grupoId}` : '/inicio');
     } catch (e) {
       setError('Error al guardar. Intentá de nuevo.');
     }
@@ -207,10 +215,9 @@ function CrearJugadaForm() {
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      {/* HEADER */}
       <div style={{ background: 'linear-gradient(160deg,#0A1F5C,#0D2870)' }} className="px-4 pt-4 pb-5">
         <div className="flex items-center gap-3 mb-4">
-          <button onClick={() => step === 1 ? window.history.back() : setStep(step - 1)}
+          <button onClick={() => step === 1 ? router.back() : setStep(step - 1)}
             className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm">←</button>
           <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
             {grupo ? <b style={{ color: 'rgba(255,255,255,0.65)' }}>{grupo.nombre}</b> : 'Nueva jugada'}
@@ -233,7 +240,6 @@ function CrearJugadaForm() {
 
       <div className="px-4 py-4">
 
-        {/* STEP 1 — NOMBRE */}
         {step === 1 && (
           <>
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#8892A4' }}>Datos de la jugada</div>
@@ -270,14 +276,12 @@ function CrearJugadaForm() {
           </>
         )}
 
-        {/* STEP 2 — VARIABLES */}
         {step === 2 && (
           <>
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#8892A4' }}>
               Variables de la fecha
               {grupo?.variablesCustom && <span className="ml-2 text-xs px-2 py-0.5 rounded-lg" style={{background:'rgba(201,168,76,0.15)',color:'#C9A84C'}}>⭐ Custom</span>}
             </div>
-
             {variables.map((v) => (
               <div key={v.key} className="mb-4">
                 <div className="flex justify-between items-center mb-2">
@@ -293,7 +297,6 @@ function CrearJugadaForm() {
                 )}
               </div>
             ))}
-
             <div className="rounded-xl p-3 mb-4 flex gap-2" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
               <span>⚠️</span>
               <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Todas las respuestas aplican sobre tiempo reglamentario y alargue. No cuenta definición por penales.</p>
@@ -311,7 +314,6 @@ function CrearJugadaForm() {
           </>
         )}
 
-        {/* STEP 3 — PREDICCIONES */}
         {step === 3 && (
           <>
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#8892A4' }}>
@@ -325,7 +327,16 @@ function CrearJugadaForm() {
               </div>
             )}
 
-            {!cargandoPartidos && partidos.length === 0 && (
+            {/* FECHA BLOQUEADA */}
+            {!cargandoPartidos && fechaBloqueada && (
+              <div className="rounded-2xl p-5 mb-4 text-center" style={{ background: 'rgba(232,25,44,0.07)', border: '1px solid rgba(232,25,44,0.3)' }}>
+                <div className="text-4xl mb-3">🔒</div>
+                <div className="font-condensed text-lg font-black mb-2" style={{ color: '#E8192C' }}>La fecha ya comenzó</div>
+                <div className="text-xs" style={{ color: '#8892A4' }}>No podés crear una jugada una vez que empezó el primer partido de la fecha.</div>
+              </div>
+            )}
+
+            {!cargandoPartidos && !fechaBloqueada && partidos.length === 0 && (
               <div className="rounded-2xl p-5 mb-4 text-center" style={{ background: '#0D1B3E', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div className="text-3xl mb-2">📅</div>
                 <div className="font-condensed text-base font-bold mb-1">Sin partidos próximos</div>
@@ -333,7 +344,7 @@ function CrearJugadaForm() {
               </div>
             )}
 
-            {!cargandoPartidos && partidos.length > 0 && (
+            {!cargandoPartidos && !fechaBloqueada && partidos.length > 0 && (
               <>
                 <div className="text-xs mb-3 px-1" style={{ color: '#8892A4' }}>
                   📅 {formatFecha(partidos[0].fecha)} — {partidos.length} partidos
@@ -364,9 +375,13 @@ function CrearJugadaForm() {
             )}
 
             {error && <p className="text-xs mb-4" style={{ color: '#E8192C' }}>{error}</p>}
-            <button onClick={() => { if (validarStep3()) setStep(4); }}
-              className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3" style={{ background: '#E8192C', color: 'white' }}>
-              SIGUIENTE →
+
+            <button
+              onClick={() => { if (validarStep3()) setStep(4); }}
+              disabled={fechaBloqueada}
+              className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3"
+              style={{ background: fechaBloqueada ? 'rgba(255,255,255,0.1)' : '#E8192C', color: fechaBloqueada ? '#8892A4' : 'white', cursor: fechaBloqueada ? 'not-allowed' : 'pointer' }}>
+              {fechaBloqueada ? '🔒 FECHA BLOQUEADA' : 'SIGUIENTE →'}
             </button>
             <button onClick={() => setStep(2)}
               className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
@@ -376,17 +391,14 @@ function CrearJugadaForm() {
           </>
         )}
 
-        {/* STEP 4 — CONFIRMACION */}
         {step === 4 && (
           <>
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#8892A4' }}>Confirmación</div>
-
             <div className="rounded-2xl p-4 mb-4 text-center" style={{ background: 'rgba(0,200,83,0.07)', border: '1px solid rgba(0,200,83,0.2)' }}>
               <div className="text-4xl mb-2">✅</div>
               <div className="font-condensed text-xl font-black mb-1">{nombre}</div>
               <div className="text-xs" style={{ color: '#8892A4' }}>{grupo?.nombre || 'Sin grupo'}</div>
             </div>
-
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{ color: '#8892A4' }}>Variables</div>
             <div className="rounded-2xl overflow-hidden mb-4" style={{ background: '#0D1B3E', border: '1px solid rgba(255,255,255,0.07)' }}>
               {variables.map((v, i) => (
@@ -399,7 +411,6 @@ function CrearJugadaForm() {
                 </div>
               ))}
             </div>
-
             {partidos.length > 0 && (
               <>
                 <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{ color: '#8892A4' }}>Predicciones</div>
@@ -417,14 +428,11 @@ function CrearJugadaForm() {
                 </div>
               </>
             )}
-
             <div className="rounded-xl p-3 mb-5 flex gap-2" style={{ background: 'rgba(232,25,44,0.07)', border: '1px solid rgba(232,25,44,0.18)' }}>
               <span>⚠️</span>
               <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Una vez confirmada la jugada <b style={{ color: 'white' }}>no se puede modificar</b>. Revisá bien antes de enviar.</p>
             </div>
-
             {error && <p className="text-xs mb-4" style={{ color: '#E8192C' }}>{error}</p>}
-
             <button onClick={guardarJugada} disabled={guardando}
               className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3"
               style={{ background: '#E8192C', color: 'white', opacity: guardando ? 0.7 : 1 }}>
@@ -444,9 +452,5 @@ function CrearJugadaForm() {
 }
 
 export default function CrearJugada() {
-  return (
-    <Suspense>
-      <CrearJugadaForm />
-    </Suspense>
-  );
+  return <Suspense><CrearJugadaForm /></Suspense>;
 }
