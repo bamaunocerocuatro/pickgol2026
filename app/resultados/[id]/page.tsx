@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { auth, db } from '../../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 const VARIABLES_DEFAULT = [
   { key: 'amarillas', label: '¿Cuántas amarillas hubo?', tipo: 'numero' },
@@ -31,6 +31,7 @@ export default function CargarResultados() {
   const [variables, setVariables] = useState<any[]>(VARIABLES_DEFAULT);
   const [valoresVariables, setValoresVariables] = useState<Record<string, string>>({});
   const [resultadosPartidos, setResultadosPartidos] = useState<Record<string, { local: string; visitante: string }>>({});
+  const [modoCorreccion, setModoCorreccion] = useState(false);
   const [calculando, setCalculando] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
@@ -43,17 +44,15 @@ export default function CargarResultados() {
         const snap = await getDoc(doc(db, 'grupos', id));
         if (!snap.exists()) { router.push('/grupos'); return; }
         const grupoData = { id: snap.id, ...snap.data() } as any;
-        // Solo el creador puede acceder
         if (grupoData.creadorId !== u.uid) { router.push(`/grupo/${id}`); return; }
         setGrupo(grupoData);
-        // Si tiene variables custom usarlas
         if (grupoData.variablesCustom?.length > 0) {
           setVariables(grupoData.variablesCustom.map((v: any) => ({
-            key: v.key, label: v.label.replace('¿Cuántas', '¿Cuántas').replace('habrá', 'hubo').replace('Habrá', 'Hubo'),
+            key: v.key,
+            label: v.label.replace('habrá', 'hubo').replace('Habrá', 'Hubo'),
             tipo: v.tipo
           })));
         }
-        // Cargar partidos de la liga
         cargarPartidos(grupoData.liga);
       } catch (e) {}
       setLoading(false);
@@ -67,11 +66,9 @@ export default function CargarResultados() {
       const res = await fetch(`/api/fixture?liga=${liga}`);
       const data = await res.json();
       const todos = data.partidos || [];
-      // Mostrar partidos terminados (FT) de la última fecha
       const terminados = todos.filter((p: any) => p.estado === 'FT');
       if (terminados.length === 0) { setPartidos([]); setCargandoPartidos(false); return; }
 
-      // Agrupar por fecha y tomar la más reciente
       const fechas = terminados.map((p: any) => p.fecha.substring(0, 10));
       const fechaMax = fechas.sort().reverse()[0];
       const fechaMaxDate = new Date(fechaMax);
@@ -85,7 +82,6 @@ export default function CargarResultados() {
 
       setPartidos(ultimaFecha);
 
-      // Pre-cargar resultados reales de la API
       const init: Record<string, { local: string; visitante: string }> = {};
       ultimaFecha.forEach((p: any, i: number) => {
         init[i] = {
@@ -108,17 +104,15 @@ export default function CargarResultados() {
 
   const calcularPuntos = async () => {
     setError('');
-    // Validar variables
     for (const v of variables) {
       if (!valoresVariables[v.key] && valoresVariables[v.key] !== '0') {
         setError('Completá todas las variables antes de calcular'); return;
       }
     }
-    // Validar partidos
     for (let i = 0; i < partidos.length; i++) {
       const r = resultadosPartidos[i];
       if (!r || r.local === '' || r.visitante === '') {
-        setError('Completá todos los resultados de partidos'); return;
+        setError('Falta el resultado de algún partido'); return;
       }
     }
 
@@ -141,10 +135,7 @@ export default function CargarResultados() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           grupoId: id,
-          resultadosFecha: {
-            variables: variablesFinales,
-            partidos: partidosFinales,
-          }
+          resultadosFecha: { variables: variablesFinales, partidos: partidosFinales }
         })
       });
 
@@ -190,7 +181,7 @@ export default function CargarResultados() {
           <span className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>← <b style={{color:'rgba(255,255,255,0.65)'}}>{grupo?.nombre}</b></span>
         </div>
         <h1 className="font-condensed text-3xl font-black mb-1">📊 Cargar Resultados</h1>
-        <p className="text-xs" style={{color:'#8892A4'}}>Cargá los resultados reales de la fecha para calcular los puntos</p>
+        <p className="text-xs" style={{color:'#8892A4'}}>Cargá las variables de la fecha para calcular los puntos</p>
       </div>
 
       <div className="px-4 py-4">
@@ -206,48 +197,70 @@ export default function CargarResultados() {
             {v.tipo === 'numero' ? (
               <input type="number" value={valoresVariables[v.key] || ''} onChange={(e) => setValor(v.key, e.target.value)}
                 placeholder="0" className="w-full rounded-xl px-4 py-3 text-white text-sm outline-none"
-                style={{background:'rgba(0,0,0,0.35)',border: valoresVariables[v.key] !== undefined ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)'}} />
+                style={{background:'rgba(0,0,0,0.35)', border: valoresVariables[v.key] ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)'}} />
             ) : (
               <YN varKey={v.key} />
             )}
           </div>
         ))}
 
-        {/* RESULTADOS PARTIDOS */}
+        {/* RESULTADOS DE PARTIDOS — SOLO LECTURA */}
         {cargandoPartidos && (
-          <div className="text-center py-6"><div className="text-3xl mb-2">⏳</div><p className="text-sm" style={{color:'#8892A4'}}>Cargando partidos...</p></div>
+          <div className="text-center py-4"><div className="text-2xl mb-2">⏳</div><p className="text-sm" style={{color:'#8892A4'}}>Cargando partidos...</p></div>
         )}
 
         {!cargandoPartidos && partidos.length > 0 && (
           <>
-            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3 mt-2" style={{color:'#8892A4'}}>
+            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2 mt-2" style={{color:'#8892A4'}}>
               Resultados de partidos
             </div>
-            <div className="rounded-xl p-3 mb-3 flex gap-2" style={{background:'rgba(0,200,83,0.07)',border:'1px solid rgba(0,200,83,0.2)'}}>
-              <span>ℹ️</span>
-              <p className="text-xs" style={{color:'rgba(255,255,255,0.5)'}}>Los resultados se cargaron automáticamente desde la API. Verificalos antes de calcular.</p>
-            </div>
-            {partidos.map((p: any, i: number) => (
-              <div key={i} className="rounded-2xl p-4 mb-3" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 text-right">
-                    <div className="text-sm font-bold mb-2">{p.local}</div>
-                    <input type="number" min="0" value={resultadosPartidos[i]?.local || ''}
-                      onChange={(e) => setResultado(i, 'local', e.target.value)}
-                      className="w-full rounded-xl px-3 py-2 text-white text-lg font-black text-center outline-none"
-                      style={{background:'rgba(0,200,83,0.1)',border:'1px solid rgba(0,200,83,0.3)'}} />
-                  </div>
-                  <div className="font-condensed text-xl font-black px-2" style={{color:'#8892A4'}}>—</div>
-                  <div className="flex-1 text-left">
-                    <div className="text-sm font-bold mb-2">{p.visitante}</div>
-                    <input type="number" min="0" value={resultadosPartidos[i]?.visitante || ''}
-                      onChange={(e) => setResultado(i, 'visitante', e.target.value)}
-                      className="w-full rounded-xl px-3 py-2 text-white text-lg font-black text-center outline-none"
-                      style={{background:'rgba(0,200,83,0.1)',border:'1px solid rgba(0,200,83,0.3)'}} />
-                  </div>
+
+            {/* LISTADO COMPACTO */}
+            <div className="rounded-2xl overflow-hidden mb-3" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
+              {partidos.map((p: any, i: number) => (
+                <div key={i} className="flex items-center px-4 py-2"
+                  style={{borderBottom: i < partidos.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'}}>
+                  <span className="flex-1 text-sm font-semibold truncate">{p.local}</span>
+                  <span className="font-condensed text-base font-black px-3" style={{color:'#C9A84C'}}>
+                    {modoCorreccion ? (
+                      <span className="flex items-center gap-1">
+                        <input type="number" min="0" value={resultadosPartidos[i]?.local || ''}
+                          onChange={(e) => setResultado(i, 'local', e.target.value)}
+                          className="w-8 rounded-lg px-1 py-0.5 text-white text-sm font-black text-center outline-none"
+                          style={{background:'rgba(232,25,44,0.15)',border:'1px solid rgba(232,25,44,0.3)'}} />
+                        <span style={{color:'#8892A4'}}>-</span>
+                        <input type="number" min="0" value={resultadosPartidos[i]?.visitante || ''}
+                          onChange={(e) => setResultado(i, 'visitante', e.target.value)}
+                          className="w-8 rounded-lg px-1 py-0.5 text-white text-sm font-black text-center outline-none"
+                          style={{background:'rgba(232,25,44,0.15)',border:'1px solid rgba(232,25,44,0.3)'}} />
+                      </span>
+                    ) : (
+                      `${resultadosPartidos[i]?.local ?? '?'} - ${resultadosPartidos[i]?.visitante ?? '?'}`
+                    )}
+                  </span>
+                  <span className="flex-1 text-sm font-semibold truncate text-right">{p.visitante}</span>
                 </div>
+              ))}
+            </div>
+
+            {/* BOTÓN CORREGIR */}
+            {!modoCorreccion ? (
+              <div className="mb-4">
+                <button onClick={() => setModoCorreccion(true)}
+                  className="w-full py-2 rounded-xl font-condensed font-bold text-sm"
+                  style={{background:'transparent',border:'1px solid rgba(255,179,0,0.3)',color:'#FFB300'}}>
+                  ⚠️ Corregir resultados manualmente
+                </button>
+                <p className="text-xs mt-2 text-center" style={{color:'rgba(255,255,255,0.3)'}}>
+                  Solo usá esta opción si hay un error en los datos automáticos
+                </p>
               </div>
-            ))}
+            ) : (
+              <div className="rounded-xl p-3 mb-4 flex gap-2" style={{background:'rgba(255,179,0,0.07)',border:'1px solid rgba(255,179,0,0.3)'}}>
+                <span>⚠️</span>
+                <p className="text-xs" style={{color:'rgba(255,255,255,0.6)'}}>Estás editando los resultados manualmente. Asegurate de que sean correctos antes de calcular.</p>
+              </div>
+            )}
           </>
         )}
 
