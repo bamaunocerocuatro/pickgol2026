@@ -24,6 +24,9 @@ export default function GrupoDashboard() {
   const [guardando, setGuardando] = useState(false);
   const [ranking, setRanking] = useState<any[]>([]);
   const [cargandoRanking, setCargandoRanking] = useState(false);
+  const [copiado, setCopiado] = useState(false);
+  const [showCompartir, setShowCompartir] = useState(false);
+  const [showQR, setShowQR] = useState(false);
   const params = useParams();
   const id = params.id as string;
 
@@ -50,10 +53,7 @@ export default function GrupoDashboard() {
       const q = query(collection(db, 'jugadas'), where('grupoId', '==', grupoId));
       const snap = await getDocs(q);
       if (snap.empty) { setCargandoRanking(false); return; }
-
       const jugadas = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-
-      // Agrupar por usuario — tomar la jugada con más puntos de cada usuario
       const porUsuario: Record<string, any> = {};
       for (const j of jugadas) {
         const userId = j.userId;
@@ -61,8 +61,6 @@ export default function GrupoDashboard() {
           porUsuario[userId] = j;
         }
       }
-
-      // Buscar nombres de usuarios
       const rankingData = await Promise.all(
         Object.entries(porUsuario).map(async ([userId, jugada]) => {
           let nombre = jugada.userEmail || 'Jugador';
@@ -73,16 +71,9 @@ export default function GrupoDashboard() {
               nombre = udata.displayName || udata.email || nombre;
             }
           } catch (e) {}
-          return {
-            userId,
-            nombre,
-            puntos: jugada.puntos || 0,
-            esYo: userId === uid,
-          };
+          return { userId, nombre, puntos: jugada.puntos || 0, esYo: userId === uid };
         })
       );
-
-      // Ordenar por puntos
       rankingData.sort((a, b) => b.puntos - a.puntos);
       setRanking(rankingData);
     } catch (e) {}
@@ -90,9 +81,31 @@ export default function GrupoDashboard() {
   };
 
   const esCreador = grupo?.creadorId === user?.uid;
-
   const miPosicion = ranking.findIndex(r => r.esYo) + 1;
   const misPuntos = ranking.find(r => r.esYo)?.puntos || 0;
+  const linkGrupo = `https://pickgol2026.vercel.app/unirse?codigo=${grupo?.codigo}`;
+
+  const copiarCodigo = () => {
+    navigator.clipboard.writeText(grupo?.codigo || '');
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
+  };
+
+  const compartirWhatsApp = () => {
+    const texto = `¡Unite a mi grupo de predicciones en PickGol 2026! 🏆⚽\nGrupo: *${grupo?.nombre}*\nCódigo: *${grupo?.codigo}*\nEntrá acá: ${linkGrupo}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+  };
+
+  const compartirNativo = async () => {
+    const texto = `¡Unite a mi grupo de predicciones en PickGol 2026! 🏆⚽\nGrupo: ${grupo?.nombre}\nCódigo: ${grupo?.codigo}\nEntrá acá: ${linkGrupo}`;
+    if (navigator.share) {
+      await navigator.share({ title: `Grupo ${grupo?.nombre}`, text: texto, url: linkGrupo });
+    } else {
+      navigator.clipboard.writeText(linkGrupo);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    }
+  };
 
   const toggleChat = async () => {
     setGuardando(true);
@@ -164,10 +177,59 @@ export default function GrupoDashboard() {
 
       <div className="px-4 pt-4">
 
-        <div className="rounded-2xl p-4 mb-4 text-center" style={{background:'linear-gradient(135deg,#0A1F5C,#0D2870)',border:'1px solid rgba(255,255,255,0.1)'}}>
-          <div className="text-xs mb-1" style={{color:'rgba(255,255,255,0.4)'}}>{t.codigoGrupo}</div>
-          <div className="font-condensed text-4xl font-black tracking-widest mb-2" style={{color:'#C9A84C'}}>{grupo.codigo}</div>
-          <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{t.unirseDesc}</div>
+        {/* COMPARTIR GRUPO */}
+        <div className="rounded-2xl mb-4 overflow-hidden" style={{background:'linear-gradient(135deg,#0A1F5C,#0D2870)',border:'1px solid rgba(255,255,255,0.1)'}}>
+          <div className="px-4 pt-4 pb-3 text-center">
+            <div className="text-xs mb-1" style={{color:'rgba(255,255,255,0.4)'}}>Código del grupo</div>
+            <div onClick={copiarCodigo}
+              className="font-condensed text-4xl font-black tracking-widest mb-1 cursor-pointer"
+              style={{color:'#C9A84C'}}>
+              {grupo.codigo}
+            </div>
+            <div className="text-xs mb-3" style={{color: copiado ? '#00C853' : 'rgba(255,255,255,0.3)'}}>
+              {copiado ? '✅ Código copiado' : 'Tocá el código para copiarlo'}
+            </div>
+            <button onClick={() => setShowCompartir(!showCompartir)}
+              className="w-full py-2 rounded-xl font-condensed font-black text-sm"
+              style={{background:'rgba(232,25,44,0.2)',border:'1px solid rgba(232,25,44,0.4)',color:'#E8192C'}}>
+              📤 COMPARTIR GRUPO
+            </button>
+          </div>
+
+          {showCompartir && (
+            <div className="px-4 pb-4">
+              <div className="flex gap-2">
+                <button onClick={compartirWhatsApp}
+                  className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm flex items-center justify-center gap-2"
+                  style={{background:'rgba(37,211,102,0.15)',border:'1px solid rgba(37,211,102,0.3)',color:'#25D366'}}>
+                  📱 WhatsApp
+                </button>
+                <button onClick={compartirNativo}
+                  className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm flex items-center justify-center gap-2"
+                  style={{background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)',color:'#F5F5F0'}}>
+                  🔗 Compartir
+                </button>
+                <button onClick={() => setShowQR(!showQR)}
+                  className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm flex items-center justify-center gap-2"
+                  style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C'}}>
+                  📷 QR
+                </button>
+              </div>
+
+              {showQR && (
+                <div className="mt-3 rounded-xl p-4 text-center" style={{background:'white'}}>
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkGrupo)}`}
+                    alt="QR del grupo"
+                    className="mx-auto rounded-lg"
+                    width={200}
+                    height={200}
+                  />
+                  <p className="text-xs mt-2 font-bold" style={{color:'#020810'}}>{grupo.nombre} · {grupo.codigo}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <button onClick={() => router.push(`/jugada/crear?grupo=${id}`)}
@@ -223,15 +285,9 @@ export default function GrupoDashboard() {
             ) : (
               ranking.map((r, i) => (
                 <div key={r.userId} className="flex items-center px-4 py-3"
-                  style={{
-                    borderBottom: i < ranking.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                    background: r.esYo ? 'rgba(232,25,44,0.07)' : 'transparent'
-                  }}>
+                  style={{borderBottom: i < ranking.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', background: r.esYo ? 'rgba(232,25,44,0.07)' : 'transparent'}}>
                   <div className="w-8 h-8 rounded-full flex items-center justify-center font-condensed font-black text-sm mr-3 flex-shrink-0"
-                    style={{
-                      background: i === 0 ? 'linear-gradient(135deg,#C9A84C,#8B6914)' : i === 1 ? 'rgba(192,192,192,0.2)' : i === 2 ? 'rgba(205,127,50,0.2)' : 'rgba(255,255,255,0.07)',
-                      color: i === 0 ? '#020810' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#8892A4'
-                    }}>
+                    style={{background: i === 0 ? 'linear-gradient(135deg,#C9A84C,#8B6914)' : i === 1 ? 'rgba(192,192,192,0.2)' : i === 2 ? 'rgba(205,127,50,0.2)' : 'rgba(255,255,255,0.07)', color: i === 0 ? '#020810' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#8892A4'}}>
                     {i + 1}
                   </div>
                   <div className="flex-1">
