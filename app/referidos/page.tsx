@@ -20,6 +20,8 @@ export default function Referidos() {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [copiado, setCopiado] = useState(false);
+  const [showCompartir, setShowCompartir] = useState(false);
+  const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -39,8 +41,13 @@ export default function Referidos() {
   const totalReferidos = userData?.totalReferidos || 0;
   const jugadasGratis = userData?.jugadasGratis || 0;
 
-  const compartir = async () => {
-    const texto = `¡Jugá el Prode Mundial 2026 conmigo en PickGol! Predecí los resultados y ganá jugadas gratis. Registrate acá: ${link}`;
+  const compartirWhatsApp = () => {
+    const texto = `¡Jugá el Mundial 2026 conmigo en PickGol! 🏆⚽\nPredecí los resultados y ganá jugadas gratis para el Mundial.\nRegistrate acá: ${link}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+  };
+
+  const compartirNativo = async () => {
+    const texto = `¡Jugá el Mundial 2026 conmigo en PickGol! 🏆⚽\nPredecí los resultados y ganá jugadas gratis para el Mundial.\nRegistrate acá: ${link}`;
     if (navigator.share) {
       await navigator.share({ title: 'PickGol 2026', text: texto, url: link });
     } else {
@@ -81,7 +88,7 @@ export default function Referidos() {
           </div>
           <div className="flex-1 text-center rounded-xl py-3" style={{background:'rgba(255,255,255,0.08)'}}>
             <div className="font-condensed text-2xl font-black" style={{color:'#00C853'}}>{jugadasGratis}</div>
-            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{t.jugadasGratis}</div>
+            <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{t.jugadasGratis} Mundial 🏆</div>
           </div>
         </div>
       </div>
@@ -98,7 +105,7 @@ export default function Referidos() {
               <div className="h-full rounded-full" style={{background:'linear-gradient(90deg,#E8192C,#C9A84C)',width:`${progreso}%`,transition:'width .5s'}} />
             </div>
             <div className="text-xs" style={{color:'#8892A4'}}>
-              {t.faltan} <b style={{color:'white'}}>{proximoNivel.referidos - totalReferidos}</b> {t.paraGanar} <b style={{color:'#00C853'}}>{proximoNivel.jugadas} {proximoNivel.jugadas > 1 ? t.jugadasGratis : t.jugadasGratis}</b>
+              {t.faltan} <b style={{color:'white'}}>{proximoNivel.referidos - totalReferidos}</b> {t.paraGanar} <b style={{color:'#00C853'}}>{proximoNivel.jugadas} {t.jugadasGratis} del Mundial 🏆</b>
             </div>
           </div>
         )}
@@ -117,7 +124,7 @@ export default function Referidos() {
                 <div className="flex-1">
                   <div className="text-sm font-bold">{nivel.referidos} {t.totalReferidos.toLowerCase()}</div>
                   <div className="text-xs" style={{color: alcanzado ? '#00C853' : '#8892A4'}}>
-                    {nivel.jugadas} {t.jugadasGratis}
+                    {nivel.jugadas} {t.jugadasGratis} del Mundial 🏆
                   </div>
                 </div>
                 {alcanzado && <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{background:'rgba(0,200,83,0.1)',color:'#00C853'}}>{t.ganado}</span>}
@@ -126,21 +133,60 @@ export default function Referidos() {
           })}
         </div>
 
+        {/* COMPARTIR */}
         <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{color:'#8892A4'}}>{t.tuLink}</div>
-        <div className="rounded-xl p-3 mb-4 flex items-center gap-2" style={{background:'rgba(0,0,0,0.35)',border:'1px solid rgba(255,255,255,0.09)'}}>
-          <div className="flex-1 text-xs font-mono truncate" style={{color:'#8892A4'}}>{link}</div>
-          <button onClick={() => { navigator.clipboard.writeText(link); setCopiado(true); setTimeout(() => setCopiado(false), 2000); }}
-            className="text-xs px-3 py-1 rounded-lg font-bold flex-shrink-0"
-            style={{background:'rgba(201,168,76,0.15)',color:'#C9A84C'}}>
-            {copiado ? '✅' : t.copiar}
-          </button>
-        </div>
+        <div className="rounded-2xl mb-4 overflow-hidden" style={{background:'linear-gradient(135deg,#0A1F5C,#0D2870)',border:'1px solid rgba(255,255,255,0.1)'}}>
+          <div className="px-4 pt-4 pb-3 text-center">
+            <div className="rounded-xl p-2 mb-2 flex items-center gap-2" style={{background:'rgba(0,0,0,0.3)'}}>
+              <div className="flex-1 text-xs font-mono truncate" style={{color:'#8892A4'}}>{link}</div>
+              <button onClick={() => { navigator.clipboard.writeText(link); setCopiado(true); setTimeout(() => setCopiado(false), 2000); }}
+                className="text-xs px-3 py-1 rounded-lg font-bold flex-shrink-0"
+                style={{background:'rgba(201,168,76,0.15)',color:'#C9A84C'}}>
+                {copiado ? '✅' : t.copiar}
+              </button>
+            </div>
+            <button onClick={() => setShowCompartir(!showCompartir)}
+              className="w-full py-2 rounded-xl font-condensed font-black text-sm"
+              style={{background:'rgba(232,25,44,0.2)',border:'1px solid rgba(232,25,44,0.4)',color:'#E8192C'}}>
+              📤 {t.invitar}
+            </button>
+          </div>
 
-        <button onClick={compartir}
-          className="w-full py-4 rounded-xl font-condensed font-black text-lg"
-          style={{background:'linear-gradient(135deg,#E8192C,#8B0018)',color:'white'}}>
-          🚀 {t.invitar}
-        </button>
+          {showCompartir && (
+            <div className="px-4 pb-4">
+              <div className="flex gap-2">
+                <button onClick={compartirWhatsApp}
+                  className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm flex items-center justify-center gap-1"
+                  style={{background:'rgba(37,211,102,0.15)',border:'1px solid rgba(37,211,102,0.3)',color:'#25D366'}}>
+                  📱 WhatsApp
+                </button>
+                <button onClick={compartirNativo}
+                  className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm flex items-center justify-center gap-1"
+                  style={{background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)',color:'#F5F5F0'}}>
+                  🔗 Compartir
+                </button>
+                <button onClick={() => setShowQR(!showQR)}
+                  className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm flex items-center justify-center gap-1"
+                  style={{background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',color:'#C9A84C'}}>
+                  📷 QR
+                </button>
+              </div>
+
+              {showQR && (
+                <div className="mt-3 rounded-xl p-4 text-center" style={{background:'white'}}>
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}`}
+                    alt="QR de referido"
+                    className="mx-auto rounded-lg"
+                    width={200}
+                    height={200}
+                  />
+                  <p className="text-xs mt-2 font-bold" style={{color:'#020810'}}>PickGol 2026 · {codigoRef}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
       </div>
 
