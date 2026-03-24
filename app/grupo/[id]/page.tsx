@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '../../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
 import { useIdioma } from '../../context/IdiomaContext';
 
@@ -22,6 +22,8 @@ export default function GrupoDashboard() {
   const [grupo, setGrupo] = useState<any>(null);
   const [tab, setTab] = useState<'ranking' | 'pagos' | 'info'>('ranking');
   const [guardando, setGuardando] = useState(false);
+  const [ranking, setRanking] = useState<any[]>([]);
+  const [cargandoRanking, setCargandoRanking] = useState(false);
   const params = useParams();
   const id = params.id as string;
 
@@ -31,14 +33,66 @@ export default function GrupoDashboard() {
       setUser(u);
       try {
         const snap = await getDoc(doc(db, 'grupos', id));
-        if (snap.exists()) setGrupo({ id: snap.id, ...snap.data() });
+        if (snap.exists()) {
+          const grupoData = { id: snap.id, ...snap.data() };
+          setGrupo(grupoData);
+          cargarRanking(id, u.uid);
+        }
       } catch (e) {}
       setLoading(false);
     });
     return () => unsub();
   }, [id]);
 
+  const cargarRanking = async (grupoId: string, uid: string) => {
+    setCargandoRanking(true);
+    try {
+      const q = query(collection(db, 'jugadas'), where('grupoId', '==', grupoId));
+      const snap = await getDocs(q);
+      if (snap.empty) { setCargandoRanking(false); return; }
+
+      const jugadas = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+
+      // Agrupar por usuario — tomar la jugada con más puntos de cada usuario
+      const porUsuario: Record<string, any> = {};
+      for (const j of jugadas) {
+        const userId = j.userId;
+        if (!porUsuario[userId] || (j.puntos || 0) > (porUsuario[userId].puntos || 0)) {
+          porUsuario[userId] = j;
+        }
+      }
+
+      // Buscar nombres de usuarios
+      const rankingData = await Promise.all(
+        Object.entries(porUsuario).map(async ([userId, jugada]) => {
+          let nombre = jugada.userEmail || 'Jugador';
+          try {
+            const usnap = await getDoc(doc(db, 'usuarios', userId));
+            if (usnap.exists()) {
+              const udata = usnap.data();
+              nombre = udata.displayName || udata.email || nombre;
+            }
+          } catch (e) {}
+          return {
+            userId,
+            nombre,
+            puntos: jugada.puntos || 0,
+            esYo: userId === uid,
+          };
+        })
+      );
+
+      // Ordenar por puntos
+      rankingData.sort((a, b) => b.puntos - a.puntos);
+      setRanking(rankingData);
+    } catch (e) {}
+    setCargandoRanking(false);
+  };
+
   const esCreador = grupo?.creadorId === user?.uid;
+
+  const miPosicion = ranking.findIndex(r => r.esYo) + 1;
+  const misPuntos = ranking.find(r => r.esYo)?.puntos || 0;
 
   const toggleChat = async () => {
     setGuardando(true);
@@ -98,11 +152,11 @@ export default function GrupoDashboard() {
             <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{t.jugadores}</div>
           </div>
           <div className="flex-1 text-center rounded-xl py-2" style={{background:'rgba(255,255,255,0.08)'}}>
-            <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>0</div>
+            <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>{misPuntos}</div>
             <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{t.misPts}</div>
           </div>
           <div className="flex-1 text-center rounded-xl py-2" style={{background:'rgba(255,255,255,0.08)'}}>
-            <div className="font-condensed text-xl font-black">#—</div>
+            <div className="font-condensed text-xl font-black">#{miPosicion > 0 ? miPosicion : '—'}</div>
             <div className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>{t.posicion}</div>
           </div>
         </div>
@@ -155,11 +209,40 @@ export default function GrupoDashboard() {
 
         {tab === 'ranking' && (
           <div className="rounded-2xl overflow-hidden" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
-            <div className="px-4 py-5 text-center">
-              <div className="text-3xl mb-2">⏳</div>
-              <div className="font-condensed text-base font-bold mb-1">{t.noJugadas}</div>
-              <div className="text-xs" style={{color:'#8892A4'}}>{t.noJugadasSub}</div>
-            </div>
+            {cargandoRanking ? (
+              <div className="px-4 py-5 text-center">
+                <div className="text-3xl mb-2">⏳</div>
+                <p className="text-sm" style={{color:'#8892A4'}}>Cargando ranking...</p>
+              </div>
+            ) : ranking.length === 0 ? (
+              <div className="px-4 py-5 text-center">
+                <div className="text-3xl mb-2">⏳</div>
+                <div className="font-condensed text-base font-bold mb-1">{t.noJugadas}</div>
+                <div className="text-xs" style={{color:'#8892A4'}}>{t.noJugadasSub}</div>
+              </div>
+            ) : (
+              ranking.map((r, i) => (
+                <div key={r.userId} className="flex items-center px-4 py-3"
+                  style={{
+                    borderBottom: i < ranking.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    background: r.esYo ? 'rgba(232,25,44,0.07)' : 'transparent'
+                  }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center font-condensed font-black text-sm mr-3 flex-shrink-0"
+                    style={{
+                      background: i === 0 ? 'linear-gradient(135deg,#C9A84C,#8B6914)' : i === 1 ? 'rgba(192,192,192,0.2)' : i === 2 ? 'rgba(205,127,50,0.2)' : 'rgba(255,255,255,0.07)',
+                      color: i === 0 ? '#020810' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#8892A4'
+                    }}>
+                    {i + 1}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold" style={{color: r.esYo ? '#E8192C' : '#F5F5F0'}}>
+                      {r.nombre} {r.esYo && <span className="text-xs" style={{color:'#8892A4'}}>(vos)</span>}
+                    </div>
+                  </div>
+                  <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>{r.puntos} pts</div>
+                </div>
+              ))
+            )}
           </div>
         )}
 
