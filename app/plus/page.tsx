@@ -16,6 +16,8 @@ function PlusContent() {
   const [loading, setLoading] = useState(true);
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [acepto, setAcepto] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -30,10 +32,8 @@ function PlusContent() {
     return () => unsub();
   }, []);
 
-  // Capturar pago al volver de PayPal
   useEffect(() => {
     const orderId = searchParams.get('token');
-    const cancelled = searchParams.get('cancelled');
     if (orderId && user) {
       capturarPago(orderId);
     }
@@ -151,7 +151,7 @@ function PlusContent() {
 
             {error && <p className="text-xs mb-4 text-center" style={{color:'#E8192C'}}>{error}</p>}
 
-            <button onClick={handleComprar} disabled={procesando}
+            <button onClick={() => setShowModal(true)} disabled={procesando}
               className="w-full py-4 rounded-xl font-condensed font-black text-xl mb-3"
               style={{background:'linear-gradient(135deg,#C9A84C,#8B6914)',color:'#020810',opacity: procesando ? 0.7 : 1}}>
               ⭐ {t.activarPlus} — USD 2.79
@@ -171,6 +171,46 @@ function PlusContent() {
         )}
 
       </div>
+
+      {/* MODAL CONFIRMACION */}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center px-5"
+          style={{background:'rgba(0,0,0,0.85)',zIndex:999}}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{background:'#0D1B3E',border:'1px solid rgba(201,168,76,0.3)'}}>
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-3">⭐</div>
+              <div className="font-condensed text-xl font-black mb-2" style={{color:'#C9A84C'}}>Antes de activar Plus</div>
+              <p className="text-xs" style={{color:'#8892A4',lineHeight:'1.7'}}>
+                Las ventajas de PickGol Plus aplican a los <b style={{color:'white'}}>grupos que crees a partir de ahora</b>. Los grupos que ya tenés creados no se modifican y seguirán con las variables estándar.
+              </p>
+            </div>
+
+            <div className="rounded-xl p-3 mb-4 flex items-start gap-3 cursor-pointer"
+              style={{background:'rgba(255,255,255,0.04)',border: acepto ? '1px solid rgba(0,200,83,0.4)' : '1px solid rgba(255,255,255,0.09)'}}
+              onClick={() => setAcepto(!acepto)}>
+              <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5"
+                style={{background: acepto ? '#00C853' : 'transparent', border: acepto ? 'none' : '1px solid rgba(255,255,255,0.3)'}}>
+                {acepto && <span className="text-xs text-black font-black">✓</span>}
+              </div>
+              <p className="text-xs" style={{color:'rgba(255,255,255,0.7)'}}>
+                Entiendo que las variables personalizadas aplican a los nuevos grupos que cree siendo Plus.
+              </p>
+            </div>
+
+            <button onClick={() => { if (acepto) { setShowModal(false); handleComprar(); } }}
+              disabled={!acepto}
+              className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-2"
+              style={{background: acepto ? 'linear-gradient(135deg,#C9A84C,#8B6914)' : 'rgba(255,255,255,0.1)', color: acepto ? '#020810' : '#8892A4'}}>
+              ⭐ ACTIVAR PLUS — USD 2.79
+            </button>
+            <button onClick={() => { setShowModal(false); setAcepto(false); }}
+              className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
+              style={{background:'transparent',border:'1px solid rgba(255,255,255,0.12)',color:'#F5F5F0'}}>
+              CANCELAR
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/inicio')}>
