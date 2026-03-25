@@ -1,22 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useIdioma } from '../context/IdiomaContext';
 
-declare global {
-  interface Window { Paddle: any; }
-}
-
-export default function Plus() {
+function PlusContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useIdioma();
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [procesando, setProcesando] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -28,29 +27,74 @@ export default function Plus() {
       } catch (e) {}
       setLoading(false);
     });
-
-    const script = document.createElement('script');
-    script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
-    script.onload = () => {
-      window.Paddle.Initialize({ token: 'live_dc281cbb836bab390f6cb2c282e' });
-    };
-    document.head.appendChild(script);
-
     return () => unsub();
   }, []);
 
-  const handleComprar = () => {
-    if (!user || !window.Paddle) return;
-    window.Paddle.Checkout.open({
-      items: [{ priceId: 'pri_01km4nm17rfbe8g8r3h45kgvkp', quantity: 1 }],
-      customer: { email: user.email },
-      settings: { successUrl: 'https://pickgol2026.vercel.app/plus?success=true' },
-    });
+  // Capturar pago al volver de PayPal
+  useEffect(() => {
+    const orderId = searchParams.get('token');
+    const cancelled = searchParams.get('cancelled');
+    if (orderId && user) {
+      capturarPago(orderId);
+    }
+  }, [searchParams, user]);
+
+  const capturarPago = async (orderId: string) => {
+    setProcesando(true);
+    try {
+      const res = await fetch('/api/paypal/capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, userId: user.uid, tipo: 'plus' }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        const snap = await getDoc(doc(db, 'usuarios', user.uid));
+        if (snap.exists()) setUserData(snap.data());
+        router.replace('/plus');
+      } else {
+        setError('Error al procesar el pago. Contactá soporte.');
+      }
+    } catch (e) {
+      setError('Error de conexión. Intentá de nuevo.');
+    }
+    setProcesando(false);
   };
 
-  if (loading) return (
+  const handleComprar = async () => {
+    if (!user) return;
+    setProcesando(true);
+    setError('');
+    try {
+      const res = await fetch('/api/paypal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: '2.79',
+          currency: 'USD',
+          description: 'PickGol Plus — Variables personalizadas (pago único)',
+          returnUrl: 'https://pickgol2026.vercel.app/plus',
+          cancelUrl: 'https://pickgol2026.vercel.app/plus?cancelled=true',
+        }),
+      });
+      const data = await res.json();
+      if (data.approvalUrl) {
+        window.location.href = data.approvalUrl;
+      } else {
+        setError('Error al iniciar el pago. Intentá de nuevo.');
+      }
+    } catch (e) {
+      setError('Error de conexión. Intentá de nuevo.');
+    }
+    setProcesando(false);
+  };
+
+  if (loading || procesando) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
-      <div className="text-center"><div className="text-5xl mb-3">⭐</div><p className="text-[#8892A4] text-sm">Cargando...</p></div>
+      <div className="text-center">
+        <div className="text-5xl mb-3">⭐</div>
+        <p className="text-[#8892A4] text-sm">{procesando ? 'Procesando pago...' : 'Cargando...'}</p>
+      </div>
     </main>
   );
 
@@ -83,8 +127,8 @@ export default function Plus() {
         ) : (
           <>
             <div className="rounded-2xl p-5 mb-4 text-center" style={{background:'#0D1B3E',border:'1px solid rgba(201,168,76,0.3)'}}>
-              <div className="font-condensed text-5xl font-black mb-1" style={{color:'#C9A84C'}}>USD 2.59</div>
-              <div className="text-sm" style={{color:'#8892A4'}}>{t.procesado}</div>
+              <div className="font-condensed text-5xl font-black mb-1" style={{color:'#C9A84C'}}>USD 2.79</div>
+              <div className="text-sm" style={{color:'#8892A4'}}>Pago único · Para siempre</div>
             </div>
 
             <div className="rounded-2xl overflow-hidden mb-5" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
@@ -105,14 +149,20 @@ export default function Plus() {
               ))}
             </div>
 
-            <button onClick={handleComprar}
+            {error && <p className="text-xs mb-4 text-center" style={{color:'#E8192C'}}>{error}</p>}
+
+            <button onClick={handleComprar} disabled={procesando}
               className="w-full py-4 rounded-xl font-condensed font-black text-xl mb-3"
-              style={{background:'linear-gradient(135deg,#C9A84C,#8B6914)',color:'#020810'}}>
-              ⭐ {t.activarPlus}
+              style={{background:'linear-gradient(135deg,#C9A84C,#8B6914)',color:'#020810',opacity: procesando ? 0.7 : 1}}>
+              ⭐ {t.activarPlus} — USD 2.79
             </button>
 
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg" alt="PayPal" className="h-5 rounded" />
+              <span className="text-xs" style={{color:'#8892A4'}}>Pago seguro con PayPal</span>
+            </div>
+
             <p className="text-center text-xs" style={{color:'#8892A4'}}>
-              {t.procesado} ·{' '}
               <span className="cursor-pointer underline" onClick={() => router.push('/terms')}>
                 {t.terminos}
               </span>
@@ -142,4 +192,8 @@ export default function Plus() {
 
     </main>
   );
+}
+
+export default function Plus() {
+  return <Suspense><PlusContent /></Suspense>;
 }
