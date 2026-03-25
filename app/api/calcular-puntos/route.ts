@@ -1,11 +1,10 @@
- import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '../../lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   try {
     const { grupoId, resultadosFecha } = await req.json();
 
-    // Obtener todas las jugadas del grupo
     const jugadasSnap = await db.collection('jugadas')
       .where('grupoId', '==', grupoId)
       .get();
@@ -18,6 +17,13 @@ export async function POST(req: NextRequest) {
 
     for (const jugadaDoc of jugadasSnap.docs) {
       const jugada = jugadaDoc.data();
+
+      // Si el grupo tiene control de pagos y la jugada no está paga → 0 puntos
+      if (resultadosFecha.controlPagos && !jugada.pagadoInterno) {
+        batch.update(jugadaDoc.ref, { puntos: 0, calculadoEn: new Date(), inhabilitada: true });
+        continue;
+      }
+
       let puntos = 0;
 
       // 1. Puntos por predicciones de partidos
@@ -61,6 +67,7 @@ export async function POST(req: NextRequest) {
       batch.update(jugadaDoc.ref, {
         puntos,
         calculadoEn: new Date(),
+        inhabilitada: false,
       });
     }
 

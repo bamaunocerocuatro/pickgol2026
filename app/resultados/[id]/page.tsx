@@ -135,7 +135,11 @@ export default function CargarResultados() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           grupoId: id,
-          resultadosFecha: { variables: variablesFinales, partidos: partidosFinales }
+          resultadosFecha: {
+            variables: variablesFinales,
+            partidos: partidosFinales,
+            controlPagos: grupo?.controlPagos || false,
+          }
         })
       });
 
@@ -186,7 +190,6 @@ export default function CargarResultados() {
 
       <div className="px-4 py-4">
 
-        {/* VARIABLES */}
         <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{color:'#8892A4'}}>
           Variables de la fecha
         </div>
@@ -204,7 +207,6 @@ export default function CargarResultados() {
           </div>
         ))}
 
-        {/* RESULTADOS DE PARTIDOS — SOLO LECTURA */}
         {cargandoPartidos && (
           <div className="text-center py-4"><div className="text-2xl mb-2">⏳</div><p className="text-sm" style={{color:'#8892A4'}}>Cargando partidos...</p></div>
         )}
@@ -215,7 +217,6 @@ export default function CargarResultados() {
               Resultados de partidos
             </div>
 
-            {/* LISTADO COMPACTO */}
             <div className="rounded-2xl overflow-hidden mb-3" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
               {partidos.map((p: any, i: number) => (
                 <div key={i} className="flex items-center px-4 py-2"
@@ -243,7 +244,6 @@ export default function CargarResultados() {
               ))}
             </div>
 
-            {/* BOTÓN CORREGIR */}
             {!modoCorreccion ? (
               <div className="mb-4">
                 <button onClick={() => setModoCorreccion(true)}
@@ -269,6 +269,13 @@ export default function CargarResultados() {
             <div className="text-3xl mb-2">📅</div>
             <div className="font-condensed text-base font-bold mb-1">Sin partidos terminados</div>
             <div className="text-xs" style={{color:'#8892A4'}}>No hay partidos finalizados para cargar resultados</div>
+          </div>
+        )}
+
+        {grupo?.controlPagos && (
+          <div className="rounded-xl p-3 mb-4 flex gap-2" style={{background:'rgba(255,179,0,0.07)',border:'1px solid rgba(255,179,0,0.3)'}}>
+            <span>💰</span>
+            <p className="text-xs" style={{color:'rgba(255,255,255,0.6)'}}>Este grupo tiene control de pagos activo. Las jugadas con <b style={{color:'white'}}>pago pendiente</b> quedarán con 0 puntos automáticamente.</p>
           </div>
         )}
 
