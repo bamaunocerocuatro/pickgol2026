@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const PAYPAL_BASE_URL = process.env.PAYPAL_BASE_URL || 'https://api-m.paypal.com';
 
 async function getAccessToken() {
-  const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+  const clientId = process.env.PAYPAL_CLIENT_ID || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || 'Ac9uhdLZJNQuxb5GBx0P7sIlYCY1vktiPmO8LR9PvLPCbda3Z1yt696wuVDl9z5hQKDkSP4thJ3-e-XT';
   const secret = process.env.PAYPAL_SECRET;
 
   console.log('PayPal clientId:', clientId ? 'OK' : 'MISSING');
