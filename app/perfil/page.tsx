@@ -170,7 +170,7 @@ export default function Perfil() {
             <div className="text-2xl">⭐</div>
             <div className="flex-1">
               <div className="text-sm font-bold" style={{color:'#C9A84C'}}>PickGol Plus</div>
-              <div className="text-xs" style={{color:'#8892A4'}}>Variables personalizadas · USD 2.59 único</div>
+              <div className="text-xs" style={{color:'#8892A4'}}>Variables personalizadas · USD 2.79 único</div>
             </div>
             <div className="text-white/30">›</div>
           </div>

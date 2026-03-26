@@ -114,7 +114,9 @@ export default function Inicio() {
           </div>
         )}
 
-        <div className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer" style={{background:'linear-gradient(135deg,#E8192C,#8B0018)'}}>
+        {/* BANNER MUNDIAL */}
+        <div className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer"
+          style={{background:'linear-gradient(135deg,#E8192C,#8B0018)'}}>
           <div className="text-3xl">🏆</div>
           <div className="flex-1">
             <div className="font-condensed text-lg font-black">{t.mundialTitulo}</div>
@@ -123,6 +125,21 @@ export default function Inicio() {
           <div className="text-white/30 text-lg">›</div>
         </div>
 
+        {/* HACETE PLUS — solo si no es Plus */}
+        {!userData?.plus && (
+          <div onClick={() => router.push('/plus')}
+            className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer"
+            style={{background:'rgba(201,168,76,0.07)',border:'1px solid rgba(201,168,76,0.3)'}}>
+            <div className="text-3xl">⭐</div>
+            <div className="flex-1">
+              <div className="font-condensed text-lg font-black" style={{color:'#C9A84C'}}>HACETE PLUS</div>
+              <div className="text-xs" style={{color:'#8892A4'}}>Variables personalizadas · USD 2.79 único</div>
+            </div>
+            <div className="text-[#C9A84C] text-lg">›</div>
+          </div>
+        )}
+
+        {/* CREAR GRUPO */}
         <div onClick={() => router.push('/crear-grupo')}
           className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer"
           style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
@@ -134,6 +151,7 @@ export default function Inicio() {
           <div className="text-white/30 text-lg">›</div>
         </div>
 
+        {/* PRODE COMUNITARIO */}
         <div onClick={() => router.push('/prode-comunitario')}
           className="rounded-2xl p-4 mb-4 flex items-center gap-3 cursor-pointer"
           style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
