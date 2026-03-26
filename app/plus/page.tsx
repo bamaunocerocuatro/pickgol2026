@@ -18,25 +18,47 @@ function PlusContent() {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [acepto, setAcepto] = useState(false);
+  const [metodoPago, setMetodoPago] = useState<'paypal' | 'mp'>('mp');
 
-  // Guardar orderId en localStorage cuando PayPal redirige
+  // PayPal: guardar orderId en localStorage cuando redirige
   useEffect(() => {
     const orderId = searchParams.get('token');
     if (orderId) {
       localStorage.setItem('pendingPaypalOrder', orderId);
       localStorage.setItem('pendingPaypalTipo', 'plus');
     }
+    // MercadoPago: capturar cuando redirige con status success
+    const mpStatus = searchParams.get('mp_status');
+    const mpTipo = searchParams.get('tipo');
+    const mpUserId = searchParams.get('userId');
+    if (mpStatus === 'success' && mpTipo && mpUserId) {
+      localStorage.setItem('pendingMpTipo', mpTipo);
+      localStorage.setItem('pendingMpUserId', mpUserId);
+    }
   }, [searchParams]);
 
-  // Cuando el user está listo, verificar si hay un pago pendiente
+  // Cuando el user está listo, verificar pagos pendientes
   useEffect(() => {
     if (!user) return;
-    const orderId = localStorage.getItem('pendingPaypalOrder');
-    const tipo = localStorage.getItem('pendingPaypalTipo');
-    if (orderId && tipo) {
+
+    // PayPal pendiente
+    const paypalOrderId = localStorage.getItem('pendingPaypalOrder');
+    const paypalTipo = localStorage.getItem('pendingPaypalTipo');
+    if (paypalOrderId && paypalTipo) {
       localStorage.removeItem('pendingPaypalOrder');
       localStorage.removeItem('pendingPaypalTipo');
-      capturarPago(orderId, tipo);
+      capturarPaypal(paypalOrderId, paypalTipo);
+      return;
+    }
+
+    // MercadoPago pendiente
+    const mpTipo = localStorage.getItem('pendingMpTipo');
+    const mpUserId = localStorage.getItem('pendingMpUserId');
+    if (mpTipo && mpUserId) {
+      localStorage.removeItem('pendingMpTipo');
+      localStorage.removeItem('pendingMpUserId');
+      capturarMP(mpTipo, mpUserId);
+      return;
     }
   }, [user]);
 
@@ -53,7 +75,7 @@ function PlusContent() {
     return () => unsub();
   }, []);
 
-  const capturarPago = async (orderId: string, tipo: string = 'plus') => {
+  const capturarPaypal = async (orderId: string, tipo: string) => {
     setProcesando(true);
     try {
       const res = await fetch('/api/paypal/capture', {
@@ -75,7 +97,29 @@ function PlusContent() {
     setProcesando(false);
   };
 
-  const handleComprar = async () => {
+  const capturarMP = async (tipo: string, userId: string) => {
+    setProcesando(true);
+    try {
+      const res = await fetch('/api/mercadopago/capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo, userId }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        const snap = await getDoc(doc(db, 'usuarios', user.uid));
+        if (snap.exists()) setUserData(snap.data());
+        router.replace('/plus');
+      } else {
+        setError('Error al procesar el pago. Contactá soporte.');
+      }
+    } catch (e) {
+      setError('Error de conexión. Intentá de nuevo.');
+    }
+    setProcesando(false);
+  };
+
+  const handleComprarPaypal = async () => {
     if (!user) return;
     setProcesando(true);
     setError('');
@@ -96,11 +140,46 @@ function PlusContent() {
         window.location.href = data.approvalUrl;
       } else {
         setError('Error al iniciar el pago. Intentá de nuevo.');
+        setProcesando(false);
       }
     } catch (e) {
       setError('Error de conexión. Intentá de nuevo.');
+      setProcesando(false);
     }
-    setProcesando(false);
+  };
+
+  const handleComprarMP = async () => {
+    if (!user) return;
+    setProcesando(true);
+    setError('');
+    try {
+      const res = await fetch('/api/mercadopago', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: 2.79,
+          description: 'PickGol Plus — Variables personalizadas (pago único)',
+          returnUrl: 'https://pickgol2026.vercel.app/plus',
+          tipo: 'plus',
+          userId: user.uid,
+        }),
+      });
+      const data = await res.json();
+      if (data.initPoint) {
+        window.location.href = data.initPoint;
+      } else {
+        setError('Error al iniciar el pago. Intentá de nuevo.');
+        setProcesando(false);
+      }
+    } catch (e) {
+      setError('Error de conexión. Intentá de nuevo.');
+      setProcesando(false);
+    }
+  };
+
+  const handleComprar = () => {
+    if (metodoPago === 'mp') handleComprarMP();
+    else handleComprarPaypal();
   };
 
   if (loading || procesando) return (
@@ -163,6 +242,26 @@ function PlusContent() {
               ))}
             </div>
 
+            {/* SELECTOR MÉTODO DE PAGO */}
+            <div className="mb-4">
+              <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>
+                Método de pago
+              </div>
+              <div className="flex gap-2">
+                <div onClick={() => setMetodoPago('mp')}
+                  className="flex-1 rounded-xl py-3 px-3 cursor-pointer flex items-center gap-2"
+                  style={{background: metodoPago === 'mp' ? 'rgba(0,158,227,0.15)' : 'rgba(0,0,0,0.35)', border: metodoPago === 'mp' ? '1px solid rgba(0,158,227,0.5)' : '1px solid rgba(255,255,255,0.09)'}}>
+                  <img src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/5.21.22/mercadopago/logo__large@2x.png" alt="MercadoPago" className="h-4 object-contain" />
+                </div>
+                <div onClick={() => setMetodoPago('paypal')}
+                  className="flex-1 rounded-xl py-3 px-3 cursor-pointer flex items-center gap-2 justify-center"
+                  style={{background: metodoPago === 'paypal' ? 'rgba(0,112,186,0.15)' : 'rgba(0,0,0,0.35)', border: metodoPago === 'paypal' ? '1px solid rgba(0,112,186,0.5)' : '1px solid rgba(255,255,255,0.09)'}}>
+                  <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg" alt="PayPal" className="h-4 rounded object-contain" />
+                  <span className="text-xs font-bold" style={{color: metodoPago === 'paypal' ? '#009BDE' : '#8892A4'}}>PayPal</span>
+                </div>
+              </div>
+            </div>
+
             {error && <p className="text-xs mb-4 text-center" style={{color:'#E8192C'}}>{error}</p>}
 
             <button onClick={() => setShowModal(true)} disabled={procesando}
@@ -170,11 +269,6 @@ function PlusContent() {
               style={{background:'linear-gradient(135deg,#C9A84C,#8B6914)',color:'#020810',opacity: procesando ? 0.7 : 1}}>
               ⭐ {t.activarPlus} — USD 2.79
             </button>
-
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg" alt="PayPal" className="h-5 rounded" />
-              <span className="text-xs" style={{color:'#8892A4'}}>Pago seguro con PayPal</span>
-            </div>
 
             <p className="text-center text-xs" style={{color:'#8892A4'}}>
               <span className="cursor-pointer underline" onClick={() => router.push('/terms')}>
