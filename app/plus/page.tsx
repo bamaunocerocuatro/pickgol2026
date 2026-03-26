@@ -19,6 +19,27 @@ function PlusContent() {
   const [showModal, setShowModal] = useState(false);
   const [acepto, setAcepto] = useState(false);
 
+  // Guardar orderId en localStorage cuando PayPal redirige
+  useEffect(() => {
+    const orderId = searchParams.get('token');
+    if (orderId) {
+      localStorage.setItem('pendingPaypalOrder', orderId);
+      localStorage.setItem('pendingPaypalTipo', 'plus');
+    }
+  }, [searchParams]);
+
+  // Cuando el user está listo, verificar si hay un pago pendiente
+  useEffect(() => {
+    if (!user) return;
+    const orderId = localStorage.getItem('pendingPaypalOrder');
+    const tipo = localStorage.getItem('pendingPaypalTipo');
+    if (orderId && tipo) {
+      localStorage.removeItem('pendingPaypalOrder');
+      localStorage.removeItem('pendingPaypalTipo');
+      capturarPago(orderId, tipo);
+    }
+  }, [user]);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) { router.push('/login'); return; }
@@ -32,20 +53,13 @@ function PlusContent() {
     return () => unsub();
   }, []);
 
-  useEffect(() => {
-    const orderId = searchParams.get('token');
-    if (orderId && user) {
-      capturarPago(orderId);
-    }
-  }, [searchParams, user]);
-
-  const capturarPago = async (orderId: string) => {
+  const capturarPago = async (orderId: string, tipo: string = 'plus') => {
     setProcesando(true);
     try {
       const res = await fetch('/api/paypal/capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, userId: user.uid, tipo: 'plus' }),
+        body: JSON.stringify({ orderId, userId: user.uid, tipo }),
       });
       const data = await res.json();
       if (data.ok) {
@@ -172,7 +186,6 @@ function PlusContent() {
 
       </div>
 
-      {/* MODAL CONFIRMACION */}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center px-5"
           style={{background:'rgba(0,0,0,0.85)',zIndex:999}}>
