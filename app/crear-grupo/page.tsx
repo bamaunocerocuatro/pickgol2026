@@ -193,7 +193,7 @@ function CrearGrupoForm() {
               <div className="text-sm font-bold" style={{color:'#C9A84C'}}>Variables personalizadas</div>
               <div className="text-xs" style={{color:'#8892A4'}}>Activá PickGol Plus para crear tus propias variables</div>
             </div>
-            <div className="text-xs font-bold px-2 py-1 rounded-lg" style={{background:'rgba(201,168,76,0.15)',color:'#C9A84C'}}>USD 2.59</div>
+            <div className="text-xs font-bold px-2 py-1 rounded-lg" style={{background:'rgba(201,168,76,0.15)',color:'#C9A84C'}}>USD 2.79</div>
           </div>
         )}
 
