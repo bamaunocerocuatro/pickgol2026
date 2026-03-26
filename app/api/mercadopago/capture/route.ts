@@ -1,12 +1,27 @@
- import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '../../../lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   try {
-    const { tipo, userId } = await req.json();
+    const { paymentId, tipo, userId } = await req.json();
 
     if (!userId || !tipo) {
       return NextResponse.json({ error: 'Faltan datos' }, { status: 400 });
+    }
+
+    // Verificar el pago con la API de MercadoPago
+    if (paymentId) {
+      const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+        headers: {
+          'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}`,
+        },
+      });
+      const mpData = await mpRes.json();
+      console.log('MP payment status:', mpData.status);
+
+      if (mpData.status !== 'approved') {
+        return NextResponse.json({ error: 'Pago no aprobado', status: mpData.status }, { status: 400 });
+      }
     }
 
     const userRef = db.collection('usuarios').doc(userId);

@@ -26,12 +26,14 @@ function PlusContent() {
       localStorage.setItem('pendingPaypalOrder', orderId);
       localStorage.setItem('pendingPaypalTipo', 'plus');
     }
-    const mpStatus = searchParams.get('mp_status');
+    const mpStatus = searchParams.get('mp_status') || searchParams.get('status');
     const mpTipo = searchParams.get('tipo');
     const mpUserId = searchParams.get('userId');
-    if (mpStatus === 'success' && mpTipo && mpUserId) {
+    const paymentId = searchParams.get('payment_id');
+    if ((mpStatus === 'success' || mpStatus === 'approved') && mpTipo && mpUserId) {
       localStorage.setItem('pendingMpTipo', mpTipo);
       localStorage.setItem('pendingMpUserId', mpUserId);
+      if (paymentId) localStorage.setItem('pendingMpPaymentId', paymentId);
     }
   }, [searchParams]);
 
@@ -47,10 +49,12 @@ function PlusContent() {
     }
     const mpTipo = localStorage.getItem('pendingMpTipo');
     const mpUserId = localStorage.getItem('pendingMpUserId');
+    const mpPaymentId = localStorage.getItem('pendingMpPaymentId');
     if (mpTipo && mpUserId) {
       localStorage.removeItem('pendingMpTipo');
       localStorage.removeItem('pendingMpUserId');
-      capturarMP(mpTipo, mpUserId);
+      localStorage.removeItem('pendingMpPaymentId');
+      capturarMP(mpTipo, mpUserId, mpPaymentId || '');
       return;
     }
   }, [user]);
@@ -90,13 +94,13 @@ function PlusContent() {
     setProcesando(false);
   };
 
-  const capturarMP = async (tipo: string, userId: string) => {
+  const capturarMP = async (tipo: string, userId: string, paymentId: string) => {
     setProcesando(true);
     try {
       const res = await fetch('/api/mercadopago/capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo, userId }),
+        body: JSON.stringify({ tipo, userId, paymentId }),
       });
       const data = await res.json();
       if (data.ok) {
@@ -235,7 +239,6 @@ function PlusContent() {
               ))}
             </div>
 
-            {/* SELECTOR MÉTODO DE PAGO */}
             <div className="mb-4">
               <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>
                 Método de pago
@@ -244,7 +247,7 @@ function PlusContent() {
                 <div onClick={() => setMetodoPago('mp')}
                   className="flex-1 rounded-xl py-3 px-3 cursor-pointer flex items-center justify-center"
                   style={{background: metodoPago === 'mp' ? 'rgba(0,158,227,0.15)' : 'rgba(0,0,0,0.35)', border: metodoPago === 'mp' ? '1px solid rgba(0,158,227,0.5)' : '1px solid rgba(255,255,255,0.09)'}}>
-                  <img src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/5.21.22/mercadopago/logo__large@2x.png" alt="MercadoPago" className="h-4 object-contain" />
+                  <span className="text-sm font-black" style={{color: metodoPago === 'mp' ? '#009EE3' : '#8892A4'}}>MercadoPago</span>
                 </div>
                 <div onClick={() => setMetodoPago('paypal')}
                   className="flex-1 rounded-xl py-3 px-3 cursor-pointer flex items-center justify-center gap-2"
