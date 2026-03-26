@@ -20,14 +20,12 @@ function PlusContent() {
   const [acepto, setAcepto] = useState(false);
   const [metodoPago, setMetodoPago] = useState<'paypal' | 'mp'>('mp');
 
-  // PayPal: guardar orderId en localStorage cuando redirige
   useEffect(() => {
     const orderId = searchParams.get('token');
     if (orderId) {
       localStorage.setItem('pendingPaypalOrder', orderId);
       localStorage.setItem('pendingPaypalTipo', 'plus');
     }
-    // MercadoPago: capturar cuando redirige con status success
     const mpStatus = searchParams.get('mp_status');
     const mpTipo = searchParams.get('tipo');
     const mpUserId = searchParams.get('userId');
@@ -37,11 +35,8 @@ function PlusContent() {
     }
   }, [searchParams]);
 
-  // Cuando el user está listo, verificar pagos pendientes
   useEffect(() => {
     if (!user) return;
-
-    // PayPal pendiente
     const paypalOrderId = localStorage.getItem('pendingPaypalOrder');
     const paypalTipo = localStorage.getItem('pendingPaypalTipo');
     if (paypalOrderId && paypalTipo) {
@@ -50,8 +45,6 @@ function PlusContent() {
       capturarPaypal(paypalOrderId, paypalTipo);
       return;
     }
-
-    // MercadoPago pendiente
     const mpTipo = localStorage.getItem('pendingMpTipo');
     const mpUserId = localStorage.getItem('pendingMpUserId');
     if (mpTipo && mpUserId) {
@@ -249,12 +242,12 @@ function PlusContent() {
               </div>
               <div className="flex gap-2">
                 <div onClick={() => setMetodoPago('mp')}
-                  className="flex-1 rounded-xl py-3 px-3 cursor-pointer flex items-center gap-2"
+                  className="flex-1 rounded-xl py-3 px-3 cursor-pointer flex items-center justify-center"
                   style={{background: metodoPago === 'mp' ? 'rgba(0,158,227,0.15)' : 'rgba(0,0,0,0.35)', border: metodoPago === 'mp' ? '1px solid rgba(0,158,227,0.5)' : '1px solid rgba(255,255,255,0.09)'}}>
                   <img src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/5.21.22/mercadopago/logo__large@2x.png" alt="MercadoPago" className="h-4 object-contain" />
                 </div>
                 <div onClick={() => setMetodoPago('paypal')}
-                  className="flex-1 rounded-xl py-3 px-3 cursor-pointer flex items-center gap-2 justify-center"
+                  className="flex-1 rounded-xl py-3 px-3 cursor-pointer flex items-center justify-center gap-2"
                   style={{background: metodoPago === 'paypal' ? 'rgba(0,112,186,0.15)' : 'rgba(0,0,0,0.35)', border: metodoPago === 'paypal' ? '1px solid rgba(0,112,186,0.5)' : '1px solid rgba(255,255,255,0.09)'}}>
                   <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg" alt="PayPal" className="h-4 rounded object-contain" />
                   <span className="text-xs font-bold" style={{color: metodoPago === 'paypal' ? '#009BDE' : '#8892A4'}}>PayPal</span>
