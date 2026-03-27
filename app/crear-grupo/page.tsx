@@ -29,7 +29,6 @@ function CrearGrupoForm() {
   const [ligaId, setLigaId] = useState('');
   const [precio, setPrecio] = useState('');
   const [moneda, setMoneda] = useState('ARS');
-  const [tipo, setTipo] = useState<'temporada' | 'fechas'>('temporada');
   const [controlPagos, setControlPagos] = useState(false);
   const [chatHabilitado, setChatHabilitado] = useState(false);
   const [error, setError] = useState('');
@@ -74,7 +73,7 @@ function CrearGrupoForm() {
         liga: ligaId,
         precio: controlPagos && precio ? parseFloat(precio) : null,
         moneda: controlPagos ? moneda : null,
-        tipo,
+        tipo: 'temporada',
         controlPagos,
         chatHabilitado,
         creadorId: user.uid,
@@ -133,18 +132,9 @@ function CrearGrupoForm() {
           <LigaSelector value={ligaId} onChange={setLigaId} />
         </div>
 
-        <div className="mb-4">
-          <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{color:'#8892A4'}}>Duración del torneo *</label>
-          <div className="flex gap-2">
-            <div onClick={() => setTipo('temporada')} className="flex-1 rounded-xl px-3 py-3 text-center cursor-pointer text-sm font-semibold"
-              style={{ background: tipo === 'temporada' ? 'rgba(232,25,44,0.15)' : 'rgba(0,0,0,0.35)', border: tipo === 'temporada' ? '1px solid #E8192C' : '1px solid rgba(255,255,255,0.09)', color: tipo === 'temporada' ? '#F5F5F0' : '#8892A4' }}>
-              📅 Toda la temporada
-            </div>
-            <div onClick={() => setTipo('fechas')} className="flex-1 rounded-xl px-3 py-3 text-center cursor-pointer text-sm font-semibold"
-              style={{ background: tipo === 'fechas' ? 'rgba(232,25,44,0.15)' : 'rgba(0,0,0,0.35)', border: tipo === 'fechas' ? '1px solid #E8192C' : '1px solid rgba(255,255,255,0.09)', color: tipo === 'fechas' ? '#F5F5F0' : '#8892A4' }}>
-              🎯 Fechas específicas
-            </div>
-          </div>
+        <div className="rounded-xl p-3 mb-4 flex gap-2" style={{background:'rgba(0,200,83,0.07)',border:'1px solid rgba(0,200,83,0.2)'}}>
+          <span>📅</span>
+          <p className="text-xs" style={{color:'rgba(255,255,255,0.6)'}}>Los grupos de PickGol son por <b style={{color:'white'}}>toda la temporada</b>. Cada jugador crea una jugada por fecha y los puntos se acumulan a lo largo del torneo.</p>
         </div>
 
         {esPlus ? (
