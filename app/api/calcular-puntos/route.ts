@@ -20,11 +20,15 @@ export async function POST(req: NextRequest) {
 
       // Si el grupo tiene control de pagos y la jugada no está paga → 0 puntos
       if (resultadosFecha.controlPagos && !jugada.pagadoInterno) {
-        batch.update(jugadaDoc.ref, { puntos: 0, calculadoEn: new Date(), inhabilitada: true });
+        batch.update(jugadaDoc.ref, {
+          puntosUltimaFecha: 0,
+          calculadoEn: new Date(),
+          inhabilitada: true
+        });
         continue;
       }
 
-      let puntos = 0;
+      let puntosEstaFecha = 0;
 
       // 1. Puntos por predicciones de partidos
       if (jugada.predicciones && resultadosFecha.partidos) {
@@ -40,11 +44,11 @@ export async function POST(req: NextRequest) {
           const realVisitante = Number(real.golesVisitante);
 
           if (predLocal === realLocal && predVisitante === realVisitante) {
-            puntos += 5; // resultado exacto
+            puntosEstaFecha += 5;
           } else {
             const predGanador = predLocal > predVisitante ? 'L' : predLocal < predVisitante ? 'V' : 'E';
             const realGanador = realLocal > realVisitante ? 'L' : realLocal < realVisitante ? 'V' : 'E';
-            if (predGanador === realGanador) puntos += 2; // ganador correcto
+            if (predGanador === realGanador) puntosEstaFecha += 2;
           }
         }
       }
@@ -57,15 +61,20 @@ export async function POST(req: NextRequest) {
           if (predicho === undefined || real === undefined) continue;
 
           if (meta.tipo === 'numero') {
-            if (Number(predicho) === Number(real)) puntos += meta.pts;
+            if (Number(predicho) === Number(real)) puntosEstaFecha += meta.pts;
           } else {
-            if (String(predicho) === String(real)) puntos += meta.pts;
+            if (String(predicho) === String(real)) puntosEstaFecha += meta.pts;
           }
         }
       }
 
+      // Sumar a los puntos acumulados anteriores
+      const puntosAcumulados = jugada.puntos || 0;
+      const puntosTotal = puntosAcumulados + puntosEstaFecha;
+
       batch.update(jugadaDoc.ref, {
-        puntos,
+        puntos: puntosTotal,
+        puntosUltimaFecha: puntosEstaFecha,
         calculadoEn: new Date(),
         inhabilitada: false,
       });
