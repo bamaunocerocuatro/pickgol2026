@@ -1,6 +1,8 @@
- import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
+  console.log('MP_ACCESS_TOKEN:', process.env.MP_ACCESS_TOKEN ? 'OK' : 'MISSING');
+  console.log('ALL MP KEYS:', Object.keys(process.env).filter(k => k.includes('MP')));
   try {
     const { amount, description, returnUrl, tipo, userId } = await req.json();
 
@@ -47,4 +49,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
-
