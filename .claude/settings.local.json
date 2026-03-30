@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"mercado\\\\|MercadoPago\\\\|mp_\" c:UsersAriDesktoppickgol2026 --include=*.ts --include=*.tsx --include=*.js --include=*.jsx --include=*.json)",
+      "Bash(xargs grep:*)",
+      "Bash(find c:UsersAriDesktoppickgol2026/app -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\) ! -path */node_modules/* ! -path */.next/*)",
+      "Bash(grep -r \"mercadopago\\\\|/api/mercadopago\\\\|/api/paypal\\\\|paddle\\\\|MP_\" \"c:\\\\Users\\\\Ari\\\\Desktop\\\\pickgol2026/app\" --include=\"*.tsx\" --include=\"*.ts\" ! -path \"*/node_modules/*\" ! -path \"*/.next/*\")"
+    ]
+  }
+}
