@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Faltan datos' }, { status: 400 });
     }
 
-    // Verificar el pago con la API de MercadoPago
+    // Verificar el pago solo si hay paymentId
     if (paymentId) {
       const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
         headers: {
@@ -18,7 +18,6 @@ export async function POST(req: NextRequest) {
       });
       const mpData = await mpRes.json();
       console.log('MP payment status:', mpData.status);
-
       if (mpData.status !== 'approved') {
         return NextResponse.json({ error: 'Pago no aprobado', status: mpData.status }, { status: 400 });
       }
@@ -40,6 +39,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
+    console.error('MP capture error:', e.message);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
