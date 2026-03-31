@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const userRef = db.collection('usuarios').doc(userId);
 
     if (tipo === 'plus') {
-      await userRef.update({ plus: true, plusActivadoEn: new Date() });
+      await userRef.set({ plus: true, plusActivadoEn: new Date() }, { merge: true });
     } else {
       const jugadasMap: Record<string, number> = {
         jugada1: 1, jugada3: 3, jugada5: 5, jugada10: 10,
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       const cantidad = jugadasMap[tipo] || 0;
       const snap = await userRef.get();
       const actual = snap.data()?.jugadasMundial || 0;
-      await userRef.update({ jugadasMundial: actual + cantidad });
+      await userRef.set({ jugadasMundial: actual + cantidad }, { merge: true });
     }
 
     return NextResponse.json({ ok: true });
