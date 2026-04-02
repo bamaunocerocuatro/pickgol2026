@@ -22,15 +22,19 @@ function PlusContent() {
 
   useEffect(() => {
     const orderId = searchParams.get('token');
-    if (orderId) {
-      localStorage.setItem('pendingPaypalOrder', orderId);
-      localStorage.setItem('pendingPaypalTipo', 'plus');
-    }
     const mpStatus = searchParams.get('mp_status') || searchParams.get('status');
     const mpTipo = searchParams.get('tipo');
     const mpUserId = searchParams.get('userId');
     const paymentId = searchParams.get('payment_id');
+
+    console.log('URL params:', { orderId, mpStatus, mpTipo, mpUserId, paymentId });
+
+    if (orderId) {
+      localStorage.setItem('pendingPaypalOrder', orderId);
+      localStorage.setItem('pendingPaypalTipo', 'plus');
+    }
     if ((mpStatus === 'success' || mpStatus === 'approved') && mpTipo && mpUserId) {
+      console.log('Guardando MP en localStorage');
       localStorage.setItem('pendingMpTipo', mpTipo);
       localStorage.setItem('pendingMpUserId', mpUserId);
       if (paymentId) localStorage.setItem('pendingMpPaymentId', paymentId);
@@ -50,6 +54,7 @@ function PlusContent() {
     const mpTipo = localStorage.getItem('pendingMpTipo');
     const mpUserId = localStorage.getItem('pendingMpUserId');
     const mpPaymentId = localStorage.getItem('pendingMpPaymentId');
+    console.log('Checking MP localStorage:', { mpTipo, mpUserId, mpPaymentId });
     if (mpTipo && mpUserId) {
       localStorage.removeItem('pendingMpTipo');
       localStorage.removeItem('pendingMpUserId');
@@ -95,6 +100,7 @@ function PlusContent() {
   };
 
   const capturarMP = async (tipo: string, userId: string, paymentId: string) => {
+    console.log('Capturando MP:', { tipo, userId, paymentId });
     setProcesando(true);
     try {
       const res = await fetch('/api/mercadopago/capture', {
@@ -103,6 +109,7 @@ function PlusContent() {
         body: JSON.stringify({ tipo, userId, paymentId }),
       });
       const data = await res.json();
+      console.log('MP capture response:', data);
       if (data.ok) {
         const snap = await getDoc(doc(db, 'usuarios', user.uid));
         if (snap.exists()) setUserData(snap.data());
