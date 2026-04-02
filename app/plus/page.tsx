@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { useIdioma } from '../context/IdiomaContext';
 
 function PlusContent() {
@@ -19,6 +19,10 @@ function PlusContent() {
   const [showModal, setShowModal] = useState(false);
   const [acepto, setAcepto] = useState(false);
   const [metodoPago, setMetodoPago] = useState<'paypal' | 'mp'>('mp');
+  const [showCodigo, setShowCodigo] = useState(false);
+  const [codigo, setCodigo] = useState('');
+  const [aplicandoCodigo, setAplicandoCodigo] = useState(false);
+  const [mensajeCodigo, setMensajeCodigo] = useState('');
 
   useEffect(() => {
     const orderId = searchParams.get('token');
@@ -27,14 +31,11 @@ function PlusContent() {
     const mpUserId = searchParams.get('userId');
     const paymentId = searchParams.get('payment_id');
 
-    console.log('URL params:', { orderId, mpStatus, mpTipo, mpUserId, paymentId });
-
     if (orderId) {
       localStorage.setItem('pendingPaypalOrder', orderId);
       localStorage.setItem('pendingPaypalTipo', 'plus');
     }
     if ((mpStatus === 'success' || mpStatus === 'approved') && mpTipo && mpUserId) {
-      console.log('Guardando MP en localStorage');
       localStorage.setItem('pendingMpTipo', mpTipo);
       localStorage.setItem('pendingMpUserId', mpUserId);
       if (paymentId) localStorage.setItem('pendingMpPaymentId', paymentId);
@@ -54,7 +55,6 @@ function PlusContent() {
     const mpTipo = localStorage.getItem('pendingMpTipo');
     const mpUserId = localStorage.getItem('pendingMpUserId');
     const mpPaymentId = localStorage.getItem('pendingMpPaymentId');
-    console.log('Checking MP localStorage:', { mpTipo, mpUserId, mpPaymentId });
     if (mpTipo && mpUserId) {
       localStorage.removeItem('pendingMpTipo');
       localStorage.removeItem('pendingMpUserId');
@@ -100,7 +100,6 @@ function PlusContent() {
   };
 
   const capturarMP = async (tipo: string, userId: string, paymentId: string) => {
-    console.log('Capturando MP:', { tipo, userId, paymentId });
     setProcesando(true);
     try {
       const res = await fetch('/api/mercadopago/capture', {
@@ -109,7 +108,6 @@ function PlusContent() {
         body: JSON.stringify({ tipo, userId, paymentId }),
       });
       const data = await res.json();
-      console.log('MP capture response:', data);
       if (data.ok) {
         const snap = await getDoc(doc(db, 'usuarios', user.uid));
         if (snap.exists()) setUserData(snap.data());
@@ -186,6 +184,54 @@ function PlusContent() {
     else handleComprarPaypal();
   };
 
+  const aplicarCodigo = async () => {
+    if (!codigo.trim()) return;
+    setAplicandoCodigo(true);
+    setMensajeCodigo('');
+    try {
+      const codigoRef = doc(db, 'codigos_plus', codigo.trim().toUpperCase());
+      const codigoSnap = await getDoc(codigoRef);
+
+      if (!codigoSnap.exists()) {
+        setMensajeCodigo('❌ Código inválido');
+        setAplicandoCodigo(false);
+        return;
+      }
+
+      const codigoData = codigoSnap.data();
+
+      if (!codigoData.activo) {
+        setMensajeCodigo('❌ Código desactivado');
+        setAplicandoCodigo(false);
+        return;
+      }
+
+      if (codigoData.maxUsos > 0 && codigoData.usos >= codigoData.maxUsos) {
+        setMensajeCodigo('❌ Código agotado');
+        setAplicandoCodigo(false);
+        return;
+      }
+
+      // Activar Plus gratis
+      await updateDoc(doc(db, 'usuarios', user.uid), {
+        plus: true,
+        plusActivadoEn: new Date(),
+        plusCodigo: codigo.trim().toUpperCase(),
+      });
+
+      // Incrementar usos del código
+      await updateDoc(codigoRef, { usos: increment(1) });
+
+      const snap = await getDoc(doc(db, 'usuarios', user.uid));
+      if (snap.exists()) setUserData(snap.data());
+      setMensajeCodigo('✅ ¡Código aplicado! Ya sos Plus');
+
+    } catch (e) {
+      setMensajeCodigo('❌ Error al aplicar el código');
+    }
+    setAplicandoCodigo(false);
+  };
+
   if (loading || procesando) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
       <div className="text-center">
@@ -246,6 +292,40 @@ function PlusContent() {
               ))}
             </div>
 
+            {/* CÓDIGO PROMOCIONAL */}
+            <div className="mb-4">
+              <button onClick={() => setShowCodigo(!showCodigo)}
+                className="text-xs font-semibold cursor-pointer"
+                style={{color:'#8892A4'}}>
+                🎟️ ¿Tenés un código? {showCodigo ? '▲' : '▼'}
+              </button>
+              {showCodigo && (
+                <div className="mt-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={codigo}
+                      onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+                      placeholder="Ingresá tu código"
+                      className="flex-1 rounded-xl px-4 py-3 text-white text-sm outline-none font-condensed font-bold tracking-widest"
+                      style={{background:'rgba(0,0,0,0.35)',border:'1px solid rgba(255,255,255,0.09)'}}
+                    />
+                    <button onClick={aplicarCodigo} disabled={aplicandoCodigo}
+                      className="px-4 py-3 rounded-xl font-condensed font-black text-sm"
+                      style={{background:'rgba(201,168,76,0.2)',border:'1px solid rgba(201,168,76,0.4)',color:'#C9A84C',opacity: aplicandoCodigo ? 0.7 : 1}}>
+                      {aplicandoCodigo ? '...' : 'APLICAR'}
+                    </button>
+                  </div>
+                  {mensajeCodigo && (
+                    <p className="text-xs mt-2" style={{color: mensajeCodigo.includes('✅') ? '#00C853' : '#E8192C'}}>
+                      {mensajeCodigo}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* MÉTODO DE PAGO */}
             <div className="mb-4">
               <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>
                 Método de pago
