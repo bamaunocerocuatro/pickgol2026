@@ -69,7 +69,7 @@ export default function Inicio() {
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
         <div className="flex items-center justify-between mb-3">
           <img src="/logo.png" className="w-8 h-8 rounded-lg" />
-          <span className="font-condensed text-xl font-black text-[#C9A84C]">PickGol 2026</span>
+          <span className="font-condensed text-xl font-black text-[#C9A84C]">PICKGOL</span>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm">🔔</div>
             <div onClick={() => router.push('/perfil')}

@@ -4,7 +4,7 @@ import PWARegister from "./components/PWARegister";
 import { IdiomaProvider } from "./context/IdiomaContext";
 
 export const metadata: Metadata = {
-  title: "PickGol 2026",
+  title: "PICKGOL",
   description: "Jugá, acertá y liderá el ranking ⚽🔥",
 };
 
@@ -24,7 +24,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="PickGol 2026" />
+        <meta name="apple-mobile-web-app-title" content="PICKGOL" />
       </head>
       <body className="bg-[#020810] text-white antialiased">
         <IdiomaProvider>

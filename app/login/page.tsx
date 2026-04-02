@@ -210,7 +210,7 @@ function LoginForm() {
 
         <div className="text-center mb-8">
           <h1 className="font-condensed text-5xl font-black text-[#C9A84C] mb-1">PickGol</h1>
-          <p className="font-condensed text-2xl font-bold text-white">2026 ⚽</p>
+          <p className="font-condensed text-2xl font-bold text-white">⚽</p>
           <p className="text-[#8892A4] text-sm mt-2">{tl.titulo}</p>
         </div>
 
