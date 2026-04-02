@@ -33,7 +33,8 @@ const TEXTOS_LOGIN: Record<string, any> = {
     google: 'CONTINUAR CON GOOGLE',
     yaTenes: '¿Ya tenés cuenta?', noTenes: '¿No tenés cuenta?',
     iniciaSesion: 'Iniciá sesión', registrate: 'Registrate',
-    invitado: 'Fuiste invitado — vas a recibir beneficios al registrarte',
+    invitadoPor: 'Fuiste invitado por',
+    invitadoGenerico: 'Fuiste invitado por un amigo',
   },
   pt: {
     titulo: 'Jogue, acerte e lidere o ranking ⚽🔥',
@@ -42,7 +43,8 @@ const TEXTOS_LOGIN: Record<string, any> = {
     google: 'CONTINUAR COM GOOGLE',
     yaTenes: 'Já tem uma conta?', noTenes: 'Não tem uma conta?',
     iniciaSesion: 'Entrar', registrate: 'Cadastre-se',
-    invitado: 'Você foi convidado — vai receber benefícios ao se cadastrar',
+    invitadoPor: 'Você foi convidado por',
+    invitadoGenerico: 'Você foi convidado por um amigo',
   },
   en: {
     titulo: 'Play, predict and lead the ranking ⚽🔥',
@@ -51,7 +53,8 @@ const TEXTOS_LOGIN: Record<string, any> = {
     google: 'CONTINUE WITH GOOGLE',
     yaTenes: 'Already have an account?', noTenes: "Don't have an account?",
     iniciaSesion: 'Sign in', registrate: 'Sign up',
-    invitado: 'You were invited — you\'ll receive benefits when you sign up',
+    invitadoPor: 'You were invited by',
+    invitadoGenerico: 'You were invited by a friend',
   },
 };
 
@@ -63,18 +66,36 @@ function LoginForm() {
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState('');
   const [refCode, setRefCode] = useState('');
+  const [refNombre, setRefNombre] = useState('');
   const searchParams = useSearchParams();
 
   const tl = TEXTOS_LOGIN[locale] || TEXTOS_LOGIN.es;
+
+  const buscarReferidor = async (codigo: string) => {
+    try {
+      const { collection, query, where, getDocs } = await import('firebase/firestore');
+      const q = query(collection(db, 'usuarios'), where('codigoRef', '==', codigo));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const data = snap.docs[0].data();
+        const nombre = data.displayName || data.email || '';
+        setRefNombre(nombre);
+      }
+    } catch (e) {}
+  };
 
   useEffect(() => {
     const ref = searchParams.get('ref');
     if (ref) {
       setRefCode(ref);
       localStorage.setItem('pickgol_ref', ref);
+      buscarReferidor(ref);
     } else {
       const saved = localStorage.getItem('pickgol_ref');
-      if (saved) setRefCode(saved);
+      if (saved) {
+        setRefCode(saved);
+        buscarReferidor(saved);
+      }
     }
   }, []);
 
@@ -173,7 +194,6 @@ function LoginForm() {
     <main className="min-h-screen bg-[#020810] flex items-center justify-center px-5">
       <div className="w-full max-w-sm">
 
-        {/* SELECTOR IDIOMA */}
         <div className="flex justify-center gap-2 mb-6">
           {IDIOMAS.map(i => (
             <div key={i.code} onClick={() => setLocale(i.code)}
@@ -195,8 +215,9 @@ function LoginForm() {
         </div>
 
         {refCode && (
-          <div className="mb-4 rounded-xl px-4 py-3 text-center text-sm font-semibold" style={{background:'rgba(0,200,83,0.1)',border:'1px solid rgba(0,200,83,0.3)',color:'#00C853'}}>
-            🎁 {tl.invitado}
+          <div className="mb-4 rounded-xl px-4 py-3 text-center text-sm font-semibold"
+            style={{background:'rgba(0,200,83,0.1)',border:'1px solid rgba(0,200,83,0.3)',color:'#00C853'}}>
+            🎁 {refNombre ? `${tl.invitadoPor} ${refNombre}` : tl.invitadoGenerico}
           </div>
         )}
 
