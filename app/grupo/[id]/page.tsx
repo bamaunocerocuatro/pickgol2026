@@ -29,6 +29,8 @@ export default function GrupoDashboard() {
   const [copiado, setCopiado] = useState(false);
   const [showCompartir, setShowCompartir] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [showEliminar, setShowEliminar] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
   const params = useParams();
   const id = params.id as string;
 
@@ -91,7 +93,6 @@ export default function GrupoDashboard() {
       const q = query(collection(db, 'jugadas'), where('grupoId', '==', grupoId));
       const snap = await getDocs(q);
       const jugadas = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-      // Buscar nombre de cada jugador
       const jugadasConNombre = await Promise.all(
         jugadas.map(async (j) => {
           let nombre = j.userEmail || 'Jugador';
@@ -117,6 +118,25 @@ export default function GrupoDashboard() {
     } catch (e) {}
   };
 
+  const eliminarGrupo = async () => {
+    setEliminando(true);
+    try {
+      const res = await fetch('/api/eliminar-grupo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grupoId: id, userId: user.uid }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        router.push('/grupos');
+      } else {
+        setEliminando(false);
+      }
+    } catch (e) {
+      setEliminando(false);
+    }
+  };
+
   const esCreador = grupo?.creadorId === user?.uid;
   const miPosicion = ranking.findIndex(r => r.esYo) + 1;
   const misPuntos = ranking.find(r => r.esYo)?.puntos || 0;
@@ -129,12 +149,12 @@ export default function GrupoDashboard() {
   };
 
   const compartirWhatsApp = () => {
-    const texto = `¡Unite a mi grupo de predicciones en PickGol 2026! 🏆⚽\nGrupo: *${grupo?.nombre}*\nCódigo: *${grupo?.codigo}*\nEntrá acá: ${linkGrupo}`;
+    const texto = `¡Unite a mi grupo de predicciones en PickGol! 🏆⚽\nGrupo: *${grupo?.nombre}*\nCódigo: *${grupo?.codigo}*\nEntrá acá: ${linkGrupo}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
   };
 
   const compartirNativo = async () => {
-    const texto = `¡Unite a mi grupo de predicciones en PickGol 2026! 🏆⚽\nGrupo: ${grupo?.nombre}\nCódigo: ${grupo?.codigo}\nEntrá acá: ${linkGrupo}`;
+    const texto = `¡Unite a mi grupo de predicciones en PickGol! 🏆⚽\nGrupo: ${grupo?.nombre}\nCódigo: ${grupo?.codigo}\nEntrá acá: ${linkGrupo}`;
     if (navigator.share) {
       await navigator.share({ title: `Grupo ${grupo?.nombre}`, text: texto, url: linkGrupo });
     } else {
@@ -215,7 +235,6 @@ export default function GrupoDashboard() {
 
       <div className="px-4 pt-4">
 
-        {/* COMPARTIR GRUPO */}
         <div className="rounded-2xl mb-4 overflow-hidden" style={{background:'linear-gradient(135deg,#0A1F5C,#0D2870)',border:'1px solid rgba(255,255,255,0.1)'}}>
           <div className="px-4 pt-4 pb-3 text-center">
             <div className="text-xs mb-1" style={{color:'rgba(255,255,255,0.4)'}}>Código del grupo</div>
@@ -231,7 +250,6 @@ export default function GrupoDashboard() {
               📤 COMPARTIR GRUPO
             </button>
           </div>
-
           {showCompartir && (
             <div className="px-4 pb-4">
               <div className="flex gap-2">
@@ -332,7 +350,6 @@ export default function GrupoDashboard() {
         {tab === 'pagos' && (
           <div className="rounded-2xl overflow-hidden" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
             <div className="px-4 py-4">
-              {/* Toggle control pagos — solo creador */}
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="text-sm font-semibold mb-1">{t.controlPagos}</div>
@@ -348,8 +365,6 @@ export default function GrupoDashboard() {
                   </span>
                 )}
               </div>
-
-              {/* Lista de jugadas para marcar pagos — solo creador con control activo */}
               {esCreador && grupo.controlPagos && (
                 <>
                   <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{color:'#8892A4'}}>
@@ -390,8 +405,6 @@ export default function GrupoDashboard() {
                   </div>
                 </>
               )}
-
-              {/* Vista para no creadores */}
               {!esCreador && (
                 <div className="text-xs px-3 py-2 rounded-xl" style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',color:'#8892A4'}}>
                   {grupo.controlPagos ? 'El creador gestiona los pagos del grupo.' : 'Este grupo no tiene control de pagos activo.'}
@@ -434,11 +447,45 @@ export default function GrupoDashboard() {
                 <span className="text-xs" style={{color:'#8892A4'}}>{t.codigoGrupo}</span>
                 <span className="font-condensed text-lg font-black" style={{color:'#C9A84C'}}>{grupo.codigo}</span>
               </div>
+
+              {esCreador && (
+                <button onClick={() => setShowEliminar(true)}
+                  className="w-full py-3 rounded-xl font-condensed font-black text-base mt-4"
+                  style={{background:'rgba(232,25,44,0.1)',border:'1px solid rgba(232,25,44,0.3)',color:'#E8192C'}}>
+                  🗑️ ELIMINAR GRUPO
+                </button>
+              )}
             </div>
           </div>
         )}
 
       </div>
+
+      {/* MODAL ELIMINAR */}
+      {showEliminar && (
+        <div className="fixed inset-0 flex items-center justify-center px-5"
+          style={{background:'rgba(0,0,0,0.85)',zIndex:999}}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{background:'#0D1B3E',border:'1px solid rgba(232,25,44,0.3)'}}>
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-3">⚠️</div>
+              <div className="font-condensed text-xl font-black mb-2" style={{color:'#E8192C'}}>Eliminar grupo</div>
+              <p className="text-xs" style={{color:'#8892A4',lineHeight:'1.7'}}>
+                Esta acción es <b style={{color:'white'}}>irreversible</b>. Se eliminarán el grupo y todas las jugadas asociadas.
+              </p>
+            </div>
+            <button onClick={eliminarGrupo} disabled={eliminando}
+              className="w-full py-3 rounded-xl font-condensed font-black text-base mb-2"
+              style={{background:'#E8192C',color:'white',opacity: eliminando ? 0.7 : 1}}>
+              {eliminando ? 'ELIMINANDO...' : '🗑️ SÍ, ELIMINAR'}
+            </button>
+            <button onClick={() => setShowEliminar(false)}
+              className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
+              style={{background:'transparent',border:'1px solid rgba(255,255,255,0.12)',color:'#F5F5F0'}}>
+              CANCELAR
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/inicio')}>
