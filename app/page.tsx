@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 export default function Home() {
   const router = useRouter();
   useEffect(() => {
-    router.push('/login');
+    const params = window.location.search;
+    router.push(`/login${params}`);
   }, []);
   return null;
 }
