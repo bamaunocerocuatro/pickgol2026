@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useIdioma } from '../context/IdiomaContext';
 
 function PlusContent() {
@@ -189,43 +189,19 @@ function PlusContent() {
     setAplicandoCodigo(true);
     setMensajeCodigo('');
     try {
-      const codigoRef = doc(db, 'codigos_plus', codigo.trim().toUpperCase());
-      const codigoSnap = await getDoc(codigoRef);
-
-      if (!codigoSnap.exists()) {
-        setMensajeCodigo('❌ Código inválido');
-        setAplicandoCodigo(false);
-        return;
-      }
-
-      const codigoData = codigoSnap.data();
-
-      if (!codigoData.activo) {
-        setMensajeCodigo('❌ Código desactivado');
-        setAplicandoCodigo(false);
-        return;
-      }
-
-      if (codigoData.maxUsos > 0 && codigoData.usos >= codigoData.maxUsos) {
-        setMensajeCodigo('❌ Código agotado');
-        setAplicandoCodigo(false);
-        return;
-      }
-
-      // Activar Plus gratis
-      await updateDoc(doc(db, 'usuarios', user.uid), {
-        plus: true,
-        plusActivadoEn: new Date(),
-        plusCodigo: codigo.trim().toUpperCase(),
+      const res = await fetch('/api/codigo-plus', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo: codigo.trim(), userId: user.uid }),
       });
-
-      // Incrementar usos del código
-      await updateDoc(codigoRef, { usos: increment(1) });
-
-      const snap = await getDoc(doc(db, 'usuarios', user.uid));
-      if (snap.exists()) setUserData(snap.data());
-      setMensajeCodigo('✅ ¡Código aplicado! Ya sos Plus');
-
+      const data = await res.json();
+      if (data.ok) {
+        const snap = await getDoc(doc(db, 'usuarios', user.uid));
+        if (snap.exists()) setUserData(snap.data());
+        setMensajeCodigo('✅ ¡Código aplicado! Ya sos Plus');
+      } else {
+        setMensajeCodigo(`❌ ${data.error}`);
+      }
     } catch (e) {
       setMensajeCodigo('❌ Error al aplicar el código');
     }
@@ -292,7 +268,6 @@ function PlusContent() {
               ))}
             </div>
 
-            {/* CÓDIGO PROMOCIONAL */}
             <div className="mb-4">
               <button onClick={() => setShowCodigo(!showCodigo)}
                 className="text-xs font-semibold cursor-pointer"
@@ -325,7 +300,6 @@ function PlusContent() {
               )}
             </div>
 
-            {/* MÉTODO DE PAGO */}
             <div className="mb-4">
               <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>
                 Método de pago
