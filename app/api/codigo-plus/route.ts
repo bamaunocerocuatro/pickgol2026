@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const codigoRef = db.collection('codigos_plus').doc(codigo.trim().toUpperCase());
     const codigoSnap = await codigoRef.get();
 
-    if (!codigoSnap.exists()) {
+    if (!codigoSnap.exists) {
       return NextResponse.json({ error: 'Código inválido' }, { status: 400 });
     }
 
