@@ -59,10 +59,23 @@ export default function Fixture() {
   );
 
   const porFecha: Record<string, any[]> = {};
-  partidos.forEach(p => {
+  const partidosOrdenados = [...partidos].sort((a, b) => {
+    if (a.estado === 'FT' && b.estado !== 'FT') return 1;
+    if (a.estado !== 'FT' && b.estado === 'FT') return -1;
+    return new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+  });
+  partidosOrdenados.forEach(p => {
     const fecha = formatFecha(p.fecha);
     if (!porFecha[fecha]) porFecha[fecha] = [];
     porFecha[fecha].push(p);
+  });
+
+  const fechasOrdenadas = Object.entries(porFecha).sort((a, b) => {
+    const aFT = a[1].every(p => p.estado === 'FT');
+    const bFT = b[1].every(p => p.estado === 'FT');
+    if (aFT && !bFT) return 1;
+    if (!aFT && bFT) return -1;
+    return 0;
   });
 
   return (
@@ -84,7 +97,7 @@ export default function Fixture() {
         {!cargando && !proximamente && partidos.length === 0 && (
           <div className="text-center py-10"><div className="text-4xl mb-3">📅</div><p className="text-sm" style={{color:'#8892A4'}}>No hay partidos disponibles</p></div>
         )}
-        {!cargando && !proximamente && Object.entries(porFecha).map(([fecha, ps]) => (
+        {!cargando && !proximamente && fechasOrdenadas.map(([fecha, ps]) => (
           <div key={fecha} className="mb-4">
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>{fecha}</div>
             <div className="rounded-2xl overflow-hidden" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
