@@ -58,11 +58,12 @@ function CrearJugadaForm() {
   }, [grupoId]);
 
   useEffect(() => {
+    if (loading) return;
     const liga = grupo?.liga || (!grupoId ? 'premier' : null);
     if (liga && (step === 1 || step === 3)) {
       cargarPartidos(liga);
     }
-  }, [step, grupo]);
+  }, [step, grupo, loading]);
 
   const cargarPartidos = async (liga: string) => {
     setCargandoPartidos(true);
@@ -160,7 +161,8 @@ function CrearJugadaForm() {
         creadoEn: serverTimestamp(),
       });
       router.push(grupoId ? `/grupo/${grupoId}` : '/inicio');
-    } catch (e) {
+    } catch (e: any) {
+      console.error('Error guardando jugada:', e.message);
       setError('Error al guardar. Intentá de nuevo.');
     }
     setGuardando(false);
@@ -383,8 +385,7 @@ function CrearJugadaForm() {
 
             {error && <p className="text-xs mb-4" style={{ color: '#E8192C' }}>{error}</p>}
 
-            <button
-              onClick={() => { if (validarStep3()) setStep(4); }}
+            <button onClick={() => { if (validarStep3()) setStep(4); }}
               disabled={fechaBloqueada}
               className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3"
               style={{ background: fechaBloqueada ? 'rgba(255,255,255,0.1)' : '#E8192C', color: fechaBloqueada ? '#8892A4' : 'white', cursor: fechaBloqueada ? 'not-allowed' : 'pointer' }}>
