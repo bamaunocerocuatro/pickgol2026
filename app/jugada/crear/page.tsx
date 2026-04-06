@@ -162,8 +162,10 @@ function CrearJugadaForm() {
       });
       router.push(grupoId ? `/grupo/${grupoId}` : '/inicio');
     } catch (e: any) {
-      console.error('Error guardando jugada:', e.message);
-      setError('Error al guardar. Intentá de nuevo.');
+      console.error('Error completo:', e);
+      console.error('Código:', e.code);
+      console.error('Mensaje:', e.message);
+      setError(`Error: ${e.code} - ${e.message}`);
     }
     setGuardando(false);
   };
