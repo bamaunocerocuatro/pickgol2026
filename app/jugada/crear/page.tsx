@@ -61,6 +61,9 @@ function CrearJugadaForm() {
     if (step === 3 && grupo?.liga) {
       cargarPartidos(grupo.liga);
     }
+    if (step === 3 && !grupoId) {
+      cargarPartidos('premier');
+    }
   }, [step, grupo]);
 
   const cargarPartidos = async (liga: string) => {
@@ -71,7 +74,6 @@ function CrearJugadaForm() {
       const data = await res.json();
       const todos = data.partidos || [];
 
-      // Encontrar la próxima fecha (partidos NS)
       const noJugados = todos.filter((p: any) => p.estado === 'NS');
       if (noJugados.length === 0) {
         setPartidos([]);
@@ -79,19 +81,13 @@ function CrearJugadaForm() {
         return;
       }
 
-      const fechas = noJugados.map((p: any) => p.fecha.substring(0, 10));
-      const fechaMin = fechas.sort()[0];
-      const fechaMinDate = new Date(fechaMin);
-      const fechaMaxDate = new Date(fechaMin);
-      fechaMaxDate.setDate(fechaMaxDate.getDate() + 4);
+      // Fecha del primer partido NS
+      const fechaMin = noJugados.map((p: any) => p.fecha.substring(0, 10)).sort()[0];
 
-      // Todos los partidos de esa fecha (incluidos los ya iniciados)
-      const todosEnFecha = todos.filter((p: any) => {
-        const d = new Date(p.fecha);
-        return d >= fechaMinDate && d <= fechaMaxDate;
-      });
+      // Todos los partidos de ese día calendario
+      const todosEnFecha = todos.filter((p: any) => p.fecha.substring(0, 10) === fechaMin);
 
-      // Si algún partido de la fecha ya comenzó → bloquear
+      // Si algún partido de ese día ya empezó o terminó → bloquear
       const hayPartidoIniciado = todosEnFecha.some((p: any) => p.estado !== 'NS');
       if (hayPartidoIniciado) {
         setFechaBloqueada(true);
@@ -100,7 +96,6 @@ function CrearJugadaForm() {
         return;
       }
 
-      // Solo los NS para mostrar
       const proximaFecha = todosEnFecha.filter((p: any) => p.estado === 'NS');
       setPartidos(proximaFecha);
 
@@ -159,12 +154,15 @@ function CrearJugadaForm() {
       });
 
       await addDoc(collection(db, 'jugadas'), {
-        nombre: nombre.trim(), grupoId,
-        userId: user.uid, userEmail: user.email,
+        nombre: nombre.trim(),
+        grupoId: grupoId || null,
+        userId: user.uid,
+        userEmail: user.email,
         variables: variablesGuardadas,
         variablesMeta: variables,
         predicciones: prediccionesGuardadas,
-        pagado: false, pagadoInterno: false,
+        pagado: false,
+        pagadoInterno: false,
         creadoEn: serverTimestamp(),
       });
       router.push(grupoId ? `/grupo/${grupoId}` : '/inicio');
@@ -264,6 +262,10 @@ function CrearJugadaForm() {
                 <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Este grupo usa <b style={{ color: '#C9A84C' }}>variables personalizadas</b> definidas por el creador.</p>
               </div>
             )}
+            <div className="rounded-xl p-3 mb-4 flex gap-2" style={{background:'rgba(255,165,0,0.07)',border:'1px solid rgba(255,165,0,0.2)'}}>
+              <span>⏰</span>
+              <p className="text-xs" style={{color:'rgba(255,255,255,0.6)'}}>Podés crear tu jugada hasta antes del inicio del primer partido de la fecha. Una vez comenzado el primer partido, no se podrán cargar nuevas jugadas.</p>
+            </div>
             <div className="rounded-xl p-3 mb-5 flex gap-2" style={{ background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.18)' }}>
               <span>ℹ️</span>
               <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Completá las variables globales, luego predecís el resultado de cada partido. Una vez enviada no se puede modificar.</p>
@@ -327,7 +329,6 @@ function CrearJugadaForm() {
               </div>
             )}
 
-            {/* FECHA BLOQUEADA */}
             {!cargandoPartidos && fechaBloqueada && (
               <div className="rounded-2xl p-5 mb-4 text-center" style={{ background: 'rgba(232,25,44,0.07)', border: '1px solid rgba(232,25,44,0.3)' }}>
                 <div className="text-4xl mb-3">🔒</div>
