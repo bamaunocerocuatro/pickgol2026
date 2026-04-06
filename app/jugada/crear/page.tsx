@@ -58,11 +58,9 @@ function CrearJugadaForm() {
   }, [grupoId]);
 
   useEffect(() => {
-    if (step === 3 && grupo?.liga) {
-      cargarPartidos(grupo.liga);
-    }
-    if (step === 3 && !grupoId) {
-      cargarPartidos('premier');
+    const liga = grupo?.liga || (!grupoId ? 'premier' : null);
+    if (liga && (step === 1 || step === 3)) {
+      cargarPartidos(liga);
     }
   }, [step, grupo]);
 
@@ -81,14 +79,10 @@ function CrearJugadaForm() {
         return;
       }
 
-      // Fecha del primer partido NS
       const fechaMin = noJugados.map((p: any) => p.fecha.substring(0, 10)).sort()[0];
-
-      // Todos los partidos de ese día calendario
       const todosEnFecha = todos.filter((p: any) => p.fecha.substring(0, 10) === fechaMin);
-
-      // Si algún partido de ese día ya empezó o terminó → bloquear
       const hayPartidoIniciado = todosEnFecha.some((p: any) => p.estado !== 'NS');
+
       if (hayPartidoIniciado) {
         setFechaBloqueada(true);
         setPartidos([]);
@@ -270,10 +264,22 @@ function CrearJugadaForm() {
               <span>ℹ️</span>
               <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Completá las variables globales, luego predecís el resultado de cada partido. Una vez enviada no se puede modificar.</p>
             </div>
+
+            {fechaBloqueada && (
+              <div className="rounded-2xl p-4 mb-4 text-center" style={{background:'rgba(232,25,44,0.07)',border:'1px solid rgba(232,25,44,0.3)'}}>
+                <div className="text-3xl mb-2">🔒</div>
+                <div className="font-condensed text-lg font-black mb-1" style={{color:'#E8192C'}}>La fecha ya comenzó</div>
+                <p className="text-xs" style={{color:'#8892A4'}}>No podés crear una jugada una vez que empezó el primer partido de la fecha. Volvé cuando empiece la próxima fecha.</p>
+              </div>
+            )}
+
             {error && <p className="text-xs mb-4" style={{ color: '#E8192C' }}>{error}</p>}
+
             <button onClick={() => { if (validarStep1()) setStep(2); }}
-              className="w-full py-3 rounded-xl font-condensed font-black text-lg" style={{ background: '#E8192C', color: 'white' }}>
-              SIGUIENTE →
+              disabled={fechaBloqueada}
+              className="w-full py-3 rounded-xl font-condensed font-black text-lg"
+              style={{ background: fechaBloqueada ? 'rgba(255,255,255,0.1)' : '#E8192C', color: fechaBloqueada ? '#8892A4' : 'white', cursor: fechaBloqueada ? 'not-allowed' : 'pointer' }}>
+              {fechaBloqueada ? '🔒 FECHA BLOQUEADA' : 'SIGUIENTE →'}
             </button>
           </>
         )}
