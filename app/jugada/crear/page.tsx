@@ -38,3 +38,4 @@ const guardarJugada = async () => {
     setError(Error: ${e.code} - ${e.message});
   }
   setGuardando(false);
+  };
