@@ -32,10 +32,10 @@ const guardarJugada = async () => {
       pagadoInterno: false,
       creadoEn: serverTimestamp(),
     });
-    router.push(grupoId ? /grupo/${grupoId} : '/inicio');
+    router.push(grupoId ? `/grupo/${grupoId}` : '/inicio');
   } catch (e: any) {
     console.error('Error completo:', e);
-    setError(Error: ${e.code} - ${e.message});
+    setError(`Error: ${e.code} - ${e.message}`);
   }
   setGuardando(false);
-  };
+};
