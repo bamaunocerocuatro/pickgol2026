@@ -73,26 +73,32 @@ function CrearJugadaForm() {
       const data = await res.json();
       const todos = data.partidos || [];
 
-      const noJugados = todos.filter((p: any) => p.estado === 'NS');
+      const hoy = new Date();
+      const haceUnaSemana = new Date();
+      haceUnaSemana.setDate(hoy.getDate() - 7);
+
+      const noJugados = todos.filter((p: any) => {
+        if (p.estado !== 'NS') return false;
+        const fechaPartido = new Date(p.fecha);
+        return fechaPartido >= haceUnaSemana;
+      });
+
       if (noJugados.length === 0) {
         setPartidos([]);
         setCargandoPartidos(false);
         return;
       }
 
-      // Fecha del primer partido NS
       const fechaMinStr = noJugados.map((p: any) => p.fecha).sort()[0];
       const fechaMin = new Date(fechaMinStr);
       const fechaMax = new Date(fechaMinStr);
       fechaMax.setDate(fechaMax.getDate() + 6);
 
-      // Todos los partidos en esa ventana de 6 días
       const todosEnVentana = todos.filter((p: any) => {
         const d = new Date(p.fecha);
         return d >= fechaMin && d <= fechaMax;
       });
 
-      // Si el primer partido NS ya tiene alguno iniciado o terminado antes → bloquear
       const primerNS = new Date(fechaMinStr);
       const hayIniciadoAntes = todosEnVentana.some((p: any) => {
         const d = new Date(p.fecha);
@@ -106,7 +112,6 @@ function CrearJugadaForm() {
         return;
       }
 
-      // Solo los NS de esa ventana
       const proximaFecha = todosEnVentana.filter((p: any) => p.estado === 'NS');
       setPartidos(proximaFecha);
 

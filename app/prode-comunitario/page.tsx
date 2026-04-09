@@ -66,7 +66,17 @@ function ProdeComunitarioContent() {
       const res = await fetch(`/api/fixture?liga=${ligaId}`);
       const data = await res.json();
       const todos = data.partidos || [];
-      const noJugados = todos.filter((p: any) => p.estado === 'NS');
+
+      const hoy = new Date();
+      const haceUnaSemana = new Date();
+      haceUnaSemana.setDate(hoy.getDate() - 7);
+
+      const noJugados = todos.filter((p: any) => {
+        if (p.estado !== 'NS') return false;
+        const fechaPartido = new Date(p.fecha);
+        return fechaPartido >= haceUnaSemana;
+      });
+
       if (noJugados.length === 0) { setPartidos([]); return; }
 
       const fechaMinStr = noJugados.map((p: any) => p.fecha).sort()[0];
@@ -218,8 +228,7 @@ function ProdeComunitarioContent() {
         {step === 'ranking' && (
           <>
             {!miJugada && (
-              <button
-                onClick={async () => { await cargarPartidos(); setStep('vars'); }}
+              <button onClick={async () => { await cargarPartidos(); setStep('vars'); }}
                 className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-4"
                 style={{ background: '#E8192C', color: 'white' }}>
                 ⚽ CREAR MI JUGADA COMUNITARIA
