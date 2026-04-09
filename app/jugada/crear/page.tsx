@@ -80,18 +80,34 @@ function CrearJugadaForm() {
         return;
       }
 
-      const fechaMin = noJugados.map((p: any) => p.fecha.substring(0, 10)).sort()[0];
-      const todosEnFecha = todos.filter((p: any) => p.fecha.substring(0, 10) === fechaMin);
-      const hayPartidoIniciado = todosEnFecha.some((p: any) => p.estado !== 'NS');
+      // Fecha del primer partido NS
+      const fechaMinStr = noJugados.map((p: any) => p.fecha).sort()[0];
+      const fechaMin = new Date(fechaMinStr);
+      const fechaMax = new Date(fechaMinStr);
+      fechaMax.setDate(fechaMax.getDate() + 6);
 
-      if (hayPartidoIniciado) {
+      // Todos los partidos en esa ventana de 6 días
+      const todosEnVentana = todos.filter((p: any) => {
+        const d = new Date(p.fecha);
+        return d >= fechaMin && d <= fechaMax;
+      });
+
+      // Si el primer partido NS ya tiene alguno iniciado o terminado antes → bloquear
+      const primerNS = new Date(fechaMinStr);
+      const hayIniciadoAntes = todosEnVentana.some((p: any) => {
+        const d = new Date(p.fecha);
+        return p.estado !== 'NS' && d <= primerNS;
+      });
+
+      if (hayIniciadoAntes) {
         setFechaBloqueada(true);
         setPartidos([]);
         setCargandoPartidos(false);
         return;
       }
 
-      const proximaFecha = todosEnFecha.filter((p: any) => p.estado === 'NS');
+      // Solo los NS de esa ventana
+      const proximaFecha = todosEnVentana.filter((p: any) => p.estado === 'NS');
       setPartidos(proximaFecha);
 
       const init: Record<string, { local: string; visitante: string }> = {};
@@ -137,11 +153,6 @@ function CrearJugadaForm() {
   const guardarJugada = async () => {
     setGuardando(true);
     try {
-      console.log('user:', user?.uid);
-      console.log('grupoId:', grupoId);
-      console.log('partidos:', partidos.length);
-      console.log('respuestas:', respuestas);
-
       const prediccionesGuardadas = partidos.map((p: any, i: number) => ({
         local: p.local, visitante: p.visitante, fecha: p.fecha,
         golesLocalPredichos: parseInt(predicciones[i]?.local || '0'),
@@ -152,9 +163,6 @@ function CrearJugadaForm() {
       variables.forEach(v => {
         variablesGuardadas[v.key] = v.tipo === 'numero' ? parseInt(respuestas[v.key] || '0') : respuestas[v.key];
       });
-
-      console.log('prediccionesGuardadas:', prediccionesGuardadas);
-      console.log('variablesGuardadas:', variablesGuardadas);
 
       await addDoc(collection(db, 'jugadas'), {
         nombre: nombre.trim(),
