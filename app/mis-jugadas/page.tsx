@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { useIdioma } from '../context/IdiomaContext';
 
 const LIGAS_NOMBRES: Record<string, string> = {
@@ -21,6 +21,9 @@ export default function MisJugadas() {
   const [jugadas, setJugadas] = useState<any[]>([]);
   const [grupos, setGrupos] = useState<Record<string, any>>({});
   const [cargando, setCargando] = useState(false);
+  const [fechasBloqueadas, setFechasBloqueadas] = useState<Record<string, boolean>>({});
+  const [eliminando, setEliminando] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -32,21 +35,78 @@ export default function MisJugadas() {
         const snap = await getDocs(q);
         const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setJugadas(data);
+
         const grupoIds = [...new Set(data.map((j: any) => j.grupoId).filter(Boolean))];
         const gruposData: Record<string, any> = {};
         for (const gid of grupoIds) {
-          const { getDoc, doc } = await import('firebase/firestore');
+          const { getDoc, doc: firestoreDoc } = await import('firebase/firestore');
           const { db: fireDb } = await import('../lib/firebase');
-          const gsnap = await getDoc(doc(fireDb, 'grupos', gid));
+          const gsnap = await getDoc(firestoreDoc(fireDb, 'grupos', gid));
           if (gsnap.exists()) gruposData[gid] = { id: gsnap.id, ...gsnap.data() };
         }
         setGrupos(gruposData);
+
+        // Verificar si la fecha ya empezó para cada liga
+        const ligas = [...new Set(Object.values(gruposData).map((g: any) => g.liga).filter(Boolean))] as string[];
+        const bloqueadas: Record<string, boolean> = {};
+        for (const liga of ligas) {
+          bloqueadas[liga] = await verificarFechaBloqueada(liga);
+        }
+        setFechasBloqueadas(bloqueadas);
+
       } catch (e) {}
       setCargando(false);
       setLoading(false);
     });
     return () => unsub();
   }, []);
+
+  const verificarFechaBloqueada = async (liga: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/fixture?liga=${liga}`);
+      const data = await res.json();
+      const todos = data.partidos || [];
+
+      const hoy = new Date();
+      const haceUnaSemana = new Date();
+      haceUnaSemana.setDate(hoy.getDate() - 7);
+
+      const noJugados = todos.filter((p: any) => {
+        if (p.estado !== 'NS') return false;
+        return new Date(p.fecha) >= haceUnaSemana;
+      });
+
+      if (noJugados.length === 0) return true;
+
+      const fechaMinStr = noJugados.map((p: any) => p.fecha).sort()[0];
+      const fechaMin = new Date(fechaMinStr);
+      const fechaMax = new Date(fechaMinStr);
+      fechaMax.setDate(fechaMax.getDate() + 6);
+
+      const todosEnVentana = todos.filter((p: any) => {
+        const d = new Date(p.fecha);
+        return d >= fechaMin && d <= fechaMax;
+      });
+
+      const primerNS = new Date(fechaMinStr);
+      return todosEnVentana.some((p: any) => {
+        const d = new Date(p.fecha);
+        return p.estado !== 'NS' && d <= primerNS;
+      });
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const eliminarJugada = async (jugadaId: string) => {
+    setEliminando(jugadaId);
+    try {
+      await deleteDoc(doc(db, 'jugadas', jugadaId));
+      setJugadas(prev => prev.filter(j => j.id !== jugadaId));
+      setShowConfirm(null);
+    } catch (e) {}
+    setEliminando(null);
+  };
 
   const formatFecha = (ts: any) => {
     if (!ts) return '';
@@ -85,19 +145,36 @@ export default function MisJugadas() {
 
         {!cargando && jugadas.map((j) => {
           const grupo = grupos[j.grupoId];
+          const ligaBloqueada = grupo ? fechasBloqueadas[grupo.liga] : false;
+          const puedeEliminar = !ligaBloqueada;
+
           return (
             <div key={j.id} className="rounded-2xl mb-3 overflow-hidden"
               style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
               <div className="px-4 py-3 flex items-center justify-between" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-                <div>
+                <div className="flex-1">
                   <div className="font-condensed text-base font-black">{j.nombre}</div>
                   <div className="text-xs" style={{color:'#8892A4'}}>
                     {grupo ? `${grupo.nombre} · ${LIGAS_NOMBRES[grupo.liga] || grupo.liga}` : t.sinGrupo}
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>0 pts</div>
-                  <div className="text-xs" style={{color:'#8892A4'}}>{formatFecha(j.creadoEn)}</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-right">
+                    <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>{j.puntos || 0} pts</div>
+                    <div className="text-xs" style={{color:'#8892A4'}}>{formatFecha(j.creadoEn)}</div>
+                  </div>
+                  <button
+                    onClick={() => puedeEliminar ? setShowConfirm(j.id) : null}
+                    disabled={!puedeEliminar}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
+                    style={{
+                      background: puedeEliminar ? 'rgba(232,25,44,0.15)' : 'rgba(255,255,255,0.05)',
+                      border: puedeEliminar ? '1px solid rgba(232,25,44,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                      color: puedeEliminar ? '#E8192C' : '#444',
+                      cursor: puedeEliminar ? 'pointer' : 'not-allowed'
+                    }}>
+                    🗑️
+                  </button>
                 </div>
               </div>
               <div className="px-4 py-3">
@@ -132,6 +209,33 @@ export default function MisJugadas() {
           );
         })}
       </div>
+
+      {/* MODAL CONFIRMAR ELIMINACION */}
+      {showConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center px-5"
+          style={{background:'rgba(0,0,0,0.85)',zIndex:999}}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{background:'#0D1B3E',border:'1px solid rgba(232,25,44,0.3)'}}>
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-3">🗑️</div>
+              <div className="font-condensed text-xl font-black mb-2" style={{color:'#E8192C'}}>Eliminar jugada</div>
+              <p className="text-xs" style={{color:'#8892A4',lineHeight:'1.7'}}>
+                Esta acción es <b style={{color:'white'}}>irreversible</b>. Se eliminará la jugada y todas sus predicciones.
+              </p>
+            </div>
+            <button onClick={() => eliminarJugada(showConfirm)}
+              disabled={eliminando === showConfirm}
+              className="w-full py-3 rounded-xl font-condensed font-black text-base mb-2"
+              style={{background:'#E8192C',color:'white',opacity: eliminando ? 0.7 : 1}}>
+              {eliminando === showConfirm ? 'ELIMINANDO...' : '🗑️ SÍ, ELIMINAR'}
+            </button>
+            <button onClick={() => setShowConfirm(null)}
+              className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
+              style={{background:'transparent',border:'1px solid rgba(255,255,255,0.12)',color:'#F5F5F0'}}>
+              CANCELAR
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/inicio')}>
