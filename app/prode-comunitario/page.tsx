@@ -11,7 +11,6 @@ function ProdeComunitarioContent() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [ligaId, setLigaId] = useState('premier');
-  const [tab, setTab] = useState<'ranking' | 'mijugada'>('ranking');
   const [jugadas, setJugadas] = useState<any[]>([]);
   const [miJugada, setMiJugada] = useState<any>(null);
   const [cargando, setCargando] = useState(false);
@@ -47,7 +46,11 @@ function ProdeComunitarioContent() {
   const cargarJugadas = async (liga: string) => {
     setCargando(true);
     try {
-      const q = query(collection(db, 'jugadas_comunitarias'), where('liga', '==', liga));
+      const q = query(
+        collection(db, 'jugadas'),
+        where('comunitaria', '==', true),
+        where('liga', '==', liga)
+      );
       const snap = await getDocs(q);
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       data.sort((a: any, b: any) => (b.puntos || 0) - (a.puntos || 0));
@@ -66,13 +69,10 @@ function ProdeComunitarioContent() {
       const noJugados = todos.filter((p: any) => p.estado === 'NS');
       if (noJugados.length === 0) { setPartidos([]); return; }
       const fechaMin = noJugados.map((p: any) => p.fecha.substring(0, 10)).sort()[0];
-      const fechaMinDate = new Date(fechaMin);
-      const fechaMaxDate = new Date(fechaMin);
-      fechaMaxDate.setDate(fechaMaxDate.getDate() + 4);
-      const proximaFecha = noJugados.filter((p: any) => {
-        const d = new Date(p.fecha);
-        return d >= fechaMinDate && d <= fechaMaxDate;
-      });
+      const todosEnFecha = todos.filter((p: any) => p.fecha.substring(0, 10) === fechaMin);
+      const hayPartidoIniciado = todosEnFecha.some((p: any) => p.estado !== 'NS');
+      if (hayPartidoIniciado) { setPartidos([]); return; }
+      const proximaFecha = todosEnFecha.filter((p: any) => p.estado === 'NS');
       setPartidos(proximaFecha);
       const init: Record<string, { local: string; visitante: string }> = {};
       proximaFecha.forEach((_: any, i: number) => { init[i] = { local: '', visitante: '' }; });
@@ -104,8 +104,11 @@ function ProdeComunitarioContent() {
         golesLocalPredichos: parseInt(predicciones[i]?.local || '0'),
         golesVisitantePredichos: parseInt(predicciones[i]?.visitante || '0'),
       }));
-      await addDoc(collection(db, 'jugadas_comunitarias'), {
+      await addDoc(collection(db, 'jugadas'), {
+        comunitaria: true,
         liga: ligaId,
+        grupoId: null,
+        nombre: `Prode Comunitario - ${ligaId}`,
         userId: user.uid,
         userEmail: user.email,
         userName: user.displayName || user.email?.split('@')[0],
@@ -120,13 +123,29 @@ function ProdeComunitarioContent() {
           hayCeroCero: variables.hayCeroCero,
           varAnulaGol: variables.varAnulaGol,
         },
+        variablesMeta: [
+          { key: 'amarillas', label: '¿Cuántas amarillas habrá?', pts: 12, tipo: 'numero' },
+          { key: 'rojas', label: '¿Cuántas rojas habrá?', pts: 10, tipo: 'numero' },
+          { key: 'goles', label: '¿Cuántos goles habrá en la fecha?', pts: 8, tipo: 'numero' },
+          { key: 'golesMax', label: '¿Cuántos goles tendrá el partido con más goles?', pts: 10, tipo: 'numero' },
+          { key: 'penales', label: '¿Cuántos penales habrá?', pts: 10, tipo: 'numero' },
+          { key: 'hayGolAntes5', label: '¿Habrá un gol antes del min 5?', pts: 5, tipo: 'sino' },
+          { key: 'hayGolAlargue', label: '¿Habrá gol en el alargue del 2do tiempo?', pts: 6, tipo: 'sino' },
+          { key: 'hayCeroCero', label: '¿Habrá algún resultado 0-0?', pts: 2, tipo: 'sino' },
+          { key: 'varAnulaGol', label: '¿El VAR anulará algún gol?', pts: 5, tipo: 'sino' },
+        ],
         predicciones: prediccionesGuardadas,
         puntos: 0,
+        pagado: false,
+        pagadoInterno: false,
         creadoEn: serverTimestamp(),
       });
       await cargarJugadas(ligaId);
       setStep('ranking');
-    } catch (e) { setError('Error al guardar. Intentá de nuevo.'); }
+    } catch (e: any) {
+      console.error('Error:', e);
+      setError(`Error: ${e.code} - ${e.message}`);
+    }
     setGuardando(false);
   };
 
@@ -169,7 +188,6 @@ function ProdeComunitarioContent() {
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      {/* HEADER */}
       <div style={{ background: 'linear-gradient(160deg,#0A1F5C,#0D2870)' }} className="px-4 pt-4 pb-4">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={() => step !== 'ranking' ? setStep('ranking') : window.history.back()}
@@ -182,15 +200,13 @@ function ProdeComunitarioContent() {
 
       <div className="px-4 py-4">
 
-        {/* RANKING */}
         {step === 'ranking' && (
           <>
             {!miJugada && (
               <button
                 onClick={async () => { await cargarPartidos(); setStep('vars'); }}
                 className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-4"
-                style={{ background: '#E8192C', color: 'white' }}
-              >
+                style={{ background: '#E8192C', color: 'white' }}>
                 ⚽ CREAR MI JUGADA COMUNITARIA
               </button>
             )}
@@ -251,7 +267,6 @@ function ProdeComunitarioContent() {
           </>
         )}
 
-        {/* STEP VARS */}
         {step === 'vars' && (
           <>
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#8892A4' }}>Variables de la fecha</div>
@@ -301,7 +316,6 @@ function ProdeComunitarioContent() {
           </>
         )}
 
-        {/* STEP PARTIDOS */}
         {step === 'partidos' && (
           <>
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#8892A4' }}>
@@ -352,7 +366,6 @@ function ProdeComunitarioContent() {
           </>
         )}
 
-        {/* STEP CONFIRM */}
         {step === 'confirm' && (
           <>
             <div className="rounded-2xl p-4 mb-4 text-center" style={{ background: 'rgba(0,200,83,0.07)', border: '1px solid rgba(0,200,83,0.2)' }}>
@@ -417,7 +430,6 @@ function ProdeComunitarioContent() {
 
       </div>
 
-      {/* BOTTOM NAV */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{ background: 'rgba(6,13,31,0.98)', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => window.location.href = '/inicio'}>
           <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{ color: '#8892A4' }}>Inicio</span>
