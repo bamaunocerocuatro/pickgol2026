@@ -12,7 +12,7 @@
   "navigationDividerColorDark": "#000000",
   "backgroundColor": "#020810",
   "enableNotifications": true,
-  "startUrl": "https://pickgol2026.vercel.app",
+  "startUrl": "https://pickgol.com",
   "iconUrl": "https://pickgol2026.vercel.app/icon-512.png",
   "maskableIconUrl": "https://pickgol2026.vercel.app/icon-512.png",
   "splashScreenFadeOutDuration": 300,
@@ -20,11 +20,11 @@
     "path": "C:\\Users\\Ari\\Desktop\\pickgol2026\\twa-pickgol\\android.keystore",
     "alias": "PICKGOL"
   },
-  "appVersionName": "2",
-  "appVersionCode": 2,
+  "appVersionName": "4",
+  "appVersionCode": 4,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://pickgol2026.vercel.app/manifest.json",
+  "webManifestUrl": "https://pickgol.com",
   "fallbackType": "customtabs",
   "features": {},
   "alphaDependencies": {
@@ -33,7 +33,7 @@
   "enableSiteSettingsShortcut": true,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
-  "fullScopeUrl": "https://pickgol2026.vercel.app/",
+  "fullScopeUrl": "https://pickgol.com/",
   "minSdkVersion": 21,
   "orientation": "portrait",
   "fingerprints": [],
@@ -43,5 +43,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "2"
+  "appVersion": "4"
 }
