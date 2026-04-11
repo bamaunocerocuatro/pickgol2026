@@ -22,18 +22,30 @@ export default function Unirse() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       if (!u) router.push('/login');
-      else { setUser(u); setLoading(false); }
+      else {
+        setUser(u);
+        setLoading(false);
+      }
     });
     return () => unsub();
   }, []);
 
-  const buscarGrupo = async () => {
+  useEffect(() => {
+    if (!user) return;
+    const params = new URLSearchParams(window.location.search);
+    const codigoParam = params.get('codigo');
+    if (codigoParam) {
+      setCodigo(codigoParam.toUpperCase());
+      buscarGrupoConCodigo(codigoParam.toUpperCase());
+    }
+  }, [user]);
+
+  const buscarGrupoConCodigo = async (cod: string) => {
     setError('');
     setGrupo(null);
-    if (!codigo.trim()) { setError(t.ingresaCodigo); return; }
     setBuscando(true);
     try {
-      const q = query(collection(db, 'grupos'), where('codigo', '==', codigo.trim().toUpperCase()));
+      const q = query(collection(db, 'grupos'), where('codigo', '==', cod));
       const snap = await getDocs(q);
       if (snap.empty) {
         setError(t.codigoIncorrecto);
@@ -46,6 +58,11 @@ export default function Unirse() {
       setError(t.errorBuscar);
     }
     setBuscando(false);
+  };
+
+  const buscarGrupo = async () => {
+    if (!codigo.trim()) { setError(t.ingresaCodigo); return; }
+    await buscarGrupoConCodigo(codigo.trim().toUpperCase());
   };
 
   const unirse = async () => {

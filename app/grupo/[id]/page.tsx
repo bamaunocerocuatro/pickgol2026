@@ -140,7 +140,7 @@ export default function GrupoDashboard() {
   const esCreador = grupo?.creadorId === user?.uid;
   const miPosicion = ranking.findIndex(r => r.esYo) + 1;
   const misPuntos = ranking.find(r => r.esYo)?.puntos || 0;
-  const linkGrupo = `https://pickgol2026.vercel.app/unirse?codigo=${grupo?.codigo}`;
+  const linkGrupo = `https://pickgol.com/unirse?codigo=${grupo?.codigo}`;
 
   const copiarCodigo = () => {
     navigator.clipboard.writeText(grupo?.codigo || '');
