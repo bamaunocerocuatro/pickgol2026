@@ -361,7 +361,7 @@ function ProdeComunitarioContent() {
                     <div className="flex items-center gap-2">
                       <div className="flex-1 text-right">
                         <div className="text-sm font-bold mb-2">{p.local}</div>
-                        <input type="number" min="0" max="20" value={predicciones[i]?.local || ''} onChange={(e) => setPrediccion(i, 'local', e.target.value)} placeholder="0"
+                        <input type="tel" inputMode="numeric" pattern="[0-9]*" value={predicciones[i]?.local || ''} onChange={(e) => setPrediccion(i, 'local', e.target.value)} placeholder="0"
                           className="w-full rounded-xl px-3 py-2 text-white text-lg font-black text-center outline-none"
                           style={{ background: predicciones[i]?.local !== '' && predicciones[i]?.local !== undefined ? 'rgba(0,200,83,0.1)' : 'rgba(0,0,0,0.35)', border: predicciones[i]?.local !== '' && predicciones[i]?.local !== undefined ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)' }} />
                       </div>
