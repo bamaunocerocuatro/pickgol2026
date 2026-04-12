@@ -89,10 +89,11 @@ function ProdeComunitarioContent() {
         return d >= fechaMin && d <= fechaMax;
       });
 
-      const primerNS = new Date(fechaMinStr);
+      // Comparar solo fecha sin hora
+      const primerNSFecha = new Date(fechaMinStr).toISOString().substring(0, 10);
       const hayIniciadoAntes = todosEnVentana.some((p: any) => {
-        const d = new Date(p.fecha);
-        return p.estado !== 'NS' && d <= primerNS;
+        const partidoFecha = new Date(p.fecha).toISOString().substring(0, 10);
+        return p.estado !== 'NS' && partidoFecha <= primerNSFecha;
       });
 
       if (hayIniciadoAntes) { setPartidos([]); return; }
@@ -198,7 +199,7 @@ function ProdeComunitarioContent() {
         <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8892A4' }}>{label}</label>
         <span className="text-xs font-black" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', padding: '2px 8px', borderRadius: '6px' }}>{pts} pts</span>
       </div>
-      <input type="number" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+      <input type="tel" inputMode="numeric" pattern="[0-9]*" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="w-full rounded-xl px-4 py-3 text-white text-sm outline-none"
         style={{ background: 'rgba(0,0,0,0.35)', border: value ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)' }} />
     </div>
@@ -368,7 +369,7 @@ function ProdeComunitarioContent() {
                       <div className="font-condensed text-xl font-black px-2" style={{ color: '#8892A4' }}>—</div>
                       <div className="flex-1 text-left">
                         <div className="text-sm font-bold mb-2">{p.visitante}</div>
-                        <input type="number" min="0" max="20" value={predicciones[i]?.visitante || ''} onChange={(e) => setPrediccion(i, 'visitante', e.target.value)} placeholder="0"
+                        <input type="tel" inputMode="numeric" pattern="[0-9]*" value={predicciones[i]?.visitante || ''} onChange={(e) => setPrediccion(i, 'visitante', e.target.value)} placeholder="0"
                           className="w-full rounded-xl px-3 py-2 text-white text-lg font-black text-center outline-none"
                           style={{ background: predicciones[i]?.visitante !== '' && predicciones[i]?.visitante !== undefined ? 'rgba(0,200,83,0.1)' : 'rgba(0,0,0,0.35)', border: predicciones[i]?.visitante !== '' && predicciones[i]?.visitante !== undefined ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)' }} />
                       </div>

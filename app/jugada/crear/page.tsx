@@ -99,10 +99,11 @@ function CrearJugadaForm() {
         return d >= fechaMin && d <= fechaMax;
       });
 
-      const primerNS = new Date(fechaMinStr);
+      // Comparar solo fecha sin hora para detectar partidos iniciados en la misma jornada
+      const primerNSFecha = new Date(fechaMinStr).toISOString().substring(0, 10);
       const hayIniciadoAntes = todosEnVentana.some((p: any) => {
-        const d = new Date(p.fecha);
-        return p.estado !== 'NS' && d <= primerNS;
+        const partidoFecha = new Date(p.fecha).toISOString().substring(0, 10);
+        return p.estado !== 'NS' && partidoFecha <= primerNSFecha;
       });
 
       if (hayIniciadoAntes) {
@@ -385,7 +386,7 @@ function CrearJugadaForm() {
                     <div className="flex items-center gap-2">
                       <div className="flex-1 text-right">
                         <div className="text-sm font-bold mb-2">{p.local}</div>
-                        <input type="number" min="0" max="20" value={predicciones[i]?.local || ''}
+                        <input type="tel" inputMode="numeric" pattern="[0-9]*" value={predicciones[i]?.local || ''}
                           onChange={(e) => setPrediccion(i, 'local', e.target.value)} placeholder="0"
                           className="w-full rounded-xl px-3 py-2 text-white text-lg font-black text-center outline-none"
                           style={{ background: predicciones[i]?.local !== '' && predicciones[i]?.local !== undefined ? 'rgba(0,200,83,0.1)' : 'rgba(0,0,0,0.35)', border: predicciones[i]?.local !== '' && predicciones[i]?.local !== undefined ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)' }} />
@@ -393,7 +394,7 @@ function CrearJugadaForm() {
                       <div className="font-condensed text-xl font-black px-2" style={{ color: '#8892A4' }}>—</div>
                       <div className="flex-1 text-left">
                         <div className="text-sm font-bold mb-2">{p.visitante}</div>
-                        <input type="number" min="0" max="20" value={predicciones[i]?.visitante || ''}
+                        <input type="tel" inputMode="numeric" pattern="[0-9]*" value={predicciones[i]?.visitante || ''}
                           onChange={(e) => setPrediccion(i, 'visitante', e.target.value)} placeholder="0"
                           className="w-full rounded-xl px-3 py-2 text-white text-lg font-black text-center outline-none"
                           style={{ background: predicciones[i]?.visitante !== '' && predicciones[i]?.visitante !== undefined ? 'rgba(0,200,83,0.1)' : 'rgba(0,0,0,0.35)', border: predicciones[i]?.visitante !== '' && predicciones[i]?.visitante !== undefined ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)' }} />

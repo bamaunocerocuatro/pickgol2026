@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 export const TEXTOS: Record<string, any> = {
   es: {
     bienvenido: 'Bienvenido de nuevo,', misPts: 'Mis pts', posicion: 'Posición', referidos: 'REFERIDOS',
-    mundialTitulo: 'PRODE MUNDIAL 2026', mundialSub: 'Lanzamiento: 1 May 2026 · El más completo',
+    mundialTitulo: 'PRODE MUNDIAL 2026', mundialSub: 'Lanzamiento: 15 May 2026 · El más completo',
     crearGrupo: 'CREAR GRUPO', crearGrupoSub: 'Jugá con tus amigos · Elegí la liga',
     prodeComunitario: 'PRODE COMUNITARIO', prodeComunitarioSub: 'Todos contra todos · Elegí la liga',
     ligasDisponibles: 'Ligas disponibles', proximamente: 'Próximamente',
@@ -179,7 +179,7 @@ export const TEXTOS: Record<string, any> = {
   },
   en: {
     bienvenido: 'Welcome back,', misPts: 'My pts', posicion: 'Position', referidos: 'REFERRALS',
-    mundialTitulo: 'WORLD CUP 2026 PREDICTIONS', mundialSub: 'Launch: May 1, 2026 · The most complete',
+    mundialTitulo: 'WORLD CUP 2026 PREDICTIONS', mundialSub: 'Launch: May 15, 2026 · The most complete',
     crearGrupo: 'CREATE GROUP', crearGrupoSub: 'Play with your friends · Choose a league',
     prodeComunitario: 'COMMUNITY PREDICTIONS', prodeComunitarioSub: 'Everyone vs everyone · Choose a league',
     ligasDisponibles: 'Available leagues', proximamente: 'Coming soon',
