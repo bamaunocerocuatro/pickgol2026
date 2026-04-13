@@ -77,10 +77,10 @@ function CrearJugadaForm() {
       const haceUnaSemana = new Date();
       haceUnaSemana.setDate(hoy.getDate() - 7);
 
+      // Partidos NS válidos (no suspendidos de hace más de 7 días)
       const noJugados = todos.filter((p: any) => {
         if (p.estado !== 'NS') return false;
-        const fechaPartido = new Date(p.fecha);
-        return fechaPartido >= haceUnaSemana;
+        return new Date(p.fecha) >= haceUnaSemana;
       });
 
       if (noJugados.length === 0) {
@@ -89,35 +89,49 @@ function CrearJugadaForm() {
         return;
       }
 
-      const fechaMinStr = noJugados.map((p: any) => p.fecha).sort()[0];
-      const fechaMin = new Date(fechaMinStr);
-      const fechaMax = new Date(fechaMinStr);
-      fechaMax.setDate(fechaMax.getDate() + 6);
+      // Ordenar NS por fecha
+      const noJugadosOrdenados = [...noJugados].sort((a: any, b: any) =>
+        new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+      );
 
-      const todosEnVentana = todos.filter((p: any) => {
-        const d = new Date(p.fecha);
-        return d >= fechaMin && d <= fechaMax;
+      // Detectar jornada actual usando gaps:
+      // Empezamos desde el primer NS y agregamos partidos mientras el gap con el siguiente sea <= 4 días
+      const GAP_MAX_DIAS = 4;
+      const jornada: any[] = [noJugadosOrdenados[0]];
+
+      for (let i = 1; i < noJugadosOrdenados.length; i++) {
+        const anterior = new Date(noJugadosOrdenados[i - 1].fecha);
+        const actual = new Date(noJugadosOrdenados[i].fecha);
+        const diffDias = (actual.getTime() - anterior.getTime()) / (1000 * 60 * 60 * 24);
+        if (diffDias <= GAP_MAX_DIAS) {
+          jornada.push(noJugadosOrdenados[i]);
+        } else {
+          break; // gap grande = nueva jornada, paramos
+        }
+      }
+
+      // Fecha del primer y último partido de la jornada
+      const fechaInicioJornada = jornada[0].fecha.substring(0, 10);
+      const fechaFinJornada = jornada[jornada.length - 1].fecha.substring(0, 10);
+
+      // Verificar si hay algún partido FT dentro de la ventana de la jornada
+      const hayIniciadoEnJornada = todos.some((p: any) => {
+        if (p.estado === 'NS') return false;
+        const fechaP = p.fecha.substring(0, 10);
+        return fechaP >= fechaInicioJornada && fechaP <= fechaFinJornada;
       });
 
-      // Buscar en TODOS los partidos si hay alguno FT en la misma fecha o posterior al primer NS
-      const primerNSFecha = new Date(fechaMinStr).toISOString().substring(0, 10);
-      const hayIniciadoAntes = todos.some((p: any) => {
-        const partidoFecha = new Date(p.fecha).toISOString().substring(0, 10);
-        return p.estado !== 'NS' && partidoFecha >= primerNSFecha;
-      });
-
-      if (hayIniciadoAntes) {
+      if (hayIniciadoEnJornada) {
         setFechaBloqueada(true);
         setPartidos([]);
         setCargandoPartidos(false);
         return;
       }
 
-      const proximaFecha = todosEnVentana.filter((p: any) => p.estado === 'NS');
-      setPartidos(proximaFecha);
+      setPartidos(jornada);
 
       const init: Record<string, { local: string; visitante: string }> = {};
-      proximaFecha.forEach((_: any, i: number) => {
+      jornada.forEach((_: any, i: number) => {
         init[i] = { local: '', visitante: '' };
       });
       setPredicciones(init);
