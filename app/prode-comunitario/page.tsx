@@ -89,11 +89,11 @@ function ProdeComunitarioContent() {
         return d >= fechaMin && d <= fechaMax;
       });
 
-      // Comparar solo fecha sin hora
+      // Buscar en TODOS los partidos si hay alguno FT en la misma fecha o posterior al primer NS
       const primerNSFecha = new Date(fechaMinStr).toISOString().substring(0, 10);
-      const hayIniciadoAntes = todosEnVentana.some((p: any) => {
+      const hayIniciadoAntes = todos.some((p: any) => {
         const partidoFecha = new Date(p.fecha).toISOString().substring(0, 10);
-        return p.estado !== 'NS' && partidoFecha <= primerNSFecha;
+        return p.estado !== 'NS' && partidoFecha >= primerNSFecha;
       });
 
       if (hayIniciadoAntes) { setPartidos([]); return; }
