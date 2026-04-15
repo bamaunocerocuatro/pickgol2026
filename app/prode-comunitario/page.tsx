@@ -70,7 +70,6 @@ function ProdeComunitarioContent() {
       const haceUnaSemana = new Date();
       haceUnaSemana.setDate(haceUnaSemana.getDate() - 7);
 
-      // Partidos NS válidos (no suspendidos de hace más de 7 días)
       const noJugados = todos.filter((p: any) => {
         if (p.estado !== 'NS') return false;
         return new Date(p.fecha) >= haceUnaSemana;
@@ -78,42 +77,48 @@ function ProdeComunitarioContent() {
 
       if (noJugados.length === 0) { setPartidos([]); return; }
 
-      // Ordenar NS por fecha
-      const noJugadosOrdenados = [...noJugados].sort((a: any, b: any) =>
-        new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
-      );
+      const tieneJornada = noJugados.some((p: any) => p.jornada != null);
+      let jornadaPartidos: any[] = [];
 
-      // Detectar jornada usando gaps: agregamos partidos mientras el gap sea <= 4 días
-      const GAP_MAX_DIAS = 4;
-      const jornada: any[] = [noJugadosOrdenados[0]];
+      if (tieneJornada) {
+        const jornadaMin = Math.min(...noJugados.map((p: any) => p.jornada));
+        jornadaPartidos = todos.filter((p: any) => p.jornada === jornadaMin);
 
-      for (let i = 1; i < noJugadosOrdenados.length; i++) {
-        const anterior = new Date(noJugadosOrdenados[i - 1].fecha);
-        const actual = new Date(noJugadosOrdenados[i].fecha);
-        const diffDias = (actual.getTime() - anterior.getTime()) / (1000 * 60 * 60 * 24);
-        if (diffDias <= GAP_MAX_DIAS) {
-          jornada.push(noJugadosOrdenados[i]);
-        } else {
-          break;
+        const hayIniciadoEnJornada = jornadaPartidos.some((p: any) => p.estado !== 'NS');
+        if (hayIniciadoEnJornada) { setPartidos([]); return; }
+
+        jornadaPartidos = jornadaPartidos.filter((p: any) => p.estado === 'NS');
+      } else {
+        const noJugadosOrdenados = [...noJugados].sort((a: any, b: any) =>
+          new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+        );
+        const GAP_MAX_DIAS = 4;
+        jornadaPartidos = [noJugadosOrdenados[0]];
+        for (let i = 1; i < noJugadosOrdenados.length; i++) {
+          const anterior = new Date(noJugadosOrdenados[i - 1].fecha);
+          const actual = new Date(noJugadosOrdenados[i].fecha);
+          const diffDias = (actual.getTime() - anterior.getTime()) / (1000 * 60 * 60 * 24);
+          if (diffDias <= GAP_MAX_DIAS) {
+            jornadaPartidos.push(noJugadosOrdenados[i]);
+          } else {
+            break;
+          }
         }
+
+        const fechaInicioJornada = jornadaPartidos[0].fecha.substring(0, 10);
+        const fechaFinJornada = jornadaPartidos[jornadaPartidos.length - 1].fecha.substring(0, 10);
+        const hayIniciadoEnJornada = todos.some((p: any) => {
+          if (p.estado === 'NS') return false;
+          const fechaP = p.fecha.substring(0, 10);
+          return fechaP >= fechaInicioJornada && fechaP <= fechaFinJornada;
+        });
+
+        if (hayIniciadoEnJornada) { setPartidos([]); return; }
       }
 
-      // Fechas de inicio y fin de la jornada
-      const fechaInicioJornada = jornada[0].fecha.substring(0, 10);
-      const fechaFinJornada = jornada[jornada.length - 1].fecha.substring(0, 10);
-
-      // Verificar si hay algún partido FT dentro de la ventana de la jornada
-      const hayIniciadoEnJornada = todos.some((p: any) => {
-        if (p.estado === 'NS') return false;
-        const fechaP = p.fecha.substring(0, 10);
-        return fechaP >= fechaInicioJornada && fechaP <= fechaFinJornada;
-      });
-
-      if (hayIniciadoEnJornada) { setPartidos([]); return; }
-
-      setPartidos(jornada);
+      setPartidos(jornadaPartidos);
       const init: Record<string, { local: string; visitante: string }> = {};
-      jornada.forEach((_: any, i: number) => { init[i] = { local: '', visitante: '' }; });
+      jornadaPartidos.forEach((_: any, i: number) => { init[i] = { local: '', visitante: '' }; });
       setPredicciones(init);
     } catch (e) { setPartidos([]); }
   };

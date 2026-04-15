@@ -1,38 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const LIGAS_IDS: Record<string, { fotmob?: string; footballdata?: string; proximamente?: boolean }> = {
-  premier:      { fotmob: '47' },
-  laliga:       { fotmob: '87' },
-  seriea:       { fotmob: '55' },
-  bundesliga:   { fotmob: '54' },
-  ligue1:       { fotmob: '53' },
+const LIGAS_IDS: Record<string, { footballdata?: string; proximamente?: boolean }> = {
+  premier:      { footballdata: 'PL' },
+  laliga:       { footballdata: 'PD' },
+  seriea:       { footballdata: 'SA' },
+  bundesliga:   { footballdata: 'BL1' },
+  ligue1:       { footballdata: 'FL1' },
+  brasileirao:  { footballdata: 'BSA' },
   ligapro:      { proximamente: true },
   'primera-b':  { proximamente: true },
-  brasileirao:  { footballdata: 'BSA' },
 };
-
-async function getFromFotmob(ligaId: string) {
-  const res = await fetch(
-    `https://free-api-live-football-data.p.rapidapi.com/football-get-all-matches-by-league?leagueid=${ligaId}`,
-    {
-      headers: {
-        'x-rapidapi-host': process.env.RAPIDAPI_HOST!,
-        'x-rapidapi-key': process.env.RAPIDAPI_KEY!,
-      },
-      next: { revalidate: 3600 }
-    }
-  );
-  const data = await res.json();
-  const matches = data?.response?.matches || [];
-  return matches.map((m: any) => ({
-    local: m.home?.name || 'Local',
-    visitante: m.away?.name || 'Visitante',
-    fecha: m.status?.utcTime || '',
-    estado: m.notStarted ? 'NS' : m.status?.finished ? 'FT' : m.status?.ongoing ? 'LIVE' : 'NS',
-    golesLocal: m.home?.score ?? null,
-    golesVisitante: m.away?.score ?? null,
-  }));
-}
 
 async function getFromFootballData(competitionCode: string) {
   const res = await fetch(
@@ -53,6 +30,7 @@ async function getFromFootballData(competitionCode: string) {
     estado: m.status === 'FINISHED' ? 'FT' : m.status === 'TIMED' || m.status === 'SCHEDULED' ? 'NS' : m.status === 'IN_PLAY' || m.status === 'PAUSED' ? 'LIVE' : 'NS',
     golesLocal: m.score?.fullTime?.home ?? null,
     golesVisitante: m.score?.fullTime?.away ?? null,
+    jornada: m.matchday ?? null,
   }));
 }
 
@@ -66,14 +44,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    let partidos: any[] = [];
-
-    if (ids.fotmob) {
-      partidos = await getFromFotmob(ids.fotmob);
-    } else if (ids.footballdata) {
-      partidos = await getFromFootballData(ids.footballdata);
-    }
-
+    const partidos = await getFromFootballData(ids.footballdata!);
     return NextResponse.json({ partidos });
   } catch (e) {
     return NextResponse.json({ partidos: [] });
