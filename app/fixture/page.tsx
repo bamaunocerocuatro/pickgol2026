@@ -58,25 +58,53 @@ export default function Fixture() {
     </main>
   );
 
-  const porFecha: Record<string, any[]> = {};
-  const partidosOrdenados = [...partidos].sort((a, b) => {
-    if (a.estado === 'FT' && b.estado !== 'FT') return 1;
-    if (a.estado !== 'FT' && b.estado === 'FT') return -1;
-    return new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
-  });
-  partidosOrdenados.forEach(p => {
-    const fecha = formatFecha(p.fecha);
-    if (!porFecha[fecha]) porFecha[fecha] = [];
-    porFecha[fecha].push(p);
-  });
+  // Agrupar por jornada si existe, sino por fecha
+  const tieneJornada = partidos.some(p => p.jornada != null);
 
-  const fechasOrdenadas = Object.entries(porFecha).sort((a, b) => {
-    const aFT = a[1].every(p => p.estado === 'FT');
-    const bFT = b[1].every(p => p.estado === 'FT');
-    if (aFT && !bFT) return 1;
-    if (!aFT && bFT) return -1;
-    return 0;
-  });
+  let grupos: { titulo: string; partidos: any[]; jornada?: number; esFT: boolean }[] = [];
+
+  if (tieneJornada) {
+    // Agrupar por número de jornada
+    const porJornada: Record<number, any[]> = {};
+    partidos.forEach(p => {
+      const j = p.jornada ?? 0;
+      if (!porJornada[j]) porJornada[j] = [];
+      porJornada[j].push(p);
+    });
+
+    // Ordenar jornadas: primero las que tienen NS, después las FT
+    grupos = Object.entries(porJornada)
+      .map(([jornada, ps]) => ({
+        titulo: `Jornada ${jornada}`,
+        jornada: Number(jornada),
+        partidos: ps.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime()),
+        esFT: ps.every(p => p.estado === 'FT'),
+      }))
+      .sort((a, b) => {
+        if (a.esFT && !b.esFT) return 1;
+        if (!a.esFT && b.esFT) return -1;
+        return (a.jornada ?? 0) - (b.jornada ?? 0);
+      });
+  } else {
+    // Fallback: agrupar por fecha
+    const porFecha: Record<string, any[]> = {};
+    const partidosOrdenados = [...partidos].sort((a, b) => {
+      if (a.estado === 'FT' && b.estado !== 'FT') return 1;
+      if (a.estado !== 'FT' && b.estado === 'FT') return -1;
+      return new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+    });
+    partidosOrdenados.forEach(p => {
+      const fecha = formatFecha(p.fecha);
+      if (!porFecha[fecha]) porFecha[fecha] = [];
+      porFecha[fecha].push(p);
+    });
+
+    grupos = Object.entries(porFecha).map(([fecha, ps]) => ({
+      titulo: fecha,
+      partidos: ps,
+      esFT: ps.every(p => p.estado === 'FT'),
+    }));
+  }
 
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
@@ -97,12 +125,15 @@ export default function Fixture() {
         {!cargando && !proximamente && partidos.length === 0 && (
           <div className="text-center py-10"><div className="text-4xl mb-3">📅</div><p className="text-sm" style={{color:'#8892A4'}}>No hay partidos disponibles</p></div>
         )}
-        {!cargando && !proximamente && fechasOrdenadas.map(([fecha, ps]) => (
-          <div key={fecha} className="mb-4">
-            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>{fecha}</div>
+        {!cargando && !proximamente && grupos.map((grupo) => (
+          <div key={grupo.titulo} className="mb-4">
+            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2 flex items-center gap-2" style={{color:'#8892A4'}}>
+              {grupo.titulo}
+              {grupo.esFT && <span className="text-xs px-2 py-0.5 rounded-lg font-bold" style={{background:'rgba(255,255,255,0.06)',color:'#8892A4'}}>Finalizada</span>}
+            </div>
             <div className="rounded-2xl overflow-hidden" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
-              {ps.map((p, i) => (
-                <div key={i} className="px-4 py-3 flex items-center gap-3" style={{borderBottom: i < ps.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'}}>
+              {grupo.partidos.map((p, i) => (
+                <div key={i} className="px-4 py-3 flex items-center gap-3" style={{borderBottom: i < grupo.partidos.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none'}}>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-semibold">{p.local}</span>
@@ -115,7 +146,12 @@ export default function Fixture() {
                   </div>
                   <div className="text-right flex-shrink-0">
                     {p.estado === 'FT' && <span className="text-xs px-2 py-1 rounded-lg font-bold" style={{background:'rgba(255,255,255,0.06)',color:'#8892A4'}}>FIN</span>}
-                    {p.estado === 'NS' && <span className="text-xs font-semibold" style={{color:'#C9A84C'}}>{formatHora(p.fecha)}</span>}
+                    {p.estado === 'NS' && (
+                      <div>
+                        <div className="text-xs font-semibold" style={{color:'#C9A84C'}}>{formatHora(p.fecha)}</div>
+                        <div className="text-xs" style={{color:'#8892A4'}}>{formatFecha(p.fecha)}</div>
+                      </div>
+                    )}
                     {p.estado !== 'FT' && p.estado !== 'NS' && <span className="text-xs px-2 py-1 rounded-lg font-bold" style={{background:'rgba(232,25,44,0.15)',color:'#E8192C'}}>● {p.estado}'</span>}
                   </div>
                 </div>
