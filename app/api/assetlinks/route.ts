@@ -1,0 +1,26 @@
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  const assetlinks = [
+    {
+      relation: [
+        'delegate_permission/common.handle_all_urls',
+        'delegate_permission/common.get_login_creds',
+      ],
+      target: {
+        namespace: 'android_app',
+        package_name: 'com.pickgol.app',
+        sha256_cert_fingerprints: [
+          'F1:0D:F3:C6:DF:75:88:E7:A3:50:9F:99:1B:9D:EB:CF:94:F4:4C:FC:27:19:9C:5F:6D:12:CF:78:CA:25:A6:9C',
+        ],
+      },
+    },
+  ];
+
+  return new NextResponse(JSON.stringify(assetlinks), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=0',
+    },
+  });
+}
