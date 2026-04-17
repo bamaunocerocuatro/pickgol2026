@@ -33,7 +33,7 @@ export default function Chat() {
   useEffect(() => {
     if (!grupo) return;
     const q = query(collection(db, 'grupos', id, 'mensajes'), orderBy('creadoEn', 'asc'));
-    const unsub = onSnapshot(q, (snap) => {
+    const unsub = onSnapshot(q, { includeMetadataChanges: false }, (snap) => {
       setMensajes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     });
@@ -42,17 +42,20 @@ export default function Chat() {
 
   const enviar = async () => {
     if (!texto.trim() || enviando) return;
+    const textoAEnviar = texto.trim();
+    setTexto('');
     setEnviando(true);
     try {
       await addDoc(collection(db, 'grupos', id, 'mensajes'), {
-        texto: texto.trim(),
+        texto: textoAEnviar,
         userId: user.uid,
         userEmail: user.email,
         userName: user.displayName || user.email?.split('@')[0] || 'Usuario',
         creadoEn: serverTimestamp(),
       });
-      setTexto('');
-    } catch (e) {}
+    } catch (e) {
+      setTexto(textoAEnviar);
+    }
     setEnviando(false);
   };
 
@@ -81,10 +84,8 @@ export default function Chat() {
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
         <div className="flex items-center gap-3 mb-4">
-          <button
-            onClick={() => window.location.href = `/grupo/${id}`}
-            className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm"
-          >←</button>
+          <button onClick={() => window.location.href = `/grupo/${id}`}
+            className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm">←</button>
           <span className="text-xs" style={{color:'rgba(255,255,255,0.4)'}}>← <b style={{color:'rgba(255,255,255,0.65)'}}>{grupo.nombre}</b></span>
         </div>
         <h1 className="font-condensed text-3xl font-black mb-1">Chat 💬</h1>
@@ -100,13 +101,10 @@ export default function Chat() {
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto flex flex-col" style={{height:'100vh'}}>
 
-      {/* HEADER */}
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-4 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => window.location.href = `/grupo/${id}`}
-            className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm"
-          >←</button>
+          <button onClick={() => window.location.href = `/grupo/${id}`}
+            className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-sm">←</button>
           <div>
             <div className="font-condensed text-lg font-black">{grupo.nombre}</div>
             <div className="text-xs" style={{color:'#8892A4'}}>💬 Chat del grupo · {grupo.miembros?.length || 1} jugadores</div>
@@ -114,7 +112,6 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* MENSAJES */}
       <div className="flex-1 overflow-y-auto px-4 py-4" style={{paddingBottom:'80px'}}>
         {mensajes.length === 0 && (
           <div className="text-center py-10">
@@ -130,15 +127,13 @@ export default function Chat() {
                 {!esMio && (
                   <div className="text-xs mb-1 px-1" style={{color:'#8892A4'}}>{m.userName}</div>
                 )}
-                <div
-                  className="px-3 py-2 rounded-2xl text-sm"
+                <div className="px-3 py-2 rounded-2xl text-sm"
                   style={{
                     background: esMio ? '#E8192C' : '#0D1B3E',
                     color: 'white',
                     borderBottomRightRadius: esMio ? '4px' : '16px',
                     borderBottomLeftRadius: esMio ? '16px' : '4px',
-                  }}
-                >
+                  }}>
                   {m.texto}
                 </div>
                 <div className={`text-xs mt-1 px-1 ${esMio ? 'text-right' : 'text-left'}`} style={{color:'rgba(255,255,255,0.3)'}}>
@@ -151,7 +146,6 @@ export default function Chat() {
         <div ref={bottomRef} />
       </div>
 
-      {/* INPUT */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md px-4 py-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
         <div className="flex gap-2">
           <input
@@ -163,12 +157,9 @@ export default function Chat() {
             className="flex-1 rounded-xl px-4 py-3 text-white text-sm outline-none"
             style={{background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.09)'}}
           />
-          <button
-            onClick={enviar}
-            disabled={enviando || !texto.trim()}
+          <button onClick={enviar} disabled={enviando || !texto.trim()}
             className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg"
-            style={{background:'#E8192C',opacity: enviando || !texto.trim() ? 0.5 : 1}}
-          >
+            style={{background:'#E8192C',opacity: enviando || !texto.trim() ? 0.5 : 1}}>
             ➤
           </button>
         </div>
