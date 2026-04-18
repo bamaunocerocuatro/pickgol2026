@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const grupoRef = db.collection('grupos').doc(grupoId);
     const grupoSnap = await grupoRef.get();
 
-    if (!grupoSnap.exists()) {
+    if (!grupoSnap.exists) {
       return NextResponse.json({ error: 'Grupo no encontrado' }, { status: 404 });
     }
 
