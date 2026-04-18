@@ -15,12 +15,9 @@ function ProdeComunitarioContent() {
   const [miJugada, setMiJugada] = useState<any>(null);
   const [cargando, setCargando] = useState(false);
   const [partidos, setPartidos] = useState<any[]>([]);
+  const [fechaBloqueada, setFechaBloqueada] = useState(false);
   const [predicciones, setPredicciones] = useState<Record<string, { local: string; visitante: string }>>({});
-  const [variables, setVariables] = useState({
-    amarillas: '', rojas: '', goles: '', golesMax: '', penales: '',
-    hayGolAntes5: '', hayGolAlargue: '', hayCeroCero: '', varAnulaGol: ''
-  });
-  const [step, setStep] = useState<'ranking' | 'vars' | 'partidos' | 'confirm'>('ranking');
+  const [step, setStep] = useState<'ranking' | 'partidos' | 'confirm'>('ranking');
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const searchParams = useSearchParams();
@@ -62,6 +59,7 @@ function ProdeComunitarioContent() {
   };
 
   const cargarPartidos = async () => {
+    setFechaBloqueada(false);
     try {
       const res = await fetch(`/api/fixture?liga=${ligaId}`);
       const data = await res.json();
@@ -75,7 +73,7 @@ function ProdeComunitarioContent() {
         return new Date(p.fecha) >= haceUnaSemana;
       });
 
-      if (noJugados.length === 0) { setPartidos([]); return; }
+      if (noJugados.length === 0) { setPartidos([]); setFechaBloqueada(true); return; }
 
       const tieneJornada = noJugados.some((p: any) => p.jornada != null);
       let jornadaPartidos: any[] = [];
@@ -85,7 +83,11 @@ function ProdeComunitarioContent() {
         jornadaPartidos = todos.filter((p: any) => p.jornada === jornadaMin);
 
         const hayIniciadoEnJornada = jornadaPartidos.some((p: any) => p.estado !== 'NS');
-        if (hayIniciadoEnJornada) { setPartidos([]); return; }
+        if (hayIniciadoEnJornada) {
+          setFechaBloqueada(true);
+          setPartidos([]);
+          return;
+        }
 
         jornadaPartidos = jornadaPartidos.filter((p: any) => p.estado === 'NS');
       } else {
@@ -113,7 +115,11 @@ function ProdeComunitarioContent() {
           return fechaP >= fechaInicioJornada && fechaP <= fechaFinJornada;
         });
 
-        if (hayIniciadoEnJornada) { setPartidos([]); return; }
+        if (hayIniciadoEnJornada) {
+          setFechaBloqueada(true);
+          setPartidos([]);
+          return;
+        }
       }
 
       setPartidos(jornadaPartidos);
@@ -121,14 +127,6 @@ function ProdeComunitarioContent() {
       jornadaPartidos.forEach((_: any, i: number) => { init[i] = { local: '', visitante: '' }; });
       setPredicciones(init);
     } catch (e) { setPartidos([]); }
-  };
-
-  const validarVars = () => {
-    const v = variables;
-    if (!v.amarillas || !v.rojas || !v.goles || !v.golesMax || !v.penales || !v.hayGolAntes5 || !v.hayGolAlargue || !v.hayCeroCero || !v.varAnulaGol) {
-      setError('Completá todas las variables'); return false;
-    }
-    setError(''); return true;
   };
 
   const validarPartidos = () => {
@@ -155,28 +153,6 @@ function ProdeComunitarioContent() {
         userId: user.uid,
         userEmail: user.email,
         userName: user.displayName || user.email?.split('@')[0],
-        variables: {
-          amarillas: parseInt(variables.amarillas),
-          rojas: parseInt(variables.rojas),
-          goles: parseInt(variables.goles),
-          golesMax: parseInt(variables.golesMax),
-          penales: parseInt(variables.penales),
-          hayGolAntes5: variables.hayGolAntes5,
-          hayGolAlargue: variables.hayGolAlargue,
-          hayCeroCero: variables.hayCeroCero,
-          varAnulaGol: variables.varAnulaGol,
-        },
-        variablesMeta: [
-          { key: 'amarillas', label: '¿Cuántas amarillas habrá?', pts: 12, tipo: 'numero' },
-          { key: 'rojas', label: '¿Cuántas rojas habrá?', pts: 10, tipo: 'numero' },
-          { key: 'goles', label: '¿Cuántos goles habrá en la fecha?', pts: 8, tipo: 'numero' },
-          { key: 'golesMax', label: '¿Cuántos goles tendrá el partido con más goles?', pts: 10, tipo: 'numero' },
-          { key: 'penales', label: '¿Cuántos penales habrá?', pts: 10, tipo: 'numero' },
-          { key: 'hayGolAntes5', label: '¿Habrá un gol antes del min 5?', pts: 5, tipo: 'sino' },
-          { key: 'hayGolAlargue', label: '¿Habrá gol en el alargue del 2do tiempo?', pts: 6, tipo: 'sino' },
-          { key: 'hayCeroCero', label: '¿Habrá algún resultado 0-0?', pts: 2, tipo: 'sino' },
-          { key: 'varAnulaGol', label: '¿El VAR anulará algún gol?', pts: 5, tipo: 'sino' },
-        ],
         predicciones: prediccionesGuardadas,
         puntos: 0,
         pagado: false,
@@ -192,7 +168,6 @@ function ProdeComunitarioContent() {
     setGuardando(false);
   };
 
-  const setVar = (key: string, val: string) => setVariables(prev => ({ ...prev, [key]: val }));
   const setPrediccion = (i: number, tipo: 'local' | 'visitante', valor: string) => {
     if (valor !== '' && (isNaN(Number(valor)) || Number(valor) < 0)) return;
     setPredicciones(prev => ({ ...prev, [i]: { ...prev[i], [tipo]: valor } }));
@@ -200,27 +175,6 @@ function ProdeComunitarioContent() {
 
   const formatHora = (dateStr: string) => new Date(dateStr).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   const formatFecha = (dateStr: string) => new Date(dateStr).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
-
-  const YN = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
-    <div className="flex gap-2">
-      <div onClick={() => onChange('si')} className="flex-1 rounded-xl py-3 text-center cursor-pointer font-condensed font-bold text-sm"
-        style={{ background: value === 'si' ? 'rgba(0,200,83,0.15)' : 'rgba(0,0,0,0.35)', border: value === 'si' ? '1px solid #00C853' : '1px solid rgba(255,255,255,0.09)', color: value === 'si' ? '#00C853' : '#8892A4' }}>✅ SÍ</div>
-      <div onClick={() => onChange('no')} className="flex-1 rounded-xl py-3 text-center cursor-pointer font-condensed font-bold text-sm"
-        style={{ background: value === 'no' ? 'rgba(232,25,44,0.15)' : 'rgba(0,0,0,0.35)', border: value === 'no' ? '1px solid #E8192C' : '1px solid rgba(255,255,255,0.09)', color: value === 'no' ? '#E8192C' : '#8892A4' }}>❌ NO</div>
-    </div>
-  );
-
-  const InputNum = ({ label, pts, value, onChange, placeholder }: any) => (
-    <div className="mb-4">
-      <div className="flex justify-between items-center mb-2">
-        <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8892A4' }}>{label}</label>
-        <span className="text-xs font-black" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', padding: '2px 8px', borderRadius: '6px' }}>{pts} pts</span>
-      </div>
-      <input type="tel" inputMode="numeric" pattern="[0-9]*" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full rounded-xl px-4 py-3 text-white text-sm outline-none"
-        style={{ background: 'rgba(0,0,0,0.35)', border: value ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)' }} />
-    </div>
-  );
 
   if (loading) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
@@ -238,7 +192,7 @@ function ProdeComunitarioContent() {
           <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Prode Comunitario</span>
         </div>
         <h1 className="font-condensed text-3xl font-black mb-3">🌍 Prode Comunitario</h1>
-        <LigaSelector value={ligaId} onChange={(id) => { setLigaId(id); setStep('ranking'); }} showMundial={false} />
+        <LigaSelector value={ligaId} onChange={(id) => { setLigaId(id); setStep('ranking'); setFechaBloqueada(false); }} showMundial={false} />
       </div>
 
       <div className="px-4 py-4">
@@ -246,11 +200,22 @@ function ProdeComunitarioContent() {
         {step === 'ranking' && (
           <>
             {!miJugada && (
-              <button onClick={async () => { await cargarPartidos(); setStep('vars'); }}
+              <button onClick={async () => {
+                await cargarPartidos();
+                if (!fechaBloqueada) setStep('partidos');
+              }}
                 className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-4"
                 style={{ background: '#E8192C', color: 'white' }}>
                 ⚽ CREAR MI JUGADA COMUNITARIA
               </button>
+            )}
+
+            {fechaBloqueada && (
+              <div className="rounded-2xl p-4 mb-4 text-center" style={{ background: 'rgba(232,25,44,0.07)', border: '1px solid rgba(232,25,44,0.3)' }}>
+                <div className="text-3xl mb-2">🔒</div>
+                <div className="font-condensed text-lg font-black mb-1" style={{ color: '#E8192C' }}>La fecha ya comenzó</div>
+                <p className="text-xs" style={{ color: '#8892A4' }}>No podés crear una jugada. Volvé cuando empiece la próxima fecha.</p>
+              </div>
             )}
 
             {miJugada && (
@@ -309,55 +274,6 @@ function ProdeComunitarioContent() {
           </>
         )}
 
-        {step === 'vars' && (
-          <>
-            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#8892A4' }}>Variables de la fecha</div>
-            <InputNum label="¿Cuántas amarillas habrá?" pts={12} value={variables.amarillas} onChange={(v: string) => setVar('amarillas', v)} placeholder="Ej: 8" />
-            <InputNum label="¿Cuántas rojas habrá?" pts={10} value={variables.rojas} onChange={(v: string) => setVar('rojas', v)} placeholder="Ej: 2" />
-            <InputNum label="¿Cuántos goles habrá en la fecha?" pts={8} value={variables.goles} onChange={(v: string) => setVar('goles', v)} placeholder="Ej: 12" />
-            <InputNum label="¿Cuántos goles tendrá el partido con más goles?" pts={10} value={variables.golesMax} onChange={(v: string) => setVar('golesMax', v)} placeholder="Ej: 4" />
-            <InputNum label="¿Cuántos penales habrá?" pts={10} value={variables.penales} onChange={(v: string) => setVar('penales', v)} placeholder="Ej: 2" />
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8892A4' }}>¿Habrá un gol antes del min 5?</label>
-                <span className="text-xs font-black" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', padding: '2px 8px', borderRadius: '6px' }}>5 pts</span>
-              </div>
-              <YN value={variables.hayGolAntes5} onChange={(v) => setVar('hayGolAntes5', v)} />
-            </div>
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8892A4' }}>¿Habrá gol en el alargue del 2do tiempo?</label>
-                <span className="text-xs font-black" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', padding: '2px 8px', borderRadius: '6px' }}>6 pts</span>
-              </div>
-              <YN value={variables.hayGolAlargue} onChange={(v) => setVar('hayGolAlargue', v)} />
-            </div>
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8892A4' }}>¿Habrá algún resultado 0-0?</label>
-                <span className="text-xs font-black" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', padding: '2px 8px', borderRadius: '6px' }}>2 pts</span>
-              </div>
-              <YN value={variables.hayCeroCero} onChange={(v) => setVar('hayCeroCero', v)} />
-            </div>
-            <div className="mb-5">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#8892A4' }}>¿El VAR anulará algún gol?</label>
-                <span className="text-xs font-black" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', padding: '2px 8px', borderRadius: '6px' }}>5 pts</span>
-              </div>
-              <YN value={variables.varAnulaGol} onChange={(v) => setVar('varAnulaGol', v)} />
-            </div>
-            {error && <p className="text-xs mb-4" style={{ color: '#E8192C' }}>{error}</p>}
-            <button onClick={() => { if (validarVars()) setStep('partidos'); }}
-              className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3" style={{ background: '#E8192C', color: 'white' }}>
-              SIGUIENTE →
-            </button>
-            <button onClick={() => setStep('ranking')}
-              className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
-              style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', color: '#F5F5F0' }}>
-              ← ATRÁS
-            </button>
-          </>
-        )}
-
         {step === 'partidos' && (
           <>
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#8892A4' }}>
@@ -400,7 +316,7 @@ function ProdeComunitarioContent() {
               className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3" style={{ background: '#E8192C', color: 'white' }}>
               SIGUIENTE →
             </button>
-            <button onClick={() => setStep('vars')}
+            <button onClick={() => setStep('ranking')}
               className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
               style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', color: '#F5F5F0' }}>
               ← ATRÁS
@@ -414,26 +330,6 @@ function ProdeComunitarioContent() {
               <div className="text-4xl mb-2">✅</div>
               <div className="font-condensed text-xl font-black mb-1">Prode Comunitario</div>
               <div className="text-xs" style={{ color: '#8892A4' }}>{ligaId} · Todos contra todos</div>
-            </div>
-            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{ color: '#8892A4' }}>Variables</div>
-            <div className="rounded-2xl overflow-hidden mb-4" style={{ background: '#0D1B3E', border: '1px solid rgba(255,255,255,0.07)' }}>
-              {[
-                { label: '🟨 Amarillas', value: variables.amarillas },
-                { label: '🟥 Rojas', value: variables.rojas },
-                { label: '⚽ Goles totales', value: variables.goles },
-                { label: '🎯 Goles partido máx', value: variables.golesMax },
-                { label: '🎽 Penales', value: variables.penales },
-                { label: '⚡ Gol antes min 5', value: variables.hayGolAntes5 === 'si' ? 'SÍ' : 'NO' },
-                { label: '⏱️ Gol en alargue', value: variables.hayGolAlargue === 'si' ? 'SÍ' : 'NO' },
-                { label: '🥅 Resultado 0-0', value: variables.hayCeroCero === 'si' ? 'SÍ' : 'NO' },
-                { label: '📺 VAR anula gol', value: variables.varAnulaGol === 'si' ? 'SÍ' : 'NO' },
-              ].map((item, i, arr) => (
-                <div key={i} className="flex justify-between items-center px-4 py-3"
-                  style={{ borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                  <span className="text-xs" style={{ color: '#8892A4' }}>{item.label}</span>
-                  <span className="text-sm font-bold">{item.value}</span>
-                </div>
-              ))}
             </div>
             {partidos.length > 0 && (
               <>
