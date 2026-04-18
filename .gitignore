@@ -40,3 +40,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 app/lib/serviceAccount.json 
+"pickgol-firebase-adminsdk-fbsvc-74e3eda984.json" 
