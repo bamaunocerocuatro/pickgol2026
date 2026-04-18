@@ -1,11 +1,10 @@
- import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '../../lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   try {
     const { grupoId, userId } = await req.json();
 
-    // Verificar que el usuario es el creador
     const grupoRef = db.collection('grupos').doc(grupoId);
     const grupoSnap = await grupoRef.get();
 
@@ -17,21 +16,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
-    // Borrar todas las jugadas del grupo
     const jugadasSnap = await db.collection('jugadas')
       .where('grupoId', '==', grupoId)
       .get();
 
     const batch = db.batch();
     jugadasSnap.docs.forEach(d => batch.delete(d.ref));
-
-    // Borrar el grupo
     batch.delete(grupoRef);
-
     await batch.commit();
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('ERROR ELIMINAR GRUPO:', e.message, e.stack);
+    return NextResponse.json({ error: e.message, stack: e.stack }, { status: 500 });
   }
 }
