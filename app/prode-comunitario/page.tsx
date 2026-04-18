@@ -130,6 +130,7 @@ function ProdeComunitarioContent() {
   };
 
   const validarPartidos = () => {
+    if (partidos.length === 0) { setError('No hay partidos disponibles para predecir'); return false; }
     for (let i = 0; i < partidos.length; i++) {
       const p = predicciones[i];
       if (!p || p.local === '' || p.visitante === '') { setError('Completá todos los resultados'); return false; }
@@ -279,14 +280,24 @@ function ProdeComunitarioContent() {
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: '#8892A4' }}>
               Predicciones por partido <span style={{ color: '#C9A84C' }}>· 5 pts c/u</span>
             </div>
-            {partidos.length === 0 && (
+
+            {fechaBloqueada && (
+              <div className="rounded-2xl p-5 mb-4 text-center" style={{ background: 'rgba(232,25,44,0.07)', border: '1px solid rgba(232,25,44,0.3)' }}>
+                <div className="text-4xl mb-3">🔒</div>
+                <div className="font-condensed text-lg font-black mb-2" style={{ color: '#E8192C' }}>La fecha ya comenzó</div>
+                <div className="text-xs" style={{ color: '#8892A4' }}>No podés crear una jugada una vez que empezó el primer partido.</div>
+              </div>
+            )}
+
+            {!fechaBloqueada && partidos.length === 0 && (
               <div className="rounded-2xl p-5 mb-4 text-center" style={{ background: '#0D1B3E', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div className="text-3xl mb-2">📅</div>
                 <div className="font-condensed text-base font-bold mb-1">Sin partidos próximos</div>
                 <div className="text-xs" style={{ color: '#8892A4' }}>No hay partidos disponibles para predecir</div>
               </div>
             )}
-            {partidos.length > 0 && (
+
+            {!fechaBloqueada && partidos.length > 0 && (
               <>
                 <div className="text-xs mb-3 px-1" style={{ color: '#8892A4' }}>📅 {formatFecha(partidos[0].fecha)} — {partidos.length} partidos</div>
                 {partidos.map((p: any, i: number) => (
@@ -311,9 +322,13 @@ function ProdeComunitarioContent() {
                 ))}
               </>
             )}
+
             {error && <p className="text-xs mb-4" style={{ color: '#E8192C' }}>{error}</p>}
+
             <button onClick={() => { if (validarPartidos()) setStep('confirm'); }}
-              className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3" style={{ background: '#E8192C', color: 'white' }}>
+              disabled={partidos.length === 0 || fechaBloqueada}
+              className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3"
+              style={{ background: partidos.length === 0 || fechaBloqueada ? 'rgba(255,255,255,0.1)' : '#E8192C', color: partidos.length === 0 || fechaBloqueada ? '#8892A4' : 'white', cursor: partidos.length === 0 || fechaBloqueada ? 'not-allowed' : 'pointer' }}>
               SIGUIENTE →
             </button>
             <button onClick={() => setStep('ranking')}
