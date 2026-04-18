@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, setPersistence, browserLocalStorage } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -15,7 +15,6 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Persistencia local para mantener la sesión al cambiar de app
 if (typeof window !== 'undefined') {
-  setPersistence(auth, browserLocalStorage).catch(() => {});
+  setPersistence(auth, browserLocalPersistence).catch(() => {});
 }
