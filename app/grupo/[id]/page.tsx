@@ -57,7 +57,6 @@ export default function GrupoDashboard() {
   const cargarRanking = async (grupoId: string, uid: string) => {
     setCargandoRanking(true);
     try {
-      // Actualizar puntos automáticamente antes de mostrar el ranking
       await fetch('/api/recalcular?secret=pickgol2026').catch(() => {});
 
       const q = query(collection(db, 'jugadas'), where('grupoId', '==', grupoId));
@@ -287,6 +286,12 @@ export default function GrupoDashboard() {
           className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3"
           style={{background:'#E8192C',color:'white'}}>
           ⚽ CREAR JUGADA
+        </button>
+
+        <button onClick={() => router.push(`/grupo/${id}/jugadas`)}
+          className="w-full py-3 rounded-xl font-condensed font-black text-base mb-3"
+          style={{background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)',color:'#F5F5F0'}}>
+          📋 VER TODAS LAS JUGADAS
         </button>
 
         {esCreador && (

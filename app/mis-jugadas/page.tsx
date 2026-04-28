@@ -119,9 +119,8 @@ export default function MisJugadas() {
     </main>
   );
 
-  // Separar jugadas de grupos y comunitarias
-  const jugadasGrupos = jugadas.filter((j: any) => !j.comunitaria);
-  const jugadasComunitarias = jugadas.filter((j: any) => j.comunitaria);
+  const jugadasGrupos = jugadas.filter((j: any) => !j.comunitaria && j.grupoId);
+  const jugadasComunitarias = jugadas.filter((j: any) => j.comunitaria === true);
 
   const renderJugadaGrupo = (j: any) => {
     const grupo = grupos[j.grupoId];
@@ -158,14 +157,15 @@ export default function MisJugadas() {
           </div>
         </div>
 
-        {/* Variables */}
         {j.variables && Object.keys(j.variables).length > 0 && (
           <div className="px-4 py-3" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>Variables</div>
             <div className="grid grid-cols-2 gap-1">
               {j.variablesMeta?.map((meta: any, i: number) => (
                 <div key={i} className="flex justify-between items-center py-0.5">
-                  <span className="text-xs" style={{color:'#8892A4'}}>{meta.label.replace('¿Cuántas ', '').replace('¿Cuántos ', '').replace('¿Habrá ', '').replace('¿El VAR anulará algún gol?', 'VAR gol').replace('?', '')}</span>
+                  <span className="text-xs" style={{color:'#8892A4'}}>
+                    {meta.label.replace('¿Cuántas ', '').replace('¿Cuántos ', '').replace('¿Habrá ', '').replace('¿El VAR anulará algún gol?', 'VAR gol').replace('?', '')}
+                  </span>
                   <span className="text-xs font-bold">
                     {meta.tipo === 'sino' ? (j.variables[meta.key] === 'si' ? 'SÍ' : 'NO') : j.variables[meta.key] ?? '—'}
                   </span>
@@ -175,7 +175,6 @@ export default function MisJugadas() {
           </div>
         )}
 
-        {/* Predicciones de partidos */}
         {j.predicciones && j.predicciones.length > 0 && (
           <div className="px-4 py-3">
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>Predicciones</div>
