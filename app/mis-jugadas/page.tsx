@@ -46,7 +46,6 @@ export default function MisJugadas() {
         }
         setGrupos(gruposData);
 
-        // Verificar si la fecha ya empezó para cada liga
         const ligas = [...new Set(Object.values(gruposData).map((g: any) => g.liga).filter(Boolean))] as string[];
         const bloqueadas: Record<string, boolean> = {};
         for (const liga of ligas) {
@@ -120,6 +119,123 @@ export default function MisJugadas() {
     </main>
   );
 
+  // Separar jugadas de grupos y comunitarias
+  const jugadasGrupos = jugadas.filter((j: any) => !j.comunitaria);
+  const jugadasComunitarias = jugadas.filter((j: any) => j.comunitaria);
+
+  const renderJugadaGrupo = (j: any) => {
+    const grupo = grupos[j.grupoId];
+    const ligaBloqueada = grupo ? fechasBloqueadas[grupo.liga] : false;
+    const puedeEliminar = !ligaBloqueada;
+
+    return (
+      <div key={j.id} className="rounded-2xl mb-3 overflow-hidden"
+        style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
+        <div className="px-4 py-3 flex items-center justify-between" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+          <div className="flex-1">
+            <div className="font-condensed text-base font-black">{j.nombre}</div>
+            <div className="text-xs" style={{color:'#8892A4'}}>
+              {grupo ? `${grupo.nombre} · ${LIGAS_NOMBRES[grupo.liga] || grupo.liga}` : t.sinGrupo}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>{j.puntos || 0} pts</div>
+              <div className="text-xs" style={{color:'#8892A4'}}>{formatFecha(j.creadoEn)}</div>
+            </div>
+            <button
+              onClick={() => puedeEliminar ? setShowConfirm(j.id) : null}
+              disabled={!puedeEliminar}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
+              style={{
+                background: puedeEliminar ? 'rgba(232,25,44,0.15)' : 'rgba(255,255,255,0.05)',
+                border: puedeEliminar ? '1px solid rgba(232,25,44,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                color: puedeEliminar ? '#E8192C' : '#444',
+                cursor: puedeEliminar ? 'pointer' : 'not-allowed'
+              }}>
+              🗑️
+            </button>
+          </div>
+        </div>
+
+        {/* Variables */}
+        {j.variables && Object.keys(j.variables).length > 0 && (
+          <div className="px-4 py-3" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>Variables</div>
+            <div className="grid grid-cols-2 gap-1">
+              {j.variablesMeta?.map((meta: any, i: number) => (
+                <div key={i} className="flex justify-between items-center py-0.5">
+                  <span className="text-xs" style={{color:'#8892A4'}}>{meta.label.replace('¿Cuántas ', '').replace('¿Cuántos ', '').replace('¿Habrá ', '').replace('¿El VAR anulará algún gol?', 'VAR gol').replace('?', '')}</span>
+                  <span className="text-xs font-bold">
+                    {meta.tipo === 'sino' ? (j.variables[meta.key] === 'si' ? 'SÍ' : 'NO') : j.variables[meta.key] ?? '—'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Predicciones de partidos */}
+        {j.predicciones && j.predicciones.length > 0 && (
+          <div className="px-4 py-3">
+            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>Predicciones</div>
+            {j.predicciones.map((p: any, i: number) => (
+              <div key={i} className="flex items-center py-1">
+                <span className="flex-1 text-xs font-semibold truncate">{p.local}</span>
+                <span className="font-condensed text-sm font-black px-3" style={{color:'#C9A84C'}}>
+                  {p.golesLocalPredichos} - {p.golesVisitantePredichos}
+                </span>
+                <span className="flex-1 text-xs font-semibold truncate text-right">{p.visitante}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {grupo?.controlPagos && (
+          <div className="px-4 py-2" style={{borderTop:'1px solid rgba(255,255,255,0.05)'}}>
+            <span className="text-xs px-2 py-1 rounded-lg font-bold"
+              style={{background: j.pagadoInterno ? 'rgba(0,200,83,0.1)' : 'rgba(255,179,0,0.1)', color: j.pagadoInterno ? '#00C853' : '#FFB300'}}>
+              {j.pagadoInterno ? t.pagadoConfirmado : t.pagoPendiente}
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderJugadaComunitaria = (j: any) => (
+    <div key={j.id} className="rounded-2xl mb-3 overflow-hidden"
+      style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
+      <div className="px-4 py-3 flex items-center justify-between" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+        <div className="flex-1">
+          <div className="font-condensed text-base font-black">🌍 {LIGAS_NOMBRES[j.liga] || j.liga}</div>
+          <div className="text-xs" style={{color:'#8892A4'}}>
+            Prode Comunitario{j.jornada ? ` · Jornada ${j.jornada}` : ''}
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>{j.puntos || 0} pts</div>
+          <div className="text-xs" style={{color:'#8892A4'}}>{formatFecha(j.creadoEn)}</div>
+        </div>
+      </div>
+
+      {j.predicciones && j.predicciones.length > 0 && (
+        <div className="px-4 py-3">
+          <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{color:'#8892A4'}}>Predicciones</div>
+          {j.predicciones.map((p: any, i: number) => (
+            <div key={i} className="flex items-center py-1">
+              <span className="flex-1 text-xs font-semibold truncate">{p.local}</span>
+              <span className="font-condensed text-sm font-black px-3" style={{color:'#C9A84C'}}>
+                {p.golesLocalPredichos} - {p.golesVisitantePredichos}
+              </span>
+              <span className="flex-1 text-xs font-semibold truncate text-right">{p.visitante}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
       <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-5">
@@ -143,74 +259,25 @@ export default function MisJugadas() {
           </div>
         )}
 
-        {!cargando && jugadas.map((j) => {
-          const grupo = grupos[j.grupoId];
-          const ligaBloqueada = grupo ? fechasBloqueadas[grupo.liga] : false;
-          const puedeEliminar = !ligaBloqueada;
-
-          return (
-            <div key={j.id} className="rounded-2xl mb-3 overflow-hidden"
-              style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
-              <div className="px-4 py-3 flex items-center justify-between" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-                <div className="flex-1">
-                  <div className="font-condensed text-base font-black">{j.nombre}</div>
-                  <div className="text-xs" style={{color:'#8892A4'}}>
-                    {grupo ? `${grupo.nombre} · ${LIGAS_NOMBRES[grupo.liga] || grupo.liga}` : t.sinGrupo}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="text-right">
-                    <div className="font-condensed text-xl font-black" style={{color:'#C9A84C'}}>{j.puntos || 0} pts</div>
-                    <div className="text-xs" style={{color:'#8892A4'}}>{formatFecha(j.creadoEn)}</div>
-                  </div>
-                  <button
-                    onClick={() => puedeEliminar ? setShowConfirm(j.id) : null}
-                    disabled={!puedeEliminar}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
-                    style={{
-                      background: puedeEliminar ? 'rgba(232,25,44,0.15)' : 'rgba(255,255,255,0.05)',
-                      border: puedeEliminar ? '1px solid rgba(232,25,44,0.3)' : '1px solid rgba(255,255,255,0.07)',
-                      color: puedeEliminar ? '#E8192C' : '#444',
-                      cursor: puedeEliminar ? 'pointer' : 'not-allowed'
-                    }}>
-                    🗑️
-                  </button>
-                </div>
-              </div>
-              <div className="px-4 py-3">
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: '🟨 Amarillas', value: j.variables?.amarillas },
-                    { label: '🟥 Rojas', value: j.variables?.rojas },
-                    { label: '⚽ Goles', value: j.variables?.goles },
-                    { label: '🎯 Goles máx', value: j.variables?.golesMax },
-                    { label: '🎽 Penales', value: j.variables?.penales },
-                    { label: '⚡ Gol min 5', value: j.variables?.hayGolAntes5 === 'si' ? 'SÍ' : 'NO' },
-                    { label: '⏱️ Gol alargue', value: j.variables?.hayGolAlargue === 'si' ? 'SÍ' : 'NO' },
-                    { label: '🥅 0-0', value: j.variables?.hayCeroCero === 'si' ? 'SÍ' : 'NO' },
-                    { label: '📺 VAR', value: j.variables?.varAnulaGol === 'si' ? 'SÍ' : 'NO' },
-                  ].map((item, i) => (
-                    <div key={i} className="flex justify-between items-center py-1">
-                      <span className="text-xs" style={{color:'#8892A4'}}>{item.label}</span>
-                      <span className="text-xs font-bold">{item.value ?? '—'}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {grupo?.controlPagos && (
-                <div className="px-4 py-2" style={{borderTop:'1px solid rgba(255,255,255,0.05)'}}>
-                  <span className="text-xs px-2 py-1 rounded-lg font-bold"
-                    style={{background: j.pagadoInterno ? 'rgba(0,200,83,0.1)' : 'rgba(255,179,0,0.1)', color: j.pagadoInterno ? '#00C853' : '#FFB300'}}>
-                    {j.pagadoInterno ? t.pagadoConfirmado : t.pagoPendiente}
-                  </span>
-                </div>
-              )}
+        {!cargando && jugadasGrupos.length > 0 && (
+          <>
+            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{color:'#8892A4'}}>
+              👥 Jugadas de grupos
             </div>
-          );
-        })}
+            {jugadasGrupos.map(renderJugadaGrupo)}
+          </>
+        )}
+
+        {!cargando && jugadasComunitarias.length > 0 && (
+          <>
+            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3 mt-4" style={{color:'#8892A4'}}>
+              🌍 Prode Comunitario
+            </div>
+            {jugadasComunitarias.map(renderJugadaComunitaria)}
+          </>
+        )}
       </div>
 
-      {/* MODAL CONFIRMAR ELIMINACION */}
       {showConfirm && (
         <div className="fixed inset-0 flex items-center justify-center px-5"
           style={{background:'rgba(0,0,0,0.85)',zIndex:999}}>
