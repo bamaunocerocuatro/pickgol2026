@@ -57,6 +57,9 @@ export default function GrupoDashboard() {
   const cargarRanking = async (grupoId: string, uid: string) => {
     setCargandoRanking(true);
     try {
+      // Actualizar puntos automáticamente antes de mostrar el ranking
+      await fetch('/api/recalcular?secret=pickgol2026').catch(() => {});
+
       const q = query(collection(db, 'jugadas'), where('grupoId', '==', grupoId));
       const snap = await getDocs(q);
       if (snap.empty) { setCargandoRanking(false); return; }
@@ -461,7 +464,6 @@ export default function GrupoDashboard() {
 
       </div>
 
-      {/* MODAL ELIMINAR */}
       {showEliminar && (
         <div className="fixed inset-0 flex items-center justify-center px-5"
           style={{background:'rgba(0,0,0,0.85)',zIndex:999}}>
