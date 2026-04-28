@@ -97,7 +97,7 @@ export default function JugadasGrupo() {
             value={filtroUsuario}
             onChange={(e) => setFiltroUsuario(e.target.value)}
             className="flex-1 rounded-xl px-3 py-2 text-white text-xs outline-none font-semibold"
-            style={{background:'rgba(255,255,255,0.1)',border:'1px solid rgba(255,255,255,0.15)'}}>
+            style={{background:'white',border:'1px solid rgba(255,255,255,0.15)',color:'#0A1F5C'}}>
             <option value="todos">👥 Todos los jugadores</option>
             {userIds.map((uid: any) => (
               <option key={uid} value={uid}>{usuarios[uid] || 'Jugador'}</option>
