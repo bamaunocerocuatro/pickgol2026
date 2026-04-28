@@ -16,6 +16,7 @@ function ProdeComunitarioContent() {
   const [cargando, setCargando] = useState(false);
   const [partidos, setPartidos] = useState<any[]>([]);
   const [fechaBloqueada, setFechaBloqueada] = useState(false);
+  const [jornadaActual, setJornadaActual] = useState<number | null>(null);
   const [predicciones, setPredicciones] = useState<Record<string, { local: string; visitante: string }>>({});
   const [step, setStep] = useState<'ranking' | 'partidos' | 'confirm'>('ranking');
   const [guardando, setGuardando] = useState(false);
@@ -43,6 +44,9 @@ function ProdeComunitarioContent() {
   const cargarJugadas = async (liga: string) => {
     setCargando(true);
     try {
+      // Auto-actualizar puntos
+      await fetch('/api/recalcular?secret=pickgol2026').catch(() => {});
+
       const q = query(
         collection(db, 'jugadas'),
         where('comunitaria', '==', true),
@@ -52,8 +56,11 @@ function ProdeComunitarioContent() {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       data.sort((a: any, b: any) => (b.puntos || 0) - (a.puntos || 0));
       setJugadas(data);
-      const mia = data.find((j: any) => j.userId === user?.uid);
-      setMiJugada(mia || null);
+
+      // Verificar si el usuario ya tiene jugada para la jornada actual
+      // Esto se actualiza cuando se cargan los partidos
+      const mia = data.find((j: any) => j.userId === user?.uid && j.jornada === jornadaActual);
+      setMiJugada(jornadaActual !== null ? (mia || null) : null);
     } catch (e) {}
     setCargando(false);
   };
@@ -77,9 +84,11 @@ function ProdeComunitarioContent() {
 
       const tieneJornada = noJugados.some((p: any) => p.jornada != null);
       let jornadaPartidos: any[] = [];
+      let jornada: number | null = null;
 
       if (tieneJornada) {
         const jornadaMin = Math.min(...noJugados.map((p: any) => p.jornada));
+        jornada = jornadaMin;
         jornadaPartidos = todos.filter((p: any) => p.jornada === jornadaMin);
 
         const hayIniciadoEnJornada = jornadaPartidos.some((p: any) => p.estado !== 'NS');
@@ -122,10 +131,26 @@ function ProdeComunitarioContent() {
         }
       }
 
+      setJornadaActual(jornada);
       setPartidos(jornadaPartidos);
       const init: Record<string, { local: string; visitante: string }> = {};
       jornadaPartidos.forEach((_: any, i: number) => { init[i] = { local: '', visitante: '' }; });
       setPredicciones(init);
+
+      // Verificar si el usuario ya tiene jugada para esta jornada
+      const q = query(
+        collection(db, 'jugadas'),
+        where('comunitaria', '==', true),
+        where('liga', '==', ligaId),
+        where('userId', '==', user.uid)
+      );
+      const snap = await getDocs(q);
+      const misJugadas = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const miaDeEstaJornada = jornada !== null
+        ? misJugadas.find((j: any) => j.jornada === jornada)
+        : misJugadas[0];
+      setMiJugada(miaDeEstaJornada || null);
+
     } catch (e) { setPartidos([]); }
   };
 
@@ -149,6 +174,7 @@ function ProdeComunitarioContent() {
       await addDoc(collection(db, 'jugadas'), {
         comunitaria: true,
         liga: ligaId,
+        jornada: jornadaActual,
         grupoId: null,
         nombre: `Prode Comunitario - ${ligaId}`,
         userId: user.uid,
@@ -193,7 +219,7 @@ function ProdeComunitarioContent() {
           <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Prode Comunitario</span>
         </div>
         <h1 className="font-condensed text-3xl font-black mb-3">🌍 Prode Comunitario</h1>
-        <LigaSelector value={ligaId} onChange={(id) => { setLigaId(id); setStep('ranking'); setFechaBloqueada(false); }} showMundial={false} />
+        <LigaSelector value={ligaId} onChange={(id) => { setLigaId(id); setStep('ranking'); setFechaBloqueada(false); setJornadaActual(null); setMiJugada(null); }} showMundial={false} />
       </div>
 
       <div className="px-4 py-4">
@@ -203,7 +229,7 @@ function ProdeComunitarioContent() {
             {!miJugada && (
               <button onClick={async () => {
                 await cargarPartidos();
-                if (!fechaBloqueada) setStep('partidos');
+                if (!fechaBloqueada && !miJugada) setStep('partidos');
               }}
                 className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-4"
                 style={{ background: '#E8192C', color: 'white' }}>
@@ -224,7 +250,9 @@ function ProdeComunitarioContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-condensed text-base font-black">✅ Ya tenés jugada</div>
-                    <div className="text-xs" style={{ color: '#8892A4' }}>Ya participás en el prode comunitario</div>
+                    <div className="text-xs" style={{ color: '#8892A4' }}>
+                      {jornadaActual ? `Jornada ${jornadaActual}` : 'Ya participás en el prode comunitario'}
+                    </div>
                   </div>
                   <div className="font-condensed text-2xl font-black" style={{ color: '#C9A84C' }}>{miJugada.puntos || 0} pts</div>
                 </div>
@@ -299,7 +327,10 @@ function ProdeComunitarioContent() {
 
             {!fechaBloqueada && partidos.length > 0 && (
               <>
-                <div className="text-xs mb-3 px-1" style={{ color: '#8892A4' }}>📅 {formatFecha(partidos[0].fecha)} — {partidos.length} partidos</div>
+                <div className="text-xs mb-3 px-1" style={{ color: '#8892A4' }}>
+                  📅 {formatFecha(partidos[0].fecha)} — {partidos.length} partidos
+                  {jornadaActual && <span style={{ color: '#C9A84C' }}> · Jornada {jornadaActual}</span>}
+                </div>
                 {partidos.map((p: any, i: number) => (
                   <div key={i} className="rounded-2xl p-4 mb-3" style={{ background: '#0D1B3E', border: '1px solid rgba(255,255,255,0.07)' }}>
                     <div className="text-xs mb-3 text-center" style={{ color: '#8892A4' }}>{formatHora(p.fecha)}</div>
@@ -344,7 +375,10 @@ function ProdeComunitarioContent() {
             <div className="rounded-2xl p-4 mb-4 text-center" style={{ background: 'rgba(0,200,83,0.07)', border: '1px solid rgba(0,200,83,0.2)' }}>
               <div className="text-4xl mb-2">✅</div>
               <div className="font-condensed text-xl font-black mb-1">Prode Comunitario</div>
-              <div className="text-xs" style={{ color: '#8892A4' }}>{ligaId} · Todos contra todos</div>
+              <div className="text-xs" style={{ color: '#8892A4' }}>
+                {ligaId} · Todos contra todos
+                {jornadaActual && ` · Jornada ${jornadaActual}`}
+              </div>
             </div>
             {partidos.length > 0 && (
               <>
