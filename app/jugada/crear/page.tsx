@@ -227,12 +227,12 @@ function CrearJugadaForm() {
 
   const formatHora = (dateStr: string) => {
     const d = new Date(dateStr);
-    return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   };
 
   const formatFecha = (dateStr: string) => {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
+    return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
   };
 
   const YN = ({ varKey }: { varKey: string }) => (

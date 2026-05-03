@@ -107,11 +107,16 @@ function LoginForm() {
       if (!snap.exists()) return;
       const data = snap.data();
       const updates: Record<string, any> = {};
+      let jugadasNuevas = 0;
       for (const nivel of NIVELES_REFERIDOS) {
         if (nuevoTotal >= nivel.referidos && !data[nivel.campo]) {
           updates[nivel.campo] = true;
-          updates.jugadasGratis = (updates.jugadasGratis ?? (data.jugadasGratis || 0)) + nivel.jugadas;
+          jugadasNuevas += nivel.jugadas;
         }
+      }
+      if (jugadasNuevas > 0) {
+        updates.jugadasGratis = (data.jugadasGratis || 0) + jugadasNuevas;
+        updates.jugadasMundialGratis = (data.jugadasMundialGratis || 1) + jugadasNuevas;
       }
       if (Object.keys(updates).length > 0) {
         await updateDoc(doc(db, 'usuarios', referidorId), updates);
@@ -209,7 +214,7 @@ function LoginForm() {
         </div>
 
         <div className="text-center mb-8">
-          <h1 className="font-condensed text-5xl font-black text-[#C9A84C] mb-1">PickGol</h1>
+          <h1 className="font-condensed text-5xl font-black text-[#C9A84C] mb-1">PICKGOL</h1>
           <p className="font-condensed text-2xl font-bold text-white">⚽</p>
           <p className="text-[#8892A4] text-sm mt-2">{tl.titulo}</p>
         </div>

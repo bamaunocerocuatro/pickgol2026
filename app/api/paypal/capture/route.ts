@@ -6,9 +6,7 @@ const PAYPAL_BASE_URL = process.env.PAYPAL_BASE_URL || 'https://api-m.paypal.com
 async function getAccessToken() {
   const clientId = process.env.PAYPAL_CLIENT_ID || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
   const secret = process.env.PAYPAL_SECRET;
-
   const credentials = Buffer.from(`${clientId}:${secret}`).toString('base64');
-
   const res = await fetch(`${PAYPAL_BASE_URL}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
@@ -17,7 +15,6 @@ async function getAccessToken() {
     },
     body: 'grant_type=client_credentials',
   });
-
   const data = await res.json();
   return data.access_token;
 }
@@ -48,6 +45,10 @@ export async function POST(req: NextRequest) {
 
       if (tipo === 'plus') {
         await userRef.set({ plus: true, plusActivadoEn: new Date() }, { merge: true });
+      } else if (tipo === 'jugada_mundial') {
+        const snap = await userRef.get();
+        const actual = snap.data()?.jugadasMundialPagas || 0;
+        await userRef.set({ jugadasMundialPagas: actual + 1 }, { merge: true });
       } else {
         const jugadasMap: Record<string, number> = {
           jugada1: 1, jugada3: 3, jugada5: 5, jugada10: 10,

@@ -33,7 +33,15 @@ export default function Inicio() {
       setUser(u);
       try {
         const snap = await getDoc(doc(db, 'usuarios', u.uid));
-        if (snap.exists()) setUserData(snap.data());
+        if (snap.exists()) {
+          const data = snap.data();
+          setUserData(data);
+          // Chequear onboarding
+          if (!data.onboardingVisto) { router.push('/onboarding'); return; } router.push('/mundial'); return; if (false) {
+            router.push('/onboarding');
+            return;
+          }
+        }
       } catch (e) {}
       setLoading(false);
     });
@@ -114,8 +122,8 @@ export default function Inicio() {
           </div>
         )}
 
-        {/* BANNER MUNDIAL */}
-        <div className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer"
+        <div onClick={() => router.push('/mundial')}
+          className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer"
           style={{background:'linear-gradient(135deg,#E8192C,#8B0018)'}}>
           <div className="text-3xl">🏆</div>
           <div className="flex-1">
@@ -125,7 +133,6 @@ export default function Inicio() {
           <div className="text-white/30 text-lg">›</div>
         </div>
 
-        {/* HACETE PLUS — solo si no es Plus */}
         {!userData?.plus && (
           <div onClick={() => router.push('/plus')}
             className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer"
@@ -139,7 +146,6 @@ export default function Inicio() {
           </div>
         )}
 
-        {/* CREAR GRUPO */}
         <div onClick={() => router.push('/crear-grupo')}
           className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer"
           style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
@@ -151,7 +157,6 @@ export default function Inicio() {
           <div className="text-white/30 text-lg">›</div>
         </div>
 
-        {/* PRODE COMUNITARIO */}
         <div onClick={() => router.push('/prode-comunitario')}
           className="rounded-2xl p-4 mb-4 flex items-center gap-3 cursor-pointer"
           style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
@@ -193,7 +198,8 @@ export default function Inicio() {
 
       </div>
 
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3"
+        style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/inicio')}>
           <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{color:'#E8192C'}}>{t.inicio}</span>
         </div>

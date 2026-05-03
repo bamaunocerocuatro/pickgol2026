@@ -9,7 +9,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Faltan datos' }, { status: 400 });
     }
 
-    // Verificar el pago solo si hay paymentId
     if (paymentId) {
       const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
         headers: {
@@ -27,6 +26,10 @@ export async function POST(req: NextRequest) {
 
     if (tipo === 'plus') {
       await userRef.set({ plus: true, plusActivadoEn: new Date() }, { merge: true });
+    } else if (tipo === 'jugada_mundial') {
+      const snap = await userRef.get();
+      const actual = snap.data()?.jugadasMundialPagas || 0;
+      await userRef.set({ jugadasMundialPagas: actual + 1 }, { merge: true });
     } else {
       const jugadasMap: Record<string, number> = {
         jugada1: 1, jugada3: 3, jugada5: 5, jugada10: 10,

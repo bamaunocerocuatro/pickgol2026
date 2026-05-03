@@ -89,6 +89,8 @@ export const TEXTOS: Record<string, any> = {
     errorBuscar: 'Error al buscar el grupo. Intentá de nuevo.',
     errorUnirse: 'Error al unirse al grupo. Intentá de nuevo.',
     ingresaCodigo: 'Ingresá un código de grupo',
+    comoJugar: 'Cómo jugar',
+    comoJugarSub: 'Reglas, puntos, costos y más',
   },
   pt: {
     bienvenido: 'Bem-vindo de volta,', misPts: 'Meus pts', posicion: 'Posição', referidos: 'INDICADOS',
@@ -176,6 +178,8 @@ export const TEXTOS: Record<string, any> = {
     errorBuscar: 'Erro ao buscar o grupo. Tente novamente.',
     errorUnirse: 'Erro ao entrar no grupo. Tente novamente.',
     ingresaCodigo: 'Digite um código de grupo',
+    comoJugar: 'Como jogar',
+    comoJugarSub: 'Regras, pontos, custos e mais',
   },
   en: {
     bienvenido: 'Welcome back,', misPts: 'My pts', posicion: 'Position', referidos: 'REFERRALS',
@@ -263,6 +267,8 @@ export const TEXTOS: Record<string, any> = {
     errorBuscar: 'Error searching for group. Please try again.',
     errorUnirse: 'Error joining group. Please try again.',
     ingresaCodigo: 'Enter a group code',
+    comoJugar: 'How to play',
+    comoJugarSub: 'Rules, points, costs and more',
   },
 };
 

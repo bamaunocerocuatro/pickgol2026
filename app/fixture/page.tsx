@@ -44,12 +44,12 @@ export default function Fixture() {
 
   const formatFecha = (dateStr: string) => {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
+    return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
   };
 
   const formatHora = (dateStr: string) => {
     const d = new Date(dateStr);
-    return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
   };
 
   if (loading) return (
