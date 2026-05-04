@@ -67,7 +67,7 @@ function JugadaCreadaContent() {
   };
 
   const compartirWhatsApp = () => {
-    const texto = `¡Hice mi jugada del Mundial 2026 en PickGol! 🏆⚽\n\nDescargá la app y armá tu prode: https://pickgol2026.vercel.app\n\n#pickgol #pickgolapp #pickgol2026`;
+    const texto = `¡Hice mi jugada del Mundial 2026 en PickGol! 🏆⚽\n\nDescargá la app y armá tu prode: https://pickgol.com\n\n#pickgol #pickgolapp #pickgol2026`;
     window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
   };
 
