@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -13,8 +13,10 @@ const IDIOMAS = [
   { code: 'en', label: '🌍 English' },
 ];
 
-export default function Perfil() {
+function PerfilContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const desdeMundial = searchParams.get('from') === 'mundial';
   const { t, locale, setLocale, ready } = useIdioma();
   const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
@@ -84,7 +86,7 @@ export default function Perfil() {
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      <div style={{background:'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-8">
+      <div style={{background: desdeMundial ? 'linear-gradient(160deg,#0d0d1a,#1a1a2e)' : 'linear-gradient(160deg,#0A1F5C,#0D2870)'}} className="px-4 pt-4 pb-8">
         <h1 className="font-condensed text-3xl font-black mb-6">{t.miPerfil} 👤</h1>
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full flex items-center justify-center font-condensed text-2xl font-black flex-shrink-0"
@@ -106,7 +108,6 @@ export default function Perfil() {
 
       <div className="px-4 py-4">
 
-        {/* NOMBRE */}
         <div className="rounded-2xl overflow-hidden mb-4" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="px-4 py-4">
             <div className="flex items-center justify-between mb-3">
@@ -145,7 +146,6 @@ export default function Perfil() {
           </div>
         </div>
 
-        {/* IDIOMA */}
         <div className="rounded-2xl overflow-hidden mb-4" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="px-4 py-4">
             <div className="text-sm font-semibold mb-3">🌍 {t.idioma}</div>
@@ -165,7 +165,6 @@ export default function Perfil() {
           </div>
         </div>
 
-        {/* CÓMO JUGAR */}
         <div onClick={() => router.push('/como-jugar')}
           className="rounded-2xl p-4 mb-4 flex items-center gap-3 cursor-pointer"
           style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
@@ -177,7 +176,6 @@ export default function Perfil() {
           <div style={{color:'rgba(255,255,255,0.2)'}}>›</div>
         </div>
 
-        {/* PLUS */}
         {!esPlus && (
           <div onClick={() => router.push('/plus')}
             className="rounded-2xl p-4 mb-4 flex items-center gap-3 cursor-pointer"
@@ -191,7 +189,6 @@ export default function Perfil() {
           </div>
         )}
 
-        {/* INFO CUENTA */}
         <div className="rounded-2xl overflow-hidden mb-4" style={{background:'#0D1B3E',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="px-4 py-4">
             <div className="text-sm font-semibold mb-3">{t.infoCuenta}</div>
@@ -210,7 +207,6 @@ export default function Perfil() {
           </div>
         </div>
 
-        {/* CERRAR SESIÓN */}
         <button onClick={cerrarSesion}
           className="w-full py-3 rounded-xl font-condensed font-black text-base"
           style={{background:'transparent',border:'1px solid rgba(232,25,44,0.3)',color:'#E8192C'}}>
@@ -219,24 +215,49 @@ export default function Perfil() {
 
       </div>
 
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/inicio')}>
-          <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.inicio}</span>
+      {/* BOTTOM NAV — Mundial o Ligas según origen */}
+      {desdeMundial ? (
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(200,170,110,0.1)'}}>
+          <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mundial')}>
+            <span className="text-lg">🏆</span><span className="text-xs font-semibold" style={{color:'rgba(210,185,130,0.5)'}}>Mundial</span>
+          </div>
+          <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mundial/fixture')}>
+            <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{color:'rgba(210,185,130,0.5)'}}>Fixture</span>
+          </div>
+          <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mundial/grupos')}>
+            <span className="text-lg">👥</span><span className="text-xs font-semibold" style={{color:'rgba(210,185,130,0.5)'}}>Grupos</span>
+          </div>
+          <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mundial/mis-jugadas')}>
+            <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{color:'rgba(210,185,130,0.5)'}}>Jugadas</span>
+          </div>
+          <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/perfil?from=mundial')}>
+            <span className="text-lg">👤</span><span className="text-xs font-semibold" style={{color:'#C8AA6E'}}>Perfil</span>
+          </div>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/fixture')}>
-          <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.fixture}</span>
+      ) : (
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3" style={{background:'rgba(6,13,31,0.98)',borderTop:'1px solid rgba(255,255,255,0.07)'}}>
+          <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/inicio?ligas=1')}>
+            <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.inicio}</span>
+          </div>
+          <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/fixture')}>
+            <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.fixture}</span>
+          </div>
+          <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/grupos')}>
+            <span className="text-lg">👥</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.grupos}</span>
+          </div>
+          <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mis-jugadas')}>
+            <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.jugadas}</span>
+          </div>
+          <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/perfil')}>
+            <span className="text-lg">👤</span><span className="text-xs font-semibold" style={{color:'#E8192C'}}>{t.perfil}</span>
+          </div>
         </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/grupos')}>
-          <span className="text-lg">👥</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.grupos}</span>
-        </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mis-jugadas')}>
-          <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{color:'#8892A4'}}>{t.jugadas}</span>
-        </div>
-        <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/perfil')}>
-          <span className="text-lg">👤</span><span className="text-xs font-semibold" style={{color:'#E8192C'}}>{t.perfil}</span>
-        </div>
-      </div>
+      )}
 
     </main>
   );
+}
+
+export default function Perfil() {
+  return <Suspense><PerfilContent /></Suspense>;
 }
