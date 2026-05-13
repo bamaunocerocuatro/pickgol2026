@@ -215,7 +215,7 @@ function EditarJugadaMundialForm() {
       </div>
       {abierto && (
         <div className="absolute left-0 right-0 rounded-xl overflow-y-auto z-50 mt-1"
-          style={{ background: 'rgba(13,27,62,0.97)', border: '1px solid rgba(200,170,110,0.4)', maxHeight: '220px', backdropFilter: 'blur(8px)' }}>
+          style={{ background: '#16213e', border: '1px solid rgba(200,170,110,0.35)', maxHeight: '220px' }}>
           {PAISES_MUNDIAL.map(p => (
             <div
               key={p.nombre}
