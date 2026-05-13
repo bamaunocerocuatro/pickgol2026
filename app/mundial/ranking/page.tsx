@@ -6,14 +6,13 @@ import { auth, db } from '../../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
-export default function MisJugadasMundial() {
+export default function RankingMundial() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [jugadasGrupos, setJugadasGrupos] = useState<any[]>([]);
-  const [jugadasComunitarias, setJugadasComunitarias] = useState<any[]>([]);
+  const [ranking, setRanking] = useState<any[]>([]);
   const [cargando, setCargando] = useState(false);
-  const [jugadaAbierta, setJugadaAbierta] = useState<string | null>(null);
+  const [tab, setTab] = useState<'grupos' | 'comunitario'>('grupos');
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -25,37 +24,27 @@ export default function MisJugadasMundial() {
   }, []);
 
   useEffect(() => {
-    if (user) cargarJugadas();
-  }, [user]);
+    if (user) cargarRanking(tab);
+  }, [user, tab]);
 
-  const cargarJugadas = async () => {
+  const cargarRanking = async (tipo: 'grupos' | 'comunitario') => {
     setCargando(true);
     try {
-      const q1 = query(
-        collection(db, 'jugadas_mundial'),
-        where('userId', '==', user.uid),
-        where('tipo', '==', 'mundial2026')
-      );
-      const snap1 = await getDocs(q1);
-      setJugadasGrupos(snap1.docs.map(d => ({ id: d.id, ...d.data() })));
-
-      const q2 = query(
-        collection(db, 'jugadas_comunitarias_mundial'),
-        where('userId', '==', user.uid),
-        where('tipo', '==', 'mundial2026')
-      );
-      const snap2 = await getDocs(q2);
-      setJugadasComunitarias(snap2.docs.map(d => ({ id: d.id, ...d.data() })));
+      const coleccion = tipo === 'grupos' ? 'jugadas_mundial' : 'jugadas_comunitarias_mundial';
+      const q = query(collection(db, coleccion), where('tipo', '==', 'mundial2026'));
+      const snap = await getDocs(q);
+      const jugadas = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const porUsuario: Record<string, any> = {};
+      for (const j of jugadas) {
+        const uid = j.userId;
+        if (!porUsuario[uid] || (j.puntos || 0) > (porUsuario[uid].puntos || 0)) porUsuario[uid] = j;
+      }
+      const rankingData = Object.values(porUsuario)
+        .map((j: any) => ({ userId: j.userId, nombre: j.userName || j.userEmail?.split('@')[0] || 'Jugador', puntos: j.puntos || 0, esYo: j.userId === user?.uid }))
+        .sort((a, b) => b.puntos - a.puntos);
+      setRanking(rankingData);
     } catch (e) {}
     setCargando(false);
-  };
-
-  const formatFecha = (dateStr: string) => {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('es-AR', {
-      day: 'numeric', month: 'short', year: 'numeric',
-      timeZone: 'America/Argentina/Buenos_Aires'
-    });
   };
 
   if (loading) return (
@@ -67,184 +56,98 @@ export default function MisJugadasMundial() {
     </main>
   );
 
-  const totalJugadas = jugadasGrupos.length + jugadasComunitarias.length;
+  const miPosicion = ranking.findIndex(r => r.esYo) + 1;
+  const misPuntos = ranking.find(r => r.esYo)?.puntos || 0;
 
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      {/* HEADER */}
       <div style={{ background: 'linear-gradient(160deg,#0d0d1a,#1a1a2e,#16213e)', borderBottom: '1px solid rgba(200,170,110,0.2)' }} className="px-4 pt-4 pb-5">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={() => router.push('/mundial')}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
             style={{ background: 'rgba(200,170,110,0.1)', color: '#C8AA6E' }}>←</button>
-          <span className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>Mundial · <b style={{ color: 'rgba(210,185,130,0.85)' }}>Mis Jugadas</b></span>
+          <span className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>Mundial · <b style={{ color: 'rgba(210,185,130,0.85)' }}>Ranking Global</b></span>
         </div>
-        <h1 className="font-condensed text-3xl font-black" style={{ color: '#C8AA6E' }}>🎯 MIS JUGADAS</h1>
-        <p className="text-xs mt-1" style={{ color: 'rgba(210,185,130,0.65)' }}>
-          Mundial 2026 · {totalJugadas} jugada{totalJugadas !== 1 ? 's' : ''}
-        </p>
+        <h1 className="font-condensed text-3xl font-black" style={{ color: '#C8AA6E' }}>🏆 RANKING GLOBAL</h1>
+        <p className="text-xs mt-1 mb-4" style={{ color: 'rgba(210,185,130,0.65)' }}>Mundial 2026 · Fase de Grupos</p>
+        {miPosicion > 0 && (
+          <div className="flex gap-2">
+            <div className="flex-1 text-center rounded-xl py-2" style={{ background: 'rgba(200,170,110,0.08)' }}>
+              <div className="font-condensed text-xl font-black" style={{ color: '#C8AA6E' }}>{misPuntos}</div>
+              <div className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>Mis pts</div>
+            </div>
+            <div className="flex-1 text-center rounded-xl py-2" style={{ background: 'rgba(200,170,110,0.08)' }}>
+              <div className="font-condensed text-xl font-black" style={{ color: '#F5F5F0' }}>#{miPosicion}</div>
+              <div className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>Posición</div>
+            </div>
+            <div className="flex-1 text-center rounded-xl py-2" style={{ background: 'rgba(200,170,110,0.08)' }}>
+              <div className="font-condensed text-xl font-black" style={{ color: '#F5F5F0' }}>{ranking.length}</div>
+              <div className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>Jugadores</div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="px-4 py-4">
+        <div className="flex mb-4" style={{ background: 'rgba(200,170,110,0.05)', borderRadius: '12px', padding: '3px', border: '1px solid rgba(200,170,110,0.1)' }}>
+          <div onClick={() => setTab('grupos')}
+            className="flex-1 text-center py-2 rounded-xl cursor-pointer font-condensed font-bold text-sm"
+            style={{ background: tab === 'grupos' ? '#0D1B3E' : 'transparent', color: tab === 'grupos' ? '#C8AA6E' : 'rgba(210,185,130,0.5)' }}>
+            👥 Grupos privados
+          </div>
+          <div onClick={() => setTab('comunitario')}
+            className="flex-1 text-center py-2 rounded-xl cursor-pointer font-condensed font-bold text-sm"
+            style={{ background: tab === 'comunitario' ? '#0D1B3E' : 'transparent', color: tab === 'comunitario' ? '#C8AA6E' : 'rgba(210,185,130,0.5)' }}>
+            🌍 Comunitario
+          </div>
+        </div>
 
         {cargando && (
           <div className="text-center py-10">
             <div className="text-4xl mb-3">⏳</div>
-            <p className="text-sm" style={{ color: 'rgba(210,185,130,0.65)' }}>Cargando jugadas...</p>
+            <p className="text-sm" style={{ color: 'rgba(210,185,130,0.65)' }}>Cargando ranking...</p>
           </div>
         )}
 
-        {!cargando && totalJugadas === 0 && (
+        {!cargando && ranking.length === 0 && (
           <div className="rounded-2xl p-6 text-center" style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.15)' }}>
-            <div className="text-4xl mb-3">🎯</div>
+            <div className="text-4xl mb-3">🏆</div>
             <div className="font-condensed text-lg font-bold mb-2" style={{ color: '#F5F5F0' }}>Sin jugadas todavía</div>
-            <div className="text-xs mb-4" style={{ color: 'rgba(210,185,130,0.65)' }}>Creá tu primera jugada del Mundial 2026</div>
-            <button onClick={() => router.push('/mundial')}
-              className="px-6 py-2 rounded-xl font-condensed font-black text-sm"
-              style={{ background: '#C8AA6E', color: '#0d0d1a' }}>
-              IR AL MUNDIAL
-            </button>
+            <div className="text-xs" style={{ color: 'rgba(210,185,130,0.65)' }}>El ranking se irá armando cuando los jugadores creen sus jugadas</div>
           </div>
         )}
 
-        {/* JUGADAS DE GRUPOS */}
-        {!cargando && jugadasGrupos.length > 0 && (
-          <>
-            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3"
-              style={{ color: 'rgba(210,185,130,0.6)' }}>
-              Grupos privados · {jugadasGrupos.length} jugada{jugadasGrupos.length !== 1 ? 's' : ''}
-            </div>
-            {jugadasGrupos.map((j) => (
-              <div key={j.id} className="rounded-2xl mb-3 overflow-hidden"
-                style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.15)' }}>
-                <div className="px-4 py-3 flex items-center justify-between cursor-pointer"
-                  onClick={() => setJugadaAbierta(jugadaAbierta === j.id ? null : j.id)}>
+        {!cargando && ranking.length > 0 && (
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.15)' }}>
+            {ranking.map((r, i) => {
+              const medalla = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+              return (
+                <div key={r.userId} className="px-4 py-3 flex items-center gap-3"
+                  style={{ borderBottom: i < ranking.length - 1 ? '1px solid rgba(200,170,110,0.07)' : 'none', background: r.esYo ? 'rgba(200,170,110,0.05)' : 'transparent' }}>
+                  <div className="w-8 text-center flex-shrink-0">
+                    {medalla
+                      ? <span className="text-xl">{medalla}</span>
+                      : <span className="font-condensed text-base font-black" style={{ color: 'rgba(210,185,130,0.45)' }}>#{i + 1}</span>}
+                  </div>
                   <div className="flex-1">
-                    <div className="font-condensed text-base font-black" style={{ color: '#C8AA6E' }}>{j.nombre}</div>
-                    <div className="text-xs mt-0.5" style={{ color: 'rgba(210,185,130,0.6)' }}>
-                      Mundial 2026 · {j.creadoEn?.toDate ? formatFecha(j.creadoEn.toDate().toISOString()) : ''}
+                    <div className="font-condensed text-base font-bold flex items-center gap-2" style={{ color: r.esYo ? '#C8AA6E' : '#F5F5F0' }}>
+                      {r.nombre}
+                      {r.esYo && <span className="text-xs px-2 py-0.5 rounded-lg" style={{ background: 'rgba(200,170,110,0.12)', color: '#C8AA6E' }}>Vos</span>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="font-condensed text-xl font-black" style={{ color: '#C8AA6E' }}>{j.puntos || 0} pts</div>
-                    <span style={{ color: 'rgba(210,185,130,0.45)' }}>{jugadaAbierta === j.id ? '▲' : '▼'}</span>
-                  </div>
+                  <div className="font-condensed text-xl font-black" style={{ color: '#C8AA6E' }}>{r.puntos} pts</div>
                 </div>
-
-                {jugadaAbierta === j.id && (
-                  <div style={{ borderTop: '1px solid rgba(200,170,110,0.1)' }}>
-
-                    {/* Variables */}
-                    {j.variables && j.variablesMeta && (
-                      <div className="px-4 py-3">
-                        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2"
-                          style={{ color: 'rgba(210,185,130,0.6)' }}>Variables</div>
-                        {j.variablesMeta.map((v: any) => (
-                          <div key={v.key} className="flex justify-between items-center py-1.5"
-                            style={{ borderBottom: '1px solid rgba(200,170,110,0.06)' }}>
-                            <span className="text-xs flex-1 mr-2" style={{ color: 'rgba(210,185,130,0.65)' }}>{v.label}</span>
-                            <span className="text-xs font-bold flex-shrink-0" style={{ color: '#F5F5F0' }}>
-                              {v.tipo === 'sino' ? (j.variables[v.key] === 'si' ? 'SÍ' : 'NO') : j.variables[v.key]}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Predicciones */}
-                    {j.predicciones && j.predicciones.length > 0 && (
-                      <div className="px-4 py-3" style={{ borderTop: '1px solid rgba(200,170,110,0.1)' }}>
-                        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2"
-                          style={{ color: 'rgba(210,185,130,0.6)' }}>
-                          Predicciones ({j.predicciones.length} partidos)
-                        </div>
-                        {j.predicciones.map((p: any, i: number) => (
-                          <div key={i} className="flex items-center py-1.5"
-                            style={{ borderBottom: i < j.predicciones.length - 1 ? '1px solid rgba(200,170,110,0.06)' : 'none' }}>
-                            <div className="flex-1 text-xs truncate" style={{ color: '#F5F5F0' }}>{p.local}</div>
-                            <div className="font-condensed text-sm font-black px-3 flex-shrink-0"
-                              style={{ color: p.puntos > 0 ? '#00C853' : '#C8AA6E' }}>
-                              {p.golesLocalPredichos} - {p.golesVisitantePredichos}
-                              {p.puntos > 0 && <span className="text-xs ml-1" style={{ color: '#00C853' }}>+{p.puntos}</span>}
-                            </div>
-                            <div className="flex-1 text-xs text-right truncate" style={{ color: '#F5F5F0' }}>{p.visitante}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Ir al grupo */}
-                    {j.grupoId && (
-                      <div className="px-4 py-3" style={{ borderTop: '1px solid rgba(200,170,110,0.1)' }}>
-                        <button onClick={() => router.push(`/mundial/grupo/${j.grupoId}`)}
-                          className="w-full py-2 rounded-xl font-condensed font-bold text-sm"
-                          style={{ background: 'rgba(200,170,110,0.08)', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.85)' }}>
-                          IR AL GRUPO →
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </>
+              );
+            })}
+          </div>
         )}
-
-        {/* JUGADAS COMUNITARIAS */}
-        {!cargando && jugadasComunitarias.length > 0 && (
-          <>
-            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3 mt-2"
-              style={{ color: 'rgba(210,185,130,0.6)' }}>
-              Prode Comunitario
-            </div>
-            {jugadasComunitarias.map((j) => (
-              <div key={j.id} className="rounded-2xl mb-3 overflow-hidden"
-                style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.15)' }}>
-                <div className="px-4 py-3 flex items-center justify-between cursor-pointer"
-                  onClick={() => setJugadaAbierta(jugadaAbierta === j.id ? null : j.id)}>
-                  <div className="flex-1">
-                    <div className="font-condensed text-base font-black" style={{ color: '#C8AA6E' }}>🌍 Prode Comunitario</div>
-                    <div className="text-xs mt-0.5" style={{ color: 'rgba(210,185,130,0.6)' }}>Mundial 2026 · Todos contra todos</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="font-condensed text-xl font-black" style={{ color: '#C8AA6E' }}>{j.puntos || 0} pts</div>
-                    <span style={{ color: 'rgba(210,185,130,0.45)' }}>{jugadaAbierta === j.id ? '▲' : '▼'}</span>
-                  </div>
-                </div>
-
-                {jugadaAbierta === j.id && j.predicciones && j.predicciones.length > 0 && (
-                  <div className="px-4 py-3" style={{ borderTop: '1px solid rgba(200,170,110,0.1)' }}>
-                    <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2"
-                      style={{ color: 'rgba(210,185,130,0.6)' }}>
-                      Predicciones ({j.predicciones.length} partidos)
-                    </div>
-                    {j.predicciones.map((p: any, i: number) => (
-                      <div key={i} className="flex items-center py-1.5"
-                        style={{ borderBottom: i < j.predicciones.length - 1 ? '1px solid rgba(200,170,110,0.06)' : 'none' }}>
-                        <div className="flex-1 text-xs truncate" style={{ color: '#F5F5F0' }}>{p.local}</div>
-                        <div className="font-condensed text-sm font-black px-3 flex-shrink-0"
-                          style={{ color: p.puntos > 0 ? '#00C853' : '#C8AA6E' }}>
-                          {p.golesLocalPredichos} - {p.golesVisitantePredichos}
-                          {p.puntos > 0 && <span className="text-xs ml-1" style={{ color: '#00C853' }}>+{p.puntos}</span>}
-                        </div>
-                        <div className="flex-1 text-xs text-right truncate" style={{ color: '#F5F5F0' }}>{p.visitante}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </>
-        )}
-
       </div>
 
-      {/* BOTTOM NAV */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3"
         style={{ background: 'rgba(6,13,31,0.98)', borderTop: '1px solid rgba(200,170,110,0.1)' }}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mundial')}>
-          <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{ color: 'rgba(210,185,130,0.5)' }}>Inicio</span>
+          <span className="text-lg">🏆</span><span className="text-xs font-semibold" style={{ color: 'rgba(210,185,130,0.5)' }}>Mundial</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mundial/fixture')}>
           <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{ color: 'rgba(210,185,130,0.5)' }}>Fixture</span>
@@ -253,7 +156,7 @@ export default function MisJugadasMundial() {
           <span className="text-lg">👥</span><span className="text-xs font-semibold" style={{ color: 'rgba(210,185,130,0.5)' }}>Grupos</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mundial/mis-jugadas')}>
-          <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{ color: '#C8AA6E' }}>Jugadas</span>
+          <span className="text-lg">🎯</span><span className="text-xs font-semibold" style={{ color: 'rgba(210,185,130,0.5)' }}>Jugadas</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/perfil')}>
           <span className="text-lg">👤</span><span className="text-xs font-semibold" style={{ color: 'rgba(210,185,130,0.5)' }}>Perfil</span>

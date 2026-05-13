@@ -36,9 +36,7 @@ export default function GrupoMundialDashboard() {
           const grupoData = { id: snap.id, ...snap.data() } as any;
           setGrupo(grupoData);
           cargarRanking(id, u.uid);
-          if (grupoData.controlPagos && grupoData.creadorId === u.uid) {
-            cargarJugadasPagos(id);
-          }
+          if (grupoData.controlPagos && grupoData.creadorId === u.uid) cargarJugadasPagos(id);
         }
       } catch (e) {}
       setLoading(false);
@@ -55,20 +53,14 @@ export default function GrupoMundialDashboard() {
       const jugadas = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
       const porUsuario: Record<string, any> = {};
       for (const j of jugadas) {
-        const userId = j.userId;
-        if (!porUsuario[userId] || (j.puntos || 0) > (porUsuario[userId].puntos || 0)) {
-          porUsuario[userId] = j;
-        }
+        if (!porUsuario[j.userId] || (j.puntos || 0) > (porUsuario[j.userId].puntos || 0)) porUsuario[j.userId] = j;
       }
       const rankingData = await Promise.all(
         Object.entries(porUsuario).map(async ([userId, jugada]) => {
           let nombre = jugada.userEmail || 'Jugador';
           try {
             const usnap = await getDoc(doc(db, 'usuarios', userId));
-            if (usnap.exists()) {
-              const udata = usnap.data();
-              nombre = udata.displayName || udata.email || nombre;
-            }
+            if (usnap.exists()) { const d = usnap.data(); nombre = d.displayName || d.email || nombre; }
           } catch (e) {}
           return { userId, nombre, puntos: jugada.puntos || 0, esYo: userId === uid };
         })
@@ -90,10 +82,7 @@ export default function GrupoMundialDashboard() {
           let nombre = j.userEmail || 'Jugador';
           try {
             const usnap = await getDoc(doc(db, 'usuarios', j.userId));
-            if (usnap.exists()) {
-              const udata = usnap.data();
-              nombre = udata.displayName || udata.email || nombre;
-            }
+            if (usnap.exists()) { const d = usnap.data(); nombre = d.displayName || d.email || nombre; }
           } catch (e) {}
           return { ...j, nombreUsuario: nombre };
         })
@@ -193,17 +182,13 @@ export default function GrupoMundialDashboard() {
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      {/* HEADER */}
       <div style={{ background: 'linear-gradient(160deg,#0d0d1a,#1a1a2e,#16213e)', borderBottom: '1px solid rgba(200,170,110,0.2)' }} className="px-4 pt-4 pb-5">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={() => router.push('/mundial/grupos')}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
             style={{ background: 'rgba(200,170,110,0.1)', color: '#C8AA6E' }}>←</button>
           <span className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>Mundial · <b style={{ color: 'rgba(210,185,130,0.85)' }}>{grupo.nombre}</b></span>
-          {esCreador && (
-            <span className="ml-auto text-xs px-2 py-1 rounded-lg font-bold"
-              style={{ background: 'rgba(200,170,110,0.12)', color: '#C8AA6E' }}>👑 Creador</span>
-          )}
+          {esCreador && <span className="ml-auto text-xs px-2 py-1 rounded-lg font-bold" style={{ background: 'rgba(200,170,110,0.12)', color: '#C8AA6E' }}>👑 Creador</span>}
         </div>
         <h1 className="font-condensed text-3xl font-black mb-1" style={{ color: '#C8AA6E' }}>{grupo.nombre}</h1>
         <p className="text-xs mb-3" style={{ color: 'rgba(210,185,130,0.65)' }}>Mundial 2026 · Fase de Grupos</p>
@@ -225,16 +210,10 @@ export default function GrupoMundialDashboard() {
 
       <div className="px-4 pt-4">
 
-        {/* CÓDIGO */}
-        <div className="rounded-2xl mb-4 overflow-hidden"
-          style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.2)' }}>
+        <div className="rounded-2xl mb-4 overflow-hidden" style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.2)' }}>
           <div className="px-4 pt-4 pb-3 text-center">
             <div className="text-xs mb-1" style={{ color: 'rgba(210,185,130,0.55)' }}>Código del grupo</div>
-            <div onClick={copiarCodigo}
-              className="font-condensed text-4xl font-black tracking-widest mb-1 cursor-pointer"
-              style={{ color: '#C8AA6E' }}>
-              {grupo.codigo}
-            </div>
+            <div onClick={copiarCodigo} className="font-condensed text-4xl font-black tracking-widest mb-1 cursor-pointer" style={{ color: '#C8AA6E' }}>{grupo.codigo}</div>
             <div className="text-xs mb-3" style={{ color: copiado ? '#00C853' : 'rgba(210,185,130,0.45)' }}>
               {copiado ? '✅ Código copiado' : 'Tocá el código para copiarlo'}
             </div>
@@ -247,26 +226,13 @@ export default function GrupoMundialDashboard() {
           {showCompartir && (
             <div className="px-4 pb-4">
               <div className="flex gap-2">
-                <button onClick={compartirWhatsApp}
-                  className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm"
-                  style={{ background: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.25)', color: '#25D366' }}>
-                  📱 WhatsApp
-                </button>
-                <button onClick={compartirNativo}
-                  className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm"
-                  style={{ background: 'rgba(200,170,110,0.06)', border: '1px solid rgba(200,170,110,0.15)', color: 'rgba(210,185,130,0.75)' }}>
-                  🔗 Compartir
-                </button>
-                <button onClick={() => setShowQR(!showQR)}
-                  className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm"
-                  style={{ background: 'rgba(200,170,110,0.06)', border: '1px solid rgba(200,170,110,0.15)', color: '#C8AA6E' }}>
-                  📷 QR
-                </button>
+                <button onClick={compartirWhatsApp} className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm" style={{ background: 'rgba(37,211,102,0.1)', border: '1px solid rgba(37,211,102,0.25)', color: '#25D366' }}>📱 WhatsApp</button>
+                <button onClick={compartirNativo} className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm" style={{ background: 'rgba(200,170,110,0.06)', border: '1px solid rgba(200,170,110,0.15)', color: 'rgba(210,185,130,0.75)' }}>🔗 Compartir</button>
+                <button onClick={() => setShowQR(!showQR)} className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm" style={{ background: 'rgba(200,170,110,0.06)', border: '1px solid rgba(200,170,110,0.15)', color: '#C8AA6E' }}>📷 QR</button>
               </div>
               {showQR && (
                 <div className="mt-3 rounded-xl p-4 text-center" style={{ background: 'white' }}>
-                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkGrupo)}`}
-                    alt="QR" className="mx-auto rounded-lg" width={200} height={200} />
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkGrupo)}`} alt="QR" className="mx-auto rounded-lg" width={200} height={200} />
                   <p className="text-xs mt-2 font-bold" style={{ color: '#020810' }}>{grupo.nombre} · {grupo.codigo}</p>
                 </div>
               )}
@@ -274,7 +240,6 @@ export default function GrupoMundialDashboard() {
           )}
         </div>
 
-        {/* BOTONES */}
         <button onClick={() => router.push(`/mundial/jugada/crear?grupo=${id}`)}
           className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3"
           style={{ background: '#C8AA6E', color: '#0d0d1a' }}>
@@ -308,9 +273,7 @@ export default function GrupoMundialDashboard() {
           </div>
         )}
 
-        {/* TABS */}
-        <div className="flex mb-4"
-          style={{ background: 'rgba(200,170,110,0.05)', borderRadius: '12px', padding: '3px', border: '1px solid rgba(200,170,110,0.1)' }}>
+        <div className="flex mb-4" style={{ background: 'rgba(200,170,110,0.05)', borderRadius: '12px', padding: '3px', border: '1px solid rgba(200,170,110,0.1)' }}>
           {(['ranking', 'pagos', 'info'] as const).map(tabKey => (
             <div key={tabKey} onClick={() => setTab(tabKey)}
               className="flex-1 text-center py-2 rounded-xl cursor-pointer font-condensed font-bold text-sm"
@@ -320,15 +283,10 @@ export default function GrupoMundialDashboard() {
           ))}
         </div>
 
-        {/* RANKING */}
         {tab === 'ranking' && (
-          <div className="rounded-2xl overflow-hidden"
-            style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.15)' }}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.15)' }}>
             {cargandoRanking ? (
-              <div className="px-4 py-5 text-center">
-                <div className="text-3xl mb-2">⏳</div>
-                <p className="text-sm" style={{ color: 'rgba(210,185,130,0.65)' }}>Cargando ranking...</p>
-              </div>
+              <div className="px-4 py-5 text-center"><div className="text-3xl mb-2">⏳</div><p className="text-sm" style={{ color: 'rgba(210,185,130,0.65)' }}>Cargando ranking...</p></div>
             ) : ranking.length === 0 ? (
               <div className="px-4 py-5 text-center">
                 <div className="text-3xl mb-2">⏳</div>
@@ -355,27 +313,19 @@ export default function GrupoMundialDashboard() {
           </div>
         )}
 
-        {/* PAGOS */}
         {tab === 'pagos' && (
-          <div className="rounded-2xl overflow-hidden"
-            style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.15)' }}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.15)' }}>
             <div className="px-4 py-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="text-sm font-semibold mb-1" style={{ color: '#F5F5F0' }}>Control de pagos internos</div>
-                  <div className="text-xs" style={{ color: 'rgba(210,185,130,0.65)' }}>
-                    {grupo.precio ? `${grupo.moneda} ${grupo.precio} por jugada` : 'Sin monto definido'}
-                  </div>
+                  <div className="text-xs" style={{ color: 'rgba(210,185,130,0.65)' }}>{grupo.precio ? `${grupo.moneda} ${grupo.precio} por jugada` : 'Sin monto definido'}</div>
                 </div>
-                {esCreador
-                  ? <Toggle value={grupo.controlPagos} onToggle={toggleControlPagos} />
-                  : <span style={{ color: grupo.controlPagos ? '#00C853' : 'rgba(210,185,130,0.5)' }}>{grupo.controlPagos ? '✅' : '❌'}</span>
-                }
+                {esCreador ? <Toggle value={grupo.controlPagos} onToggle={toggleControlPagos} /> : <span style={{ color: grupo.controlPagos ? '#00C853' : 'rgba(210,185,130,0.5)' }}>{grupo.controlPagos ? '✅' : '❌'}</span>}
               </div>
               {esCreador && grupo.controlPagos && (
                 <>
-                  <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3"
-                    style={{ color: 'rgba(210,185,130,0.6)' }}>Jugadas del grupo</div>
+                  <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{ color: 'rgba(210,185,130,0.6)' }}>Jugadas del grupo</div>
                   {cargandoPagos ? (
                     <div className="text-center py-4"><p className="text-sm" style={{ color: 'rgba(210,185,130,0.65)' }}>Cargando...</p></div>
                   ) : jugadasPagos.length === 0 ? (
@@ -390,12 +340,8 @@ export default function GrupoMundialDashboard() {
                             <div className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>{j.nombre}</div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold"
-                              style={{ color: j.pagadoInterno ? '#00C853' : '#FFB300' }}>
-                              {j.pagadoInterno ? '✅ Pagó' : '⏳ Pendiente'}
-                            </span>
-                            <div onClick={() => togglePago(j.id, j.pagadoInterno || false)}
-                              className="rounded-full cursor-pointer flex-shrink-0"
+                            <span className="text-xs font-bold" style={{ color: j.pagadoInterno ? '#00C853' : '#FFB300' }}>{j.pagadoInterno ? '✅ Pagó' : '⏳ Pendiente'}</span>
+                            <div onClick={() => togglePago(j.id, j.pagadoInterno || false)} className="rounded-full cursor-pointer flex-shrink-0"
                               style={{ width: '36px', height: '20px', background: j.pagadoInterno ? '#C8AA6E' : 'rgba(200,170,110,0.15)', position: 'relative', transition: 'background .3s' }}>
                               <div style={{ position: 'absolute', top: '2px', left: j.pagadoInterno ? '18px' : '2px', width: '16px', height: '16px', background: 'white', borderRadius: '50%', transition: 'left .3s', boxShadow: '0 2px 4px rgba(0,0,0,.3)' }} />
                             </div>
@@ -407,8 +353,7 @@ export default function GrupoMundialDashboard() {
                 </>
               )}
               {!esCreador && (
-                <div className="text-xs px-3 py-2 rounded-xl"
-                  style={{ background: 'rgba(200,170,110,0.04)', border: '1px solid rgba(200,170,110,0.1)', color: 'rgba(210,185,130,0.65)' }}>
+                <div className="text-xs px-3 py-2 rounded-xl" style={{ background: 'rgba(200,170,110,0.04)', border: '1px solid rgba(200,170,110,0.1)', color: 'rgba(210,185,130,0.65)' }}>
                   {grupo.controlPagos ? 'El creador gestiona los pagos del grupo.' : 'Este grupo no tiene control de pagos activo.'}
                 </div>
               )}
@@ -416,36 +361,22 @@ export default function GrupoMundialDashboard() {
           </div>
         )}
 
-        {/* INFO */}
         {tab === 'info' && (
-          <div className="rounded-2xl overflow-hidden"
-            style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.15)' }}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.15)' }}>
             <div className="px-4 py-4">
-              {[
-                { label: 'Torneo', valor: 'Mundial 2026' },
-                { label: 'Fase', valor: 'Grupos (72 partidos)' },
-                { label: 'Jugadores', valor: String(grupo.miembros?.length || 1) },
-              ].map((item, i) => (
-                <div key={i} className="flex justify-between items-center py-3"
-                  style={{ borderBottom: '1px solid rgba(200,170,110,0.07)' }}>
+              {[{ label: 'Torneo', valor: 'Mundial 2026' }, { label: 'Fase', valor: 'Grupos (72 partidos)' }, { label: 'Jugadores', valor: String(grupo.miembros?.length || 1) }].map((item, i) => (
+                <div key={i} className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(200,170,110,0.07)' }}>
                   <span className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>{item.label}</span>
                   <span className="text-sm font-semibold" style={{ color: '#F5F5F0' }}>{item.valor}</span>
                 </div>
               ))}
-              <div className="flex justify-between items-center py-3"
-                style={{ borderBottom: '1px solid rgba(200,170,110,0.07)' }}>
+              <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(200,170,110,0.07)' }}>
                 <span className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>Control de pagos</span>
-                <span className="text-sm font-semibold" style={{ color: grupo.controlPagos ? '#00C853' : 'rgba(210,185,130,0.5)' }}>
-                  {grupo.controlPagos ? '✅ Activo' : '❌ Inactivo'}
-                </span>
+                <span className="text-sm font-semibold" style={{ color: grupo.controlPagos ? '#00C853' : 'rgba(210,185,130,0.5)' }}>{grupo.controlPagos ? '✅ Activo' : '❌ Inactivo'}</span>
               </div>
-              <div className="flex justify-between items-center py-3"
-                style={{ borderBottom: '1px solid rgba(200,170,110,0.07)' }}>
+              <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(200,170,110,0.07)' }}>
                 <span className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>Chat</span>
-                {esCreador
-                  ? <Toggle value={grupo.chatHabilitado} onToggle={toggleChat} />
-                  : <span className="text-sm font-semibold" style={{ color: grupo.chatHabilitado ? '#00C853' : 'rgba(210,185,130,0.5)' }}>{grupo.chatHabilitado ? '✅' : '❌'}</span>
-                }
+                {esCreador ? <Toggle value={grupo.chatHabilitado} onToggle={toggleChat} /> : <span className="text-sm font-semibold" style={{ color: grupo.chatHabilitado ? '#00C853' : 'rgba(210,185,130,0.5)' }}>{grupo.chatHabilitado ? '✅' : '❌'}</span>}
               </div>
               <div className="flex justify-between items-center py-3">
                 <span className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>Código</span>
@@ -464,18 +395,13 @@ export default function GrupoMundialDashboard() {
 
       </div>
 
-      {/* MODAL ELIMINAR */}
       {showEliminar && (
-        <div className="fixed inset-0 flex items-center justify-center px-5"
-          style={{ background: 'rgba(0,0,0,0.85)', zIndex: 999 }}>
-          <div className="w-full max-w-sm rounded-2xl p-6"
-            style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.2)' }}>
+        <div className="fixed inset-0 flex items-center justify-center px-5" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 999 }}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.2)' }}>
             <div className="text-center mb-4">
               <div className="text-4xl mb-3">⚠️</div>
               <div className="font-condensed text-xl font-black mb-2" style={{ color: '#E8192C' }}>Eliminar grupo</div>
-              <p className="text-xs" style={{ color: 'rgba(210,185,130,0.7)', lineHeight: '1.7' }}>
-                Esta acción es <b style={{ color: '#F5F5F0' }}>irreversible</b>. Se eliminarán el grupo y todas las jugadas asociadas.
-              </p>
+              <p className="text-xs" style={{ color: 'rgba(210,185,130,0.7)', lineHeight: '1.7' }}>Esta acción es <b style={{ color: '#F5F5F0' }}>irreversible</b>. Se eliminarán el grupo y todas las jugadas asociadas.</p>
             </div>
             <button onClick={eliminarGrupo} disabled={eliminando}
               className="w-full py-3 rounded-xl font-condensed font-black text-base mb-2"
@@ -491,11 +417,10 @@ export default function GrupoMundialDashboard() {
         </div>
       )}
 
-      {/* BOTTOM NAV */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3"
         style={{ background: 'rgba(6,13,31,0.98)', borderTop: '1px solid rgba(200,170,110,0.1)' }}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mundial')}>
-          <span className="text-lg">🏠</span><span className="text-xs font-semibold" style={{ color: 'rgba(210,185,130,0.5)' }}>Inicio</span>
+          <span className="text-lg">🏆</span><span className="text-xs font-semibold" style={{ color: 'rgba(210,185,130,0.5)' }}>Mundial</span>
         </div>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mundial/fixture')}>
           <span className="text-lg">📅</span><span className="text-xs font-semibold" style={{ color: 'rgba(210,185,130,0.5)' }}>Fixture</span>

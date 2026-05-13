@@ -227,12 +227,12 @@ function CrearJugadaForm() {
 
   const formatHora = (dateStr: string) => {
     const d = new Date(dateStr);
-    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   };
 
   const formatFecha = (dateStr: string) => {
     const d = new Date(dateStr);
-    return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    return d.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
   };
 
   const YN = ({ varKey }: { varKey: string }) => (
@@ -421,7 +421,7 @@ function CrearJugadaForm() {
                       <div className="flex-1 text-left">
                         <div className="text-sm font-bold mb-2">{p.visitante}</div>
                         <input type="tel" inputMode="numeric" pattern="[0-9]*" value={predicciones[i]?.visitante || ''}
-                          onChange={(e) => setPrediccion(i, 'visitante', e.target.value)} placeholder="0"
+                          onChange={(e) => setPrediccion(i, 'visitante', e.target.value)} placeholder="1"
                           className="w-full rounded-xl px-3 py-2 text-white text-lg font-black text-center outline-none"
                           style={{ background: predicciones[i]?.visitante !== '' && predicciones[i]?.visitante !== undefined ? 'rgba(0,200,83,0.1)' : 'rgba(0,0,0,0.35)', border: predicciones[i]?.visitante !== '' && predicciones[i]?.visitante !== undefined ? '1px solid rgba(0,200,83,0.3)' : '1px solid rgba(255,255,255,0.09)' }} />
                       </div>
