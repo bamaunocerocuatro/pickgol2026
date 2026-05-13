@@ -215,14 +215,14 @@ function EditarJugadaMundialForm() {
       </div>
       {abierto && (
         <div className="absolute left-0 right-0 rounded-xl overflow-y-auto z-50 mt-1"
-          style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.25)', maxHeight: '220px' }}>
+          style={{ background: 'rgba(13,27,62,0.97)', border: '1px solid rgba(200,170,110,0.4)', maxHeight: '220px', backdropFilter: 'blur(8px)' }}>
           {PAISES_MUNDIAL.map(p => (
             <div
               key={p.nombre}
               onClick={() => { setRespuesta(varKey, p.nombre); setAbierto(false); }}
               className="px-4 py-2.5 cursor-pointer text-sm flex items-center gap-2"
               style={{
-                background: respuestas[varKey] === p.nombre ? 'rgba(200,170,110,0.15)' : 'transparent',
+                background: respuestas[varKey] === p.nombre ? 'rgba(200,170,110,0.15)' : 'rgba(200,170,110,0.02)',
                 color: respuestas[varKey] === p.nombre ? '#C8AA6E' : '#F5F5F0',
                 borderBottom: '1px solid rgba(200,170,110,0.06)',
               }}>
@@ -412,7 +412,7 @@ function EditarJugadaMundialForm() {
             </button>
             <button onClick={() => esComunitaria ? router.push('/mundial/mis-jugadas') : setStep(1)}
               className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
-              style={{ background: 'transparent', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
+              style={{ background: 'rgba(200,170,110,0.02)', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
               ← ATRÁS
             </button>
           </>
@@ -469,7 +469,7 @@ function EditarJugadaMundialForm() {
             </button>
             <button onClick={() => setStep(esComunitaria ? 1 : 2)}
               className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
-              style={{ background: 'transparent', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
+              style={{ background: 'rgba(200,170,110,0.02)', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
               ← ATRÁS
             </button>
           </>

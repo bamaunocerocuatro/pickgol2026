@@ -287,7 +287,7 @@ function CrearJugadaMundialForm() {
               onClick={() => { setRespuesta(varKey, p.nombre); setAbierto(false); }}
               className="px-4 py-2.5 cursor-pointer text-sm flex items-center gap-2"
               style={{
-                background: respuestas[varKey] === p.nombre ? 'rgba(200,170,110,0.15)' : 'transparent',
+                background: respuestas[varKey] === p.nombre ? 'rgba(200,170,110,0.15)' : 'rgba(200,170,110,0.02)',
                 color: respuestas[varKey] === p.nombre ? '#C8AA6E' : '#F5F5F0',
                 borderBottom: '1px solid rgba(200,170,110,0.06)',
               }}>
@@ -428,7 +428,7 @@ function CrearJugadaMundialForm() {
               SIGUIENTE →
             </button>
             <button onClick={() => setStep(1)} className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
-              style={{ background: 'transparent', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
+              style={{ background: 'rgba(200,170,110,0.02)', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
               ← ATRÁS
             </button>
           </>
@@ -512,7 +512,7 @@ function CrearJugadaMundialForm() {
               SIGUIENTE →
             </button>
             <button onClick={() => setStep(2)} className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
-              style={{ background: 'transparent', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
+              style={{ background: 'rgba(200,170,110,0.02)', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
               ← ATRÁS
             </button>
           </>
@@ -572,7 +572,7 @@ function CrearJugadaMundialForm() {
               {guardando ? 'GUARDANDO...' : '✅ CONFIRMAR JUGADA'}
             </button>
             <button onClick={() => setStep(3)} className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
-              style={{ background: 'transparent', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
+              style={{ background: 'rgba(200,170,110,0.02)', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
               ← ATRÁS
             </button>
           </>
