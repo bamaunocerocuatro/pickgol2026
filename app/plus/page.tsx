@@ -133,8 +133,8 @@ function PlusContent() {
           amount: '2.79',
           currency: 'USD',
           description: 'PickGol Plus — Variables personalizadas (pago único)',
-          returnUrl: 'https://pickgol2026.vercel.app/plus',
-          cancelUrl: 'https://pickgol2026.vercel.app/plus?cancelled=true',
+          returnUrl: 'https://pickgol.com/plus',
+          cancelUrl: 'https://pickgol.com/plus?cancelled=true',
         }),
       });
       const data = await res.json();
@@ -161,7 +161,7 @@ function PlusContent() {
         body: JSON.stringify({
           amount: 2.79,
           description: 'PickGol Plus — Variables personalizadas (pago único)',
-          returnUrl: 'https://pickgol2026.vercel.app/plus',
+          returnUrl: 'https://pickgol.com/plus',
           tipo: 'plus',
           userId: user.uid,
         }),

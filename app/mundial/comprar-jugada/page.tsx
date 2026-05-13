@@ -120,8 +120,8 @@ function ComprarJugadaContent() {
     setError('');
     try {
       const returnUrl = grupoId
-        ? `https://pickgol2026.vercel.app/mundial/comprar-jugada?grupo=${grupoId}`
-        : 'https://pickgol2026.vercel.app/mundial/comprar-jugada';
+        ? `https://pickgol.com/mundial/comprar-jugada?grupo=${grupoId}`
+        : 'https://pickgol.com/mundial/comprar-jugada';
       const res = await fetch('/api/paypal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,8 +151,8 @@ function ComprarJugadaContent() {
     setError('');
     try {
       const returnUrl = grupoId
-        ? `https://pickgol2026.vercel.app/mundial/comprar-jugada?grupo=${grupoId}`
-        : 'https://pickgol2026.vercel.app/mundial/comprar-jugada';
+        ? `https://pickgol.com/mundial/comprar-jugada?grupo=${grupoId}`
+        : 'https://pickgol.com/mundial/comprar-jugada';
       const res = await fetch('/api/mercadopago', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

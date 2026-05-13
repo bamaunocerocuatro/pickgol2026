@@ -145,7 +145,7 @@ function JugadaCreadaContent() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <div>
               <div style={{ fontFamily: 'sans-serif', fontSize: '18px', fontWeight: '900', color: '#C8AA6E', letterSpacing: '1px' }}>PICKGOL 🏆</div>
-              <div style={{ fontFamily: 'sans-serif', fontSize: '10px', color: 'rgba(210,185,130,0.5)' }}>FIFA World Cup 2026 · pickgol2026.vercel.app</div>
+              <div style={{ fontFamily: 'sans-serif', fontSize: '10px', color: 'rgba(210,185,130,0.5)' }}>FIFA World Cup 2026 · pickgol.com</div>
             </div>
           </div>
 
