@@ -7,16 +7,68 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs } from 'firebase/firestore';
 import { useSearchParams } from 'next/navigation';
 
+const PAISES_MUNDIAL = [
+  { nombre: 'Alemania', flag: '🇩🇪' },
+  { nombre: 'Arabia Saudita', flag: '🇸🇦' },
+  { nombre: 'Argelia', flag: '🇩🇿' },
+  { nombre: 'Argentina', flag: '🇦🇷' },
+  { nombre: 'Australia', flag: '🇦🇺' },
+  { nombre: 'Austria', flag: '🇦🇹' },
+  { nombre: 'Bélgica', flag: '🇧🇪' },
+  { nombre: 'Bosnia y Herzegovina', flag: '🇧🇦' },
+  { nombre: 'Brasil', flag: '🇧🇷' },
+  { nombre: 'Cabo Verde', flag: '🇨🇻' },
+  { nombre: 'Canadá', flag: '🇨🇦' },
+  { nombre: 'Colombia', flag: '🇨🇴' },
+  { nombre: 'Corea del Sur', flag: '🇰🇷' },
+  { nombre: 'Costa de Marfil', flag: '🇨🇮' },
+  { nombre: 'Croacia', flag: '🇭🇷' },
+  { nombre: 'Curazao', flag: '🇨🇼' },
+  { nombre: 'Ecuador', flag: '🇪🇨' },
+  { nombre: 'Egipto', flag: '🇪🇬' },
+  { nombre: 'Escocia', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' },
+  { nombre: 'España', flag: '🇪🇸' },
+  { nombre: 'Estados Unidos', flag: '🇺🇸' },
+  { nombre: 'Francia', flag: '🇫🇷' },
+  { nombre: 'Ghana', flag: '🇬🇭' },
+  { nombre: 'Haití', flag: '🇭🇹' },
+  { nombre: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { nombre: 'Irán', flag: '🇮🇷' },
+  { nombre: 'Irak', flag: '🇮🇶' },
+  { nombre: 'Japón', flag: '🇯🇵' },
+  { nombre: 'Jordania', flag: '🇯🇴' },
+  { nombre: 'Marruecos', flag: '🇲🇦' },
+  { nombre: 'México', flag: '🇲🇽' },
+  { nombre: 'Noruega', flag: '🇳🇴' },
+  { nombre: 'Nueva Zelanda', flag: '🇳🇿' },
+  { nombre: 'Países Bajos', flag: '🇳🇱' },
+  { nombre: 'Panamá', flag: '🇵🇦' },
+  { nombre: 'Paraguay', flag: '🇵🇾' },
+  { nombre: 'Portugal', flag: '🇵🇹' },
+  { nombre: 'Qatar', flag: '🇶🇦' },
+  { nombre: 'República Checa', flag: '🇨🇿' },
+  { nombre: 'República Democrática del Congo', flag: '🇨🇩' },
+  { nombre: 'Senegal', flag: '🇸🇳' },
+  { nombre: 'Sudáfrica', flag: '🇿🇦' },
+  { nombre: 'Suecia', flag: '🇸🇪' },
+  { nombre: 'Suiza', flag: '🇨🇭' },
+  { nombre: 'Túnez', flag: '🇹🇳' },
+  { nombre: 'Turquía', flag: '🇹🇷' },
+  { nombre: 'Uruguay', flag: '🇺🇾' },
+  { nombre: 'Uzbekistán', flag: '🇺🇿' },
+];
+
 const VARIABLES_DEFAULT = [
-  { key: 'amarillas', label: '¿Cuántas amarillas habrá en toda la fase de grupos?', pts: 12, tipo: 'numero' },
-  { key: 'rojas', label: '¿Cuántas rojas habrá en toda la fase de grupos?', pts: 10, tipo: 'numero' },
-  { key: 'goles', label: '¿Cuántos goles habrá en total en la fase de grupos?', pts: 8, tipo: 'numero' },
-  { key: 'golesMax', label: '¿Cuántos goles tendrá el partido con más goles?', pts: 10, tipo: 'numero' },
-  { key: 'penales', label: '¿Cuántos penales habrá en la fase de grupos?', pts: 10, tipo: 'numero' },
-  { key: 'hayGolAntes5', label: '¿Habrá un gol antes del min 5 en algún partido?', pts: 5, tipo: 'sino' },
-  { key: 'hayGolAlargue', label: '¿Habrá gol en el alargue del 2do tiempo?', pts: 6, tipo: 'sino' },
-  { key: 'hayCeroCero', label: '¿Habrá algún resultado 0-0?', pts: 2, tipo: 'sino' },
-  { key: 'varAnulaGol', label: '¿El VAR anulará algún gol?', pts: 5, tipo: 'sino' },
+  { key: 'campeon', label: '¿Quién será el campeón del mundo?', pts: 10, tipo: 'pais' },
+  { key: 'subcampeon', label: '¿Quién será el subcampeón del mundo?', pts: 8, tipo: 'pais' },
+  { key: 'goleador', label: '¿Quién será el goleador del mundial? (escribí solo el apellido, no cuenta definición por penales)', pts: 8, tipo: 'texto' },
+  { key: 'vallaInvicta', label: '¿Qué país tendrá la valla menos vencida?', pts: 8, tipo: 'pais' },
+  { key: 'masGoleador', label: '¿Cuál será el país más goleador?', pts: 8, tipo: 'pais' },
+  { key: 'golesMax', label: '¿Cuántos goles tendrá el partido con más goles? (no cuenta definición por penales)', pts: 10, tipo: 'numero' },
+  { key: 'penales', label: '¿Cuántos penales habrá en toda la competencia? (no cuenta definición por penales)', pts: 12, tipo: 'numero' },
+  { key: 'golAntes3', label: '¿Habrá un gol antes del min 3 en algún partido de la competencia?', pts: 5, tipo: 'sino' },
+  { key: 'tarjetasRojas', label: '¿Cuántas tarjetas rojas habrá en toda la competencia?', pts: 15, tipo: 'numero' },
+  { key: 'golesVar', label: '¿Cuántos goles anulará el VAR?', pts: 14, tipo: 'numero' },
 ];
 
 const FECHA_BLOQUEO = new Date('2026-06-09T17:00:00-03:00');
@@ -115,7 +167,9 @@ function CrearJugadaMundialForm() {
 
   const validarStep2 = () => {
     for (const v of variables) {
-      if (!respuestas[v.key]) { setError('Completá todas las variables antes de continuar'); return false; }
+      if (!respuestas[v.key] || respuestas[v.key].trim() === '') {
+        setError('Completá todas las variables antes de continuar'); return false;
+      }
     }
     setError(''); return true;
   };
@@ -151,7 +205,8 @@ function CrearJugadaMundialForm() {
       }));
       const variablesGuardadas: Record<string, any> = {};
       variables.forEach(v => {
-        variablesGuardadas[v.key] = v.tipo === 'numero' ? parseInt(respuestas[v.key] || '0') : respuestas[v.key];
+        if (v.tipo === 'numero') variablesGuardadas[v.key] = parseInt(respuestas[v.key] || '0');
+        else variablesGuardadas[v.key] = respuestas[v.key];
       });
       const coleccion = grupoId ? 'jugadas_mundial' : 'jugadas_comunitarias_mundial';
       const docRef = await addDoc(collection(db, coleccion), {
@@ -209,6 +264,35 @@ function CrearJugadaMundialForm() {
       </div>
     </div>
   );
+
+  const PaisSelect = ({ varKey }: { varKey: string }) => (
+    <select
+      value={respuestas[varKey] || ''}
+      onChange={(e) => setRespuesta(varKey, e.target.value)}
+      className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+      style={{ background: respuestas[varKey] ? 'rgba(200,170,110,0.08)' : 'rgba(200,170,110,0.04)', border: respuestas[varKey] ? '1px solid rgba(200,170,110,0.35)' : '1px solid rgba(200,170,110,0.15)', color: respuestas[varKey] ? '#F5F5F0' : 'rgba(210,185,130,0.4)' }}>
+      <option value="" disabled>Seleccioná un país</option>
+      {PAISES_MUNDIAL.map(p => (
+        <option key={p.nombre} value={p.nombre}>{p.flag} {p.nombre}</option>
+      ))}
+    </select>
+  );
+
+  const renderVariable = (v: any) => {
+    if (v.tipo === 'numero') return (
+      <input type="number" value={respuestas[v.key] || ''} onChange={(e) => setRespuesta(v.key, e.target.value)} placeholder="0"
+        className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+        style={{ background: respuestas[v.key] ? 'rgba(200,170,110,0.08)' : 'rgba(200,170,110,0.04)', border: respuestas[v.key] ? '1px solid rgba(200,170,110,0.35)' : '1px solid rgba(200,170,110,0.15)', color: '#F5F5F0' }} />
+    );
+    if (v.tipo === 'sino') return <YN varKey={v.key} />;
+    if (v.tipo === 'pais') return <PaisSelect varKey={v.key} />;
+    if (v.tipo === 'texto') return (
+      <input type="text" value={respuestas[v.key] || ''} onChange={(e) => setRespuesta(v.key, e.target.value)} placeholder="Ej: Mbappe"
+        className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+        style={{ background: respuestas[v.key] ? 'rgba(200,170,110,0.08)' : 'rgba(200,170,110,0.04)', border: respuestas[v.key] ? '1px solid rgba(200,170,110,0.35)' : '1px solid rgba(200,170,110,0.15)', color: '#F5F5F0' }} />
+    );
+    return null;
+  };
 
   if (loading) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
@@ -295,30 +379,24 @@ function CrearJugadaMundialForm() {
         {!bloqueado && step === 2 && (
           <>
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: 'rgba(210,185,130,0.6)' }}>
-              Variables de la fase de grupos
+              Variables por todo el mundial
               {grupo?.variablesCustom && <span className="ml-2 text-xs px-2 py-0.5 rounded-lg" style={{ background: 'rgba(200,170,110,0.12)', color: '#C8AA6E' }}>⭐ Custom</span>}
             </div>
             {variables.map((v) => (
-              <div key={v.key} className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold uppercase tracking-wider flex-1 mr-2" style={{ color: 'rgba(210,185,130,0.7)' }}>{v.label}</label>
+              <div key={v.key} className="mb-5">
+                <div className="flex justify-between items-start mb-2 gap-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider flex-1" style={{ color: 'rgba(210,185,130,0.7)', lineHeight: '1.5' }}>{v.label}</label>
                   <span className="text-xs font-black flex-shrink-0"
                     style={{ background: 'rgba(200,170,110,0.1)', border: '1px solid rgba(200,170,110,0.2)', color: '#C8AA6E', padding: '2px 8px', borderRadius: '6px' }}>
                     {v.pts} pts
                   </span>
                 </div>
-                {v.tipo === 'numero' ? (
-                  <input type="number" value={respuestas[v.key] || ''} onChange={(e) => setRespuesta(v.key, e.target.value)} placeholder="0"
-                    className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-                    style={{ background: respuestas[v.key] ? 'rgba(200,170,110,0.08)' : 'rgba(200,170,110,0.04)', border: respuestas[v.key] ? '1px solid rgba(200,170,110,0.35)' : '1px solid rgba(200,170,110,0.15)', color: '#F5F5F0' }} />
-                ) : (
-                  <YN varKey={v.key} />
-                )}
+                {renderVariable(v)}
               </div>
             ))}
             <div className="rounded-xl p-3 mb-4 flex gap-2" style={{ background: 'rgba(200,170,110,0.04)', border: '1px solid rgba(200,170,110,0.1)' }}>
               <span>⚠️</span>
-              <p className="text-xs" style={{ color: 'rgba(210,185,130,0.65)' }}>Todas las respuestas aplican sobre tiempo reglamentario. No cuenta definición por penales.</p>
+              <p className="text-xs" style={{ color: 'rgba(210,185,130,0.65)' }}>Las respuestas aplican a todo el torneo. No cuenta definición por penales salvo que se indique.</p>
             </div>
             {error && <p className="text-xs mb-4" style={{ color: '#E8192C' }}>{error}</p>}
             <button onClick={() => { if (validarStep2()) setStep(3); }}

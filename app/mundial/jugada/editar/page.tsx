@@ -2,9 +2,60 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { auth, db } from '../../../lib/firebase';
+import { auth, db } from '../../../../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+
+const PAISES_MUNDIAL = [
+  { nombre: 'Alemania', flag: '🇩🇪' },
+  { nombre: 'Arabia Saudita', flag: '🇸🇦' },
+  { nombre: 'Argelia', flag: '🇩🇿' },
+  { nombre: 'Argentina', flag: '🇦🇷' },
+  { nombre: 'Australia', flag: '🇦🇺' },
+  { nombre: 'Austria', flag: '🇦🇹' },
+  { nombre: 'Bélgica', flag: '🇧🇪' },
+  { nombre: 'Bosnia y Herzegovina', flag: '🇧🇦' },
+  { nombre: 'Brasil', flag: '🇧🇷' },
+  { nombre: 'Cabo Verde', flag: '🇨🇻' },
+  { nombre: 'Canadá', flag: '🇨🇦' },
+  { nombre: 'Colombia', flag: '🇨🇴' },
+  { nombre: 'Corea del Sur', flag: '🇰🇷' },
+  { nombre: 'Costa de Marfil', flag: '🇨🇮' },
+  { nombre: 'Croacia', flag: '🇭🇷' },
+  { nombre: 'Curazao', flag: '🇨🇼' },
+  { nombre: 'Ecuador', flag: '🇪🇨' },
+  { nombre: 'Egipto', flag: '🇪🇬' },
+  { nombre: 'Escocia', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' },
+  { nombre: 'España', flag: '🇪🇸' },
+  { nombre: 'Estados Unidos', flag: '🇺🇸' },
+  { nombre: 'Francia', flag: '🇫🇷' },
+  { nombre: 'Ghana', flag: '🇬🇭' },
+  { nombre: 'Haití', flag: '🇭🇹' },
+  { nombre: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { nombre: 'Irán', flag: '🇮🇷' },
+  { nombre: 'Irak', flag: '🇮🇶' },
+  { nombre: 'Japón', flag: '🇯🇵' },
+  { nombre: 'Jordania', flag: '🇯🇴' },
+  { nombre: 'Marruecos', flag: '🇲🇦' },
+  { nombre: 'México', flag: '🇲🇽' },
+  { nombre: 'Noruega', flag: '🇳🇴' },
+  { nombre: 'Nueva Zelanda', flag: '🇳🇿' },
+  { nombre: 'Países Bajos', flag: '🇳🇱' },
+  { nombre: 'Panamá', flag: '🇵🇦' },
+  { nombre: 'Paraguay', flag: '🇵🇾' },
+  { nombre: 'Portugal', flag: '🇵🇹' },
+  { nombre: 'Qatar', flag: '🇶🇦' },
+  { nombre: 'República Checa', flag: '🇨🇿' },
+  { nombre: 'República Democrática del Congo', flag: '🇨🇩' },
+  { nombre: 'Senegal', flag: '🇸🇳' },
+  { nombre: 'Sudáfrica', flag: '🇿🇦' },
+  { nombre: 'Suecia', flag: '🇸🇪' },
+  { nombre: 'Suiza', flag: '🇨🇭' },
+  { nombre: 'Túnez', flag: '🇹🇳' },
+  { nombre: 'Turquía', flag: '🇹🇷' },
+  { nombre: 'Uruguay', flag: '🇺🇾' },
+  { nombre: 'Uzbekistán', flag: '🇺🇿' },
+];
 
 const FECHA_BLOQUEO = new Date('2027-06-09T17:00:00-03:00');
 
@@ -56,9 +107,7 @@ function EditarJugadaMundialForm() {
             }
             setPredicciones(preds);
           }
-        } catch (e) {
-          console.error(e);
-        }
+        } catch (e) { console.error(e); }
       }
       setLoading(false);
     });
@@ -151,6 +200,36 @@ function EditarJugadaMundialForm() {
     </div>
   );
 
+  const PaisSelect = ({ varKey }: { varKey: string }) => (
+    <select
+      value={respuestas[varKey] || ''}
+      onChange={(e) => setRespuesta(varKey, e.target.value)}
+      className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+      style={{ background: respuestas[varKey] ? 'rgba(200,170,110,0.08)' : 'rgba(200,170,110,0.04)', border: respuestas[varKey] ? '1px solid rgba(200,170,110,0.35)' : '1px solid rgba(200,170,110,0.15)', color: respuestas[varKey] ? '#F5F5F0' : 'rgba(210,185,130,0.4)' }}>
+      <option value="" disabled>Seleccioná un país</option>
+      {PAISES_MUNDIAL.map(p => (
+        <option key={p.nombre} value={p.nombre}>{p.flag} {p.nombre}</option>
+      ))}
+    </select>
+  );
+
+  const renderVariable = (v: any) => {
+    if (v.tipo === 'numero') return (
+      <input type="number" value={respuestas[v.key] || ''} onChange={(e) => setRespuesta(v.key, e.target.value)}
+        className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+        style={{ background: 'rgba(200,170,110,0.05)', border: '1px solid rgba(200,170,110,0.2)', color: '#F5F5F0' }} />
+    );
+    if (v.tipo === 'sino') return <YN varKey={v.key} />;
+    if (v.tipo === 'pais') return <PaisSelect varKey={v.key} />;
+    if (v.tipo === 'texto') return (
+      <input type="text" value={respuestas[v.key] || ''} onChange={(e) => setRespuesta(v.key, e.target.value)}
+        placeholder="Ej: Mbappe"
+        className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+        style={{ background: 'rgba(200,170,110,0.05)', border: '1px solid rgba(200,170,110,0.2)', color: '#F5F5F0' }} />
+    );
+    return null;
+  };
+
   const prediccionesPorFecha: Record<string, number[]> = {};
   (jugada?.predicciones || []).forEach((p: any, i: number) => {
     const fecha = new Date(p.fecha).toISOString().split('T')[0];
@@ -227,23 +306,17 @@ function EditarJugadaMundialForm() {
               className="w-full rounded-xl px-4 py-3 text-sm outline-none mb-6"
               style={{ background: 'rgba(200,170,110,0.05)', border: '1px solid rgba(200,170,110,0.2)', color: '#F5F5F0' }} />
 
-            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: 'rgba(210,185,130,0.6)' }}>Variables</div>
+            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-4" style={{ color: 'rgba(210,185,130,0.6)' }}>Variables por todo el mundial</div>
             {jugada.variablesMeta?.map((v: any) => (
-              <div key={v.key} className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold uppercase tracking-wider flex-1 mr-2" style={{ color: 'rgba(210,185,130,0.7)' }}>{v.label}</label>
+              <div key={v.key} className="mb-5">
+                <div className="flex justify-between items-start mb-2 gap-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider flex-1" style={{ color: 'rgba(210,185,130,0.7)', lineHeight: '1.5' }}>{v.label}</label>
                   <span className="text-xs font-black flex-shrink-0"
                     style={{ background: 'rgba(200,170,110,0.1)', border: '1px solid rgba(200,170,110,0.2)', color: '#C8AA6E', padding: '2px 8px', borderRadius: '6px' }}>
                     {v.pts} pts
                   </span>
                 </div>
-                {v.tipo === 'numero' ? (
-                  <input type="number" value={respuestas[v.key] || ''} onChange={(e) => setRespuesta(v.key, e.target.value)}
-                    className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-                    style={{ background: 'rgba(200,170,110,0.05)', border: '1px solid rgba(200,170,110,0.2)', color: '#F5F5F0' }} />
-                ) : (
-                  <YN varKey={v.key} />
-                )}
+                {renderVariable(v)}
               </div>
             ))}
 
