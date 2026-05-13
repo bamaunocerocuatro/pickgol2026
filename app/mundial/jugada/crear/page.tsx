@@ -265,18 +265,41 @@ function CrearJugadaMundialForm() {
     </div>
   );
 
-  const PaisSelect = ({ varKey }: { varKey: string }) => (
-    <select
-      value={respuestas[varKey] || ''}
-      onChange={(e) => setRespuesta(varKey, e.target.value)}
-      className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-      style={{ background: respuestas[varKey] ? 'rgba(200,170,110,0.08)' : 'rgba(200,170,110,0.04)', border: respuestas[varKey] ? '1px solid rgba(200,170,110,0.35)' : '1px solid rgba(200,170,110,0.15)', color: respuestas[varKey] ? '#F5F5F0' : 'rgba(210,185,130,0.4)' }}>
-      <option value="" disabled>Seleccioná un país</option>
-      {PAISES_MUNDIAL.map(p => (
-        <option key={p.nombre} value={p.nombre}>{p.flag} {p.nombre}</option>
-      ))}
-    </select>
+  const PaisSelect = ({ varKey }: { varKey: string }) => {
+  const [abierto, setAbierto] = useState(false);
+  const seleccionado = PAISES_MUNDIAL.find(p => p.nombre === respuestas[varKey]);
+
+  return (
+    <div className="relative">
+      <div
+        onClick={() => setAbierto(!abierto)}
+        className="w-full rounded-xl px-4 py-3 text-sm cursor-pointer flex items-center justify-between"
+        style={{ background: respuestas[varKey] ? 'rgba(200,170,110,0.08)' : 'rgba(200,170,110,0.04)', border: respuestas[varKey] ? '1px solid rgba(200,170,110,0.35)' : '1px solid rgba(200,170,110,0.15)', color: respuestas[varKey] ? '#F5F5F0' : 'rgba(210,185,130,0.4)' }}>
+        <span>{seleccionado ? `${seleccionado.flag} ${seleccionado.nombre}` : 'Seleccioná un país'}</span>
+        <span style={{ color: 'rgba(210,185,130,0.4)' }}>{abierto ? '▲' : '▼'}</span>
+      </div>
+      {abierto && (
+        <div className="absolute left-0 right-0 rounded-xl overflow-y-auto z-50 mt-1"
+          style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.25)', maxHeight: '220px' }}>
+          {PAISES_MUNDIAL.map(p => (
+            <div
+              key={p.nombre}
+              onClick={() => { setRespuesta(varKey, p.nombre); setAbierto(false); }}
+              className="px-4 py-2.5 cursor-pointer text-sm flex items-center gap-2"
+              style={{
+                background: respuestas[varKey] === p.nombre ? 'rgba(200,170,110,0.15)' : 'transparent',
+                color: respuestas[varKey] === p.nombre ? '#C8AA6E' : '#F5F5F0',
+                borderBottom: '1px solid rgba(200,170,110,0.06)',
+              }}>
+              <span className="text-lg">{p.flag}</span>
+              <span>{p.nombre}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
+};
 
   const renderVariable = (v: any) => {
     if (v.tipo === 'numero') return (
