@@ -132,12 +132,11 @@ function LoginForm() {
     } catch (e) {}
   };
 
-  const procesarReferido = async (uid: string) => {
-    const ref = refCode || localStorage.getItem('pickgol_ref');
-    if (!ref || ref === generarCodigo(uid)) return;
+  const procesarReferido = async (uid: string, codigoRef: string) => {
+    if (!codigoRef || codigoRef === generarCodigo(uid)) return;
     try {
       const { collection, query, where, getDocs } = await import('firebase/firestore');
-      const q = query(collection(db, 'usuarios'), where('codigoRef', '==', ref));
+      const q = query(collection(db, 'usuarios'), where('codigoRef', '==', codigoRef));
       const snap = await getDocs(q);
       if (snap.empty) return;
       const referidorDoc = snap.docs[0];
@@ -146,7 +145,7 @@ function LoginForm() {
       const nuevoTotal = totalActual + 1;
       await setDoc(doc(db, 'referidos', uid), {
         referidoPor: referidorId,
-        codigoUsado: ref,
+        codigoUsado: codigoRef,
         creadoEn: serverTimestamp(),
       });
       await updateDoc(doc(db, 'usuarios', referidorId), {
@@ -173,7 +172,9 @@ function LoginForm() {
         idioma: locale,
         creadoEn: serverTimestamp(),
       });
-      await procesarReferido(uid);
+      // Leer el código directamente del localStorage o del parámetro URL
+      const codigoReferido = refCode || localStorage.getItem('pickgol_ref') || '';
+      await procesarReferido(uid, codigoReferido);
     }
   };
 
@@ -244,7 +245,6 @@ function LoginForm() {
             {isRegister ? tl.crearCuenta : tl.iniciarSesion}
           </h2>
 
-          {/* FORMULARIO EMAIL/PASSWORD — solo visible en registro o al hacer login con mail */}
           {isRegister && (
             <>
               <div className="mb-4">
