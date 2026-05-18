@@ -35,6 +35,7 @@ const TEXTOS_LOGIN: Record<string, any> = {
     iniciaSesion: 'Iniciá sesión', registrate: 'Registrate',
     invitadoPor: 'Fuiste invitado por',
     invitadoGenerico: 'Fuiste invitado por un amigo',
+    minCaracteres: 'Mínimo 4 caracteres',
   },
   pt: {
     titulo: 'Jogue, acerte e lidere o ranking ⚽🔥',
@@ -45,6 +46,7 @@ const TEXTOS_LOGIN: Record<string, any> = {
     iniciaSesion: 'Entrar', registrate: 'Cadastre-se',
     invitadoPor: 'Você foi convidado por',
     invitadoGenerico: 'Você foi convidado por um amigo',
+    minCaracteres: 'Mínimo 4 caracteres',
   },
   en: {
     titulo: 'Play, predict and lead the ranking ⚽🔥',
@@ -55,6 +57,7 @@ const TEXTOS_LOGIN: Record<string, any> = {
     iniciaSesion: 'Sign in', registrate: 'Sign up',
     invitadoPor: 'You were invited by',
     invitadoGenerico: 'You were invited by a friend',
+    minCaracteres: 'Minimum 4 characters',
   },
 };
 
@@ -88,12 +91,14 @@ function LoginForm() {
     const ref = searchParams.get('ref');
     if (ref) {
       setRefCode(ref);
+      setIsRegister(true); // ← si viene con ref, mostrar registro directo
       localStorage.setItem('pickgol_ref', ref);
       buscarReferidor(ref);
     } else {
       const saved = localStorage.getItem('pickgol_ref');
       if (saved) {
         setRefCode(saved);
+        setIsRegister(true); // ← también si tiene ref guardado
         buscarReferidor(saved);
       }
     }
@@ -170,6 +175,10 @@ function LoginForm() {
 
   const handleEmail = async () => {
     setError('');
+    if (isRegister && password.length < 4) {
+      setError(tl.minCaracteres);
+      return;
+    }
     try {
       if (isRegister) {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
@@ -238,12 +247,21 @@ function LoginForm() {
               placeholder="tu@email.com" />
           </div>
 
-          <div className="mb-5">
+          <div className="mb-1">
             <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{tl.password}</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
               placeholder="••••••••" />
           </div>
+
+          {/* Indicador mínimo de caracteres solo en registro */}
+          {isRegister && (
+            <p className="text-xs mb-4 mt-1" style={{ color: password.length > 0 && password.length < 4 ? '#E8192C' : '#8892A4' }}>
+              {tl.minCaracteres}
+            </p>
+          )}
+
+          {!isRegister && <div className="mb-5" />}
 
           {error && <p className="text-[#E8192C] text-xs mb-4">{error}</p>}
 
