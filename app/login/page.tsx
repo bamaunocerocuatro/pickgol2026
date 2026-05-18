@@ -36,6 +36,7 @@ const TEXTOS_LOGIN: Record<string, any> = {
     invitadoPor: 'Fuiste invitado por',
     invitadoGenerico: 'Fuiste invitado por un amigo',
     minCaracteres: 'Mínimo 4 caracteres',
+    registrarte: 'REGISTRARTE CON MAIL',
   },
   pt: {
     titulo: 'Jogue, acerte e lidere o ranking ⚽🔥',
@@ -47,6 +48,7 @@ const TEXTOS_LOGIN: Record<string, any> = {
     invitadoPor: 'Você foi convidado por',
     invitadoGenerico: 'Você foi convidado por um amigo',
     minCaracteres: 'Mínimo 4 caracteres',
+    registrarte: 'CADASTRAR COM EMAIL',
   },
   en: {
     titulo: 'Play, predict and lead the ranking ⚽🔥',
@@ -58,6 +60,7 @@ const TEXTOS_LOGIN: Record<string, any> = {
     invitadoPor: 'You were invited by',
     invitadoGenerico: 'You were invited by a friend',
     minCaracteres: 'Minimum 4 characters',
+    registrarte: 'REGISTER WITH EMAIL',
   },
 };
 
@@ -91,14 +94,14 @@ function LoginForm() {
     const ref = searchParams.get('ref');
     if (ref) {
       setRefCode(ref);
-      setIsRegister(true); // ← si viene con ref, mostrar registro directo
+      setIsRegister(true);
       localStorage.setItem('pickgol_ref', ref);
       buscarReferidor(ref);
     } else {
       const saved = localStorage.getItem('pickgol_ref');
       if (saved) {
         setRefCode(saved);
-        setIsRegister(true); // ← también si tiene ref guardado
+        setIsRegister(true);
         buscarReferidor(saved);
       }
     }
@@ -154,13 +157,14 @@ function LoginForm() {
     } catch (e) {}
   };
 
-  const crearUsuario = async (uid: string, email: string, displayName?: string) => {
+  const crearUsuario = async (uid: string, emailUser: string, displayName?: string) => {
     const codigo = generarCodigo(uid);
     const ref = doc(db, 'usuarios', uid);
     const snap = await getDoc(ref);
     if (!snap.exists()) {
       await setDoc(ref, {
-        uid, email,
+        uid,
+        email: emailUser,
         displayName: displayName || '',
         codigoRef: codigo,
         totalReferidos: 0,
@@ -240,53 +244,88 @@ function LoginForm() {
             {isRegister ? tl.crearCuenta : tl.iniciarSesion}
           </h2>
 
-          <div className="mb-4">
-            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{tl.email}</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
-              placeholder="tu@email.com" />
-          </div>
-
-          <div className="mb-1">
-            <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{tl.password}</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
-              placeholder="••••••••" />
-          </div>
-
-          {/* Indicador mínimo de caracteres solo en registro */}
+          {/* FORMULARIO EMAIL/PASSWORD — solo visible en registro o al hacer login con mail */}
           {isRegister && (
-            <p className="text-xs mb-4 mt-1" style={{ color: password.length > 0 && password.length < 4 ? '#E8192C' : '#8892A4' }}>
-              {tl.minCaracteres}
-            </p>
+            <>
+              <div className="mb-4">
+                <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{tl.email}</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
+                  placeholder="tu@email.com" />
+              </div>
+              <div className="mb-1">
+                <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{tl.password}</label>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
+                  placeholder="••••••••" />
+              </div>
+              <p className="text-xs mb-4 mt-1" style={{ color: password.length > 0 && password.length < 4 ? '#E8192C' : '#8892A4' }}>
+                {tl.minCaracteres}
+              </p>
+              {error && <p className="text-[#E8192C] text-xs mb-4">{error}</p>}
+              <button onClick={handleEmail}
+                className="w-full bg-[#E8192C] text-white font-condensed font-black text-lg py-3 rounded-xl mb-3 tracking-wide">
+                {tl.crearCuenta}
+              </button>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-1 h-px bg-white/10"></div>
+                <span className="text-xs text-[#8892A4]">o</span>
+                <div className="flex-1 h-px bg-white/10"></div>
+              </div>
+              <button onClick={handleGoogle}
+                className="w-full bg-white/5 border border-white/10 text-white font-condensed font-bold text-base py-3 rounded-xl mb-4">
+                🔵 {tl.google}
+              </button>
+              <p className="text-center text-xs text-[#8892A4]">
+                {tl.yaTenes}{' '}
+                <span onClick={() => setIsRegister(false)} className="text-[#C9A84C] cursor-pointer font-semibold">
+                  {tl.iniciaSesion}
+                </span>
+              </p>
+            </>
           )}
 
-          {!isRegister && <div className="mb-5" />}
+          {!isRegister && (
+            <>
+              <div className="mb-4">
+                <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{tl.email}</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
+                  placeholder="tu@email.com" />
+              </div>
+              <div className="mb-5">
+                <label className="text-xs font-semibold text-[#8892A4] uppercase tracking-wider block mb-2">{tl.password}</label>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none"
+                  placeholder="••••••••" />
+              </div>
+              {error && <p className="text-[#E8192C] text-xs mb-4">{error}</p>}
+              <button onClick={handleEmail}
+                className="w-full bg-[#E8192C] text-white font-condensed font-black text-lg py-3 rounded-xl mb-3 tracking-wide">
+                {tl.entrar}
+              </button>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-1 h-px bg-white/10"></div>
+                <span className="text-xs text-[#8892A4]">o</span>
+                <div className="flex-1 h-px bg-white/10"></div>
+              </div>
+              <button onClick={handleGoogle}
+                className="w-full bg-white/5 border border-white/10 text-white font-condensed font-bold text-base py-3 rounded-xl mb-3">
+                🔵 {tl.google}
+              </button>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-1 h-px bg-white/10"></div>
+                <span className="text-xs text-[#8892A4]">o</span>
+                <div className="flex-1 h-px bg-white/10"></div>
+              </div>
+              <button onClick={() => setIsRegister(true)}
+                className="w-full font-condensed font-black text-base py-3 rounded-xl"
+                style={{ background: 'transparent', border: '1px solid rgba(201,168,76,0.4)', color: '#C9A84C' }}>
+                📝 {tl.registrarte}
+              </button>
+            </>
+          )}
 
-          {error && <p className="text-[#E8192C] text-xs mb-4">{error}</p>}
-
-          <button onClick={handleEmail}
-            className="w-full bg-[#E8192C] text-white font-condensed font-black text-lg py-3 rounded-xl mb-3 tracking-wide">
-            {isRegister ? tl.crearCuenta : tl.entrar}
-          </button>
-
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex-1 h-px bg-white/10"></div>
-            <span className="text-xs text-[#8892A4]">o</span>
-            <div className="flex-1 h-px bg-white/10"></div>
-          </div>
-
-          <button onClick={handleGoogle}
-            className="w-full bg-white/5 border border-white/10 text-white font-condensed font-bold text-base py-3 rounded-xl mb-4">
-            🔵 {tl.google}
-          </button>
-
-          <p className="text-center text-xs text-[#8892A4]">
-            {isRegister ? tl.yaTenes : tl.noTenes}{' '}
-            <span onClick={() => setIsRegister(!isRegister)} className="text-[#C9A84C] cursor-pointer font-semibold">
-              {isRegister ? tl.iniciaSesion : tl.registrate}
-            </span>
-          </p>
         </div>
       </div>
     </main>
