@@ -87,7 +87,7 @@ function LoginForm() {
         const nombre = data.displayName || data.email || '';
         setRefNombre(nombre);
       }
-    } catch (e) {}
+    } } catch (e) { console.error('ERROR:', e); }
   };
 
   useEffect(() => {
@@ -129,7 +129,7 @@ function LoginForm() {
       if (Object.keys(updates).length > 0) {
         await updateDoc(doc(db, 'usuarios', referidorId), updates);
       }
-    } catch (e) {}
+    } } catch (e) { console.error('ERROR:', e); }
   };
 
   const procesarReferido = async (uid: string, codigoRef: string) => {
@@ -153,7 +153,7 @@ function LoginForm() {
       });
       await acreditarJugadasGratis(referidorId, nuevoTotal);
       localStorage.removeItem('pickgol_ref');
-    } catch (e) {}
+    } } catch (e) { console.error('ERROR:', e); }
   };
 
   const crearUsuario = async (uid: string, emailUser: string, displayName?: string) => {
