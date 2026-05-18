@@ -87,7 +87,7 @@ function LoginForm() {
         const nombre = data.displayName || data.email || '';
         setRefNombre(nombre);
       }
-    } } catch (e) { console.error('ERROR:', e); }
+    } catch (e) { console.error('ERROR:', e); }
   };
 
   useEffect(() => {
