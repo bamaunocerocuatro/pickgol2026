@@ -37,7 +37,7 @@ export default function Referidos() {
   }, []);
 
   const codigoRef = userData?.codigoRef || user?.uid?.substring(0, 8).toUpperCase();
-  const link = `https://pickgol.com?ref=${codigoRef}`;
+  const link = `https://pickgol.com/login?ref=${codigoRef}`;
   const totalReferidos = userData?.totalReferidos || 0;
   const jugadasGratis = userData?.jugadasGratis || 0;
 
