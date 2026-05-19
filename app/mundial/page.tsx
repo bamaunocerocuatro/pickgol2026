@@ -23,7 +23,6 @@ export default function Mundial() {
   const habilitado = ahora >= FECHA_HABILITACION;
   const bloqueado = ahora >= FECHA_BLOQUEO;
 
-  // useEffect separado para install prompt
   useEffect(() => {
     if (window.matchMedia('(display-mode: standalone)').matches) setYaInstalada(true);
     const handler = (e: any) => { e.preventDefault(); setInstallPrompt(e); };
@@ -31,7 +30,6 @@ export default function Mundial() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  // useEffect para auth y datos
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) { router.push('/login'); return; }
@@ -79,7 +77,13 @@ export default function Mundial() {
   };
 
   const totalReferidos = userData?.totalReferidos || 0;
-  const jugadasDisponibles = userData?.plus ? '∞' : (userData?.jugadasMundialGratis ?? 1);
+
+  const metaReferidos = () => {
+    if (totalReferidos >= 10) return '¡Meta alcanzada! 🏆 5 jugadas';
+    if (totalReferidos >= 6) return `Meta: ${10 - totalReferidos} más → +5`;
+    if (totalReferidos >= 3) return `Meta: ${6 - totalReferidos} más → +2`;
+    return `Meta: ${3 - totalReferidos} más → +1`;
+  };
 
   if (loading) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
@@ -129,7 +133,6 @@ export default function Mundial() {
 
       <div className="px-4 py-4">
 
-        {/* INSTALAR APP */}
         {!yaInstalada && installPrompt && (
           <div onClick={handleInstall} className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer"
             style={{ background: 'linear-gradient(135deg,#0d0d1a,#1a1a2e)', border: '1px solid rgba(200,170,110,0.3)' }}>
@@ -144,7 +147,6 @@ export default function Mundial() {
 
         {habilitado && (
           <>
-            {/* IR A LIGAS */}
             <div onClick={() => router.push('/inicio?ligas=1')}
               className="rounded-2xl p-4 mb-4 flex items-center gap-3 cursor-pointer"
               style={{ background: 'linear-gradient(135deg,#0A1F5C,#0D2870)', border: '1px solid rgba(255,255,255,0.15)' }}>
@@ -174,12 +176,15 @@ export default function Mundial() {
                   </div>
                   <div className="text-xs mt-1" style={{ color: 'rgba(210,185,130,0.65)' }}>Posición</div>
                 </div>
-                <div className="flex-1 text-center rounded-xl py-3" style={{ background: 'rgba(200,170,110,0.08)' }}>
-                  <div className="font-condensed text-2xl font-black" style={{ color: userData?.plus ? '#C8AA6E' : '#F5F5F0' }}>
-                    {jugadasDisponibles}
+                <div className="flex-1 text-center rounded-xl py-2 px-1 cursor-pointer"
+                  style={{ background: 'rgba(200,170,110,0.08)' }}
+                  onClick={() => router.push('/referidos')}>
+                  <div className="font-condensed text-2xl font-black" style={{ color: '#C8AA6E' }}>
+                    {totalReferidos}
                   </div>
-                  <div className="text-xs mt-1" style={{ color: 'rgba(210,185,130,0.65)' }}>
-                    {userData?.plus ? '⭐ Plus' : 'Jugadas'}
+                  <div className="text-xs mt-0.5" style={{ color: 'rgba(210,185,130,0.65)' }}>🎁 Refs</div>
+                  <div className="mt-0.5 font-semibold leading-tight" style={{ color: 'rgba(210,185,130,0.5)', fontSize: '8px' }}>
+                    {metaReferidos()}
                   </div>
                 </div>
               </div>
@@ -192,7 +197,6 @@ export default function Mundial() {
               )}
             </div>
 
-            {/* REFERIDOS */}
             <div onClick={() => router.push('/referidos')}
               className="rounded-2xl p-4 mb-4 flex items-center gap-3 cursor-pointer"
               style={{ background: 'rgba(200,170,110,0.07)', border: '1px solid rgba(200,170,110,0.25)' }}>
@@ -206,7 +210,6 @@ export default function Mundial() {
               <div className="text-lg" style={{ color: 'rgba(200,170,110,0.3)' }}>›</div>
             </div>
 
-            {/* HACETE PLUS */}
             {!userData?.plus && (
               <div onClick={() => router.push('/plus')}
                 className="rounded-2xl p-4 mb-3 flex items-center gap-3 cursor-pointer"
@@ -214,13 +217,12 @@ export default function Mundial() {
                 <div className="text-3xl">⭐</div>
                 <div className="flex-1">
                   <div className="font-condensed text-lg font-black" style={{ color: '#C9A84C' }}>HACETE PLUS</div>
-                  <div className="text-xs" style={{ color: 'rgba(210,185,130,0.65)' }}>Jugadas ilimitadas · Variables personalizadas · USD 2.79</div>
+                  <div className="text-xs" style={{ color: 'rgba(210,185,130,0.65)' }}>Variables personalizadas · Jugadas ilimitadas para el Mundial 2026</div>
                 </div>
                 <div className="text-lg" style={{ color: 'rgba(200,170,110,0.3)' }}>›</div>
               </div>
             )}
 
-            {/* CREAR GRUPO */}
             {!bloqueado && (
               <button onClick={() => router.push('/mundial/crear-grupo')}
                 className="w-full rounded-2xl p-4 mb-3 flex items-center gap-3 text-left"
