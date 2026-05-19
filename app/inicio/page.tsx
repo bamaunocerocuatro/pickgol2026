@@ -50,7 +50,6 @@ function InicioContent() {
         }
       } catch (e) {}
 
-      // Cargar mejor jugada de ligas
       try {
         const q = query(collection(db, 'jugadas'), where('userId', '==', u.uid));
         const snap2 = await getDocs(q);
@@ -58,8 +57,6 @@ function InicioContent() {
           const jugadas = snap2.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
           const mejor = jugadas.reduce((a, b) => (a.puntos || 0) > (b.puntos || 0) ? a : b);
           setMejorJugada(mejor);
-
-          // Calcular posición global
           const qTodos = query(collection(db, 'jugadas'));
           const snapTodos = await getDocs(qTodos);
           const todos = snapTodos.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
@@ -104,10 +101,16 @@ function InicioContent() {
   const totalReferidos = userData?.totalReferidos || 0;
   const inicial = (user?.displayName || user?.email || 'U')[0].toUpperCase();
 
+  const metaReferidos = () => {
+    if (totalReferidos >= 10) return '¡Meta alcanzada! 🏆 5 jugadas';
+    if (totalReferidos >= 6) return `Meta: ${10 - totalReferidos} más → +5`;
+    if (totalReferidos >= 3) return `Meta: ${6 - totalReferidos} más → +2`;
+    return `Meta: ${3 - totalReferidos} más → +1`;
+  };
+
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      {/* HEADER */}
       <div style={{ background: 'linear-gradient(160deg,#0A1F5C,#0D2870)', borderBottom: '1px solid rgba(255,255,255,0.07)' }} className="px-4 pt-4 pb-6">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={() => router.push('/mundial')}
@@ -186,11 +189,14 @@ function InicioContent() {
               </div>
               <div className="text-xs mt-1" style={{ color: '#8892A4' }}>{t.posicion}</div>
             </div>
-            <div className="flex-1 text-center rounded-xl py-3 cursor-pointer"
+            <div className="flex-1 text-center rounded-xl py-2 px-1 cursor-pointer"
               style={{ background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.25)' }}
               onClick={() => router.push('/referidos')}>
               <div className="font-condensed text-2xl font-black" style={{ color: '#C9A84C' }}>{totalReferidos}</div>
-              <div className="text-xs mt-1 font-bold" style={{ color: '#C9A84C' }}>{t.referidos} 🎁</div>
+              <div className="text-xs mt-0.5 font-bold" style={{ color: '#C9A84C' }}>🎁 Refs</div>
+              <div className="mt-0.5 font-semibold leading-tight" style={{ color: 'rgba(201,168,76,0.6)', fontSize: '8px' }}>
+                {metaReferidos()}
+              </div>
             </div>
           </div>
           {mejorJugada && (
@@ -224,7 +230,7 @@ function InicioContent() {
             <div className="text-3xl">⭐</div>
             <div className="flex-1">
               <div className="font-condensed text-lg font-black" style={{ color: '#C9A84C' }}>HACETE PLUS</div>
-              <div className="text-xs" style={{ color: '#8892A4' }}>Jugadas ilimitadas · Variables personalizadas · USD 2.79</div>
+              <div className="text-xs" style={{ color: '#8892A4' }}>Variables personalizadas · Jugadas ilimitadas para el Mundial 2026</div>
             </div>
             <div className="text-[#C9A84C] text-lg">›</div>
           </div>
