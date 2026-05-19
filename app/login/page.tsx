@@ -64,6 +64,50 @@ const TEXTOS_LOGIN: Record<string, any> = {
   },
 };
 
+function LoadingField() {
+  return (
+    <main className="min-h-screen bg-[#020810] flex items-center justify-center px-5">
+      <div className="w-full max-w-sm text-center">
+        <h1 className="font-condensed text-5xl font-black text-[#C9A84C] mb-8">PICKGOL</h1>
+        <div className="relative h-20 flex items-center justify-center mb-4">
+          {/* Campo de fútbol */}
+          <div className="w-full h-12 rounded-xl relative overflow-hidden"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(200,170,110,0.2)' }}>
+            {/* Línea del medio */}
+            <div className="absolute left-1/2 top-0 bottom-0 w-px" style={{ background: 'rgba(200,170,110,0.15)' }} />
+            {/* Arco derecho */}
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+              <div className="w-0.5 h-6 rounded" style={{ background: 'rgba(200,170,110,0.5)' }} />
+              <div className="w-3 h-6 rounded-r" style={{ border: '1px solid rgba(200,170,110,0.5)', borderLeft: 'none' }} />
+            </div>
+            {/* Pelota animada */}
+            <div className="absolute top-1/2 -translate-y-1/2"
+              style={{
+                animation: 'shootBall 1.8s ease-in-out infinite',
+                fontSize: '20px',
+                left: '8px',
+              }}>
+              ⚽
+            </div>
+          </div>
+        </div>
+        <p className="text-xs font-semibold" style={{ color: 'rgba(200,170,110,0.6)', letterSpacing: '3px' }}>
+          CARGANDO...
+        </p>
+        <style>{`
+          @keyframes shootBall {
+            0% { left: 8px; transform: translateY(-50%) rotate(0deg); opacity: 1; }
+            70% { left: calc(100% - 40px); transform: translateY(-50%) rotate(360deg); opacity: 1; }
+            80% { left: calc(100% - 40px); transform: translateY(-50%) rotate(400deg); opacity: 0; }
+            85% { left: 8px; opacity: 0; }
+            100% { left: 8px; transform: translateY(-50%) rotate(0deg); opacity: 1; }
+          }
+        `}</style>
+      </div>
+    </main>
+  );
+}
+
 function LoginForm() {
   const router = useRouter();
   const { locale, setLocale } = useIdioma();
@@ -73,6 +117,7 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [refCode, setRefCode] = useState('');
   const [refNombre, setRefNombre] = useState('');
+  const [cargando, setCargando] = useState(false);
   const searchParams = useSearchParams();
 
   const tl = TEXTOS_LOGIN[locale] || TEXTOS_LOGIN.es;
@@ -172,7 +217,6 @@ function LoginForm() {
         idioma: locale,
         creadoEn: serverTimestamp(),
       });
-      // Leer el código directamente del localStorage o del parámetro URL
       const codigoReferido = refCode || localStorage.getItem('pickgol_ref') || '';
       await procesarReferido(uid, codigoReferido);
     }
@@ -184,6 +228,7 @@ function LoginForm() {
       setError(tl.minCaracteres);
       return;
     }
+    setCargando(true);
     try {
       if (isRegister) {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
@@ -194,11 +239,13 @@ function LoginForm() {
       router.push('/inicio');
     } catch (e: any) {
       setError(e.message);
+      setCargando(false);
     }
   };
 
   const handleGoogle = async () => {
     setError('');
+    setCargando(true);
     try {
       const provider = new GoogleAuthProvider();
       const cred = await signInWithPopup(auth, provider);
@@ -206,8 +253,11 @@ function LoginForm() {
       router.push('/inicio');
     } catch (e: any) {
       setError(e.message);
+      setCargando(false);
     }
   };
+
+  if (cargando) return <LoadingField />;
 
   return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center px-5">
@@ -325,7 +375,6 @@ function LoginForm() {
               </button>
             </>
           )}
-
         </div>
       </div>
     </main>
