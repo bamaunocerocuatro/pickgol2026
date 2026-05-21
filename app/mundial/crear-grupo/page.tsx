@@ -138,7 +138,7 @@ export default function CrearGrupoMundial() {
           style={{ background: 'rgba(200,170,110,0.06)', border: '1px solid rgba(200,170,110,0.15)' }}>
           <span>🌍</span>
           <p className="text-xs" style={{ color: 'rgba(210,185,130,0.75)' }}>
-            Los grupos del Mundial cubren <b style={{ color: '#C8AA6E' }}>toda la fase de grupos</b>. Cada jugador hace una jugada con predicciones de los 72 partidos. Los puntos se acumulan a lo largo de todo el torneo.
+            Cada jugada está compuesta por preguntas variables que aplican a la totalidad del mundial y predicciones de resultados de la fase de grupos
           </p>
         </div>
 
@@ -159,6 +159,10 @@ export default function CrearGrupoMundial() {
             <div className="flex items-center gap-2">
               <span style={{ color: '#C8AA6E' }}>⭐</span>
               <span className="text-sm" style={{ color: '#C8AA6E' }}>Plus: jugadas ilimitadas</span>
+              <div className="flex items-center gap-2">
+                <span>??</span>
+                <span className="text-sm" style={{ color: '#F5F5F0' }}>Jugadas gratis con referidos</span>
+              </div>
             </div>
           </div>
         </div>
