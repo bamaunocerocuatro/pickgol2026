@@ -159,10 +159,10 @@ export default function CrearGrupoMundial() {
             <div className="flex items-center gap-2">
               <span style={{ color: '#C8AA6E' }}>⭐</span>
               <span className="text-sm" style={{ color: '#C8AA6E' }}>Plus: jugadas ilimitadas</span>
-              <div className="flex items-center gap-2">
-                <span>??</span>
-                <span className="text-sm" style={{ color: '#F5F5F0' }}>Jugadas gratis con referidos</span>
-              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span>🎁</span>
+              <span className="text-sm" style={{ color: '#F5F5F0' }}>Jugadas gratis con referidos</span>
             </div>
           </div>
         </div>
