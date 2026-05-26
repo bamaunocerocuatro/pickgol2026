@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '../../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 export default function RankingMundial() {
   const router = useRouter();
@@ -39,9 +39,25 @@ export default function RankingMundial() {
         const uid = j.userId;
         if (!porUsuario[uid] || (j.puntos || 0) > (porUsuario[uid].puntos || 0)) porUsuario[uid] = j;
       }
-      const rankingData = Object.values(porUsuario)
-        .map((j: any) => ({ userId: j.userId, nombre: j.userName || j.userEmail?.split('@')[0] || 'Jugador', puntos: j.puntos || 0, esYo: j.userId === user?.uid }))
-        .sort((a, b) => b.puntos - a.puntos);
+      const rankingData = await Promise.all(
+        Object.entries(porUsuario).map(async ([userId, jugada]: [string, any]) => {
+          let nombre = jugada.userEmail?.split('@')[0] || 'Jugador';
+          try {
+            const usnap = await getDoc(doc(db, 'usuarios', userId));
+            if (usnap.exists()) {
+              const d = usnap.data();
+              nombre = d.displayName || d.email?.split('@')[0] || nombre;
+            }
+          } catch (e) {}
+          return {
+            userId,
+            nombre,
+            puntos: jugada.puntos || 0,
+            esYo: userId === user?.uid,
+          };
+        })
+      );
+      rankingData.sort((a, b) => b.puntos - a.puntos);
       setRanking(rankingData);
     } catch (e) {}
     setCargando(false);
