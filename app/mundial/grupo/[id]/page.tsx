@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '../../../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, arrayRemove } from 'firebase/firestore';
 import { useParams } from 'next/navigation';
 
 export default function GrupoMundialDashboard() {
@@ -23,6 +23,11 @@ export default function GrupoMundialDashboard() {
   const [showQR, setShowQR] = useState(false);
   const [showEliminar, setShowEliminar] = useState(false);
   const [eliminando, setEliminando] = useState(false);
+  const [participantes, setParticipantes] = useState<Record<string, string>>({});
+  const [showConfirmarSalir, setShowConfirmarSalir] = useState(false);
+  const [saliendo, setSaliendo] = useState(false);
+  const [showConfirmarExpulsar, setShowConfirmarExpulsar] = useState<string | null>(null);
+  const [expulsando, setExpulsando] = useState(false);
   const params = useParams();
   const id = params.id as string;
 
@@ -36,6 +41,7 @@ export default function GrupoMundialDashboard() {
           const grupoData = { id: snap.id, ...snap.data() } as any;
           setGrupo(grupoData);
           cargarRanking(id, u.uid);
+          cargarParticipantes(grupoData.miembros || []);
           if (grupoData.controlPagos && grupoData.creadorId === u.uid) cargarJugadasPagos(id);
         }
       } catch (e) {}
@@ -43,6 +49,24 @@ export default function GrupoMundialDashboard() {
     });
     return () => unsub();
   }, [id]);
+
+  const cargarParticipantes = async (miembros: string[]) => {
+    const nombresMap: Record<string, string> = {};
+    for (const uid of miembros) {
+      try {
+        const usnap = await getDoc(doc(db, 'usuarios', uid));
+        if (usnap.exists()) {
+          const d = usnap.data();
+          nombresMap[uid] = d.displayName || d.email || 'Jugador';
+        } else {
+          nombresMap[uid] = 'Jugador';
+        }
+      } catch (e) {
+        nombresMap[uid] = 'Jugador';
+      }
+    }
+    setParticipantes(nombresMap);
+  };
 
   const cargarRanking = async (grupoId: string, uid: string) => {
     setCargandoRanking(true);
@@ -97,6 +121,25 @@ export default function GrupoMundialDashboard() {
       await updateDoc(doc(db, 'jugadas_mundial', jugadaId), { pagadoInterno: !estadoActual });
       setJugadasPagos(prev => prev.map(j => j.id === jugadaId ? { ...j, pagadoInterno: !estadoActual } : j));
     } catch (e) {}
+  };
+
+  const salirDelGrupo = async () => {
+    setSaliendo(true);
+    try {
+      await updateDoc(doc(db, 'grupos_mundial', id), { miembros: arrayRemove(user.uid) });
+      router.push('/mundial/grupos');
+    } catch (e) {}
+    setSaliendo(false);
+  };
+
+  const expulsarMiembro = async (uid: string) => {
+    setExpulsando(true);
+    try {
+      await updateDoc(doc(db, 'grupos_mundial', id), { miembros: arrayRemove(uid) });
+      setGrupo((prev: any) => ({ ...prev, miembros: prev.miembros.filter((m: string) => m !== uid) }));
+      setShowConfirmarExpulsar(null);
+    } catch (e) {}
+    setExpulsando(false);
   };
 
   const eliminarGrupo = async () => {
@@ -378,10 +421,50 @@ export default function GrupoMundialDashboard() {
                 <span className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>Chat</span>
                 {esCreador ? <Toggle value={grupo.chatHabilitado} onToggle={toggleChat} /> : <span className="text-sm font-semibold" style={{ color: grupo.chatHabilitado ? '#00C853' : 'rgba(210,185,130,0.5)' }}>{grupo.chatHabilitado ? '✅' : '❌'}</span>}
               </div>
-              <div className="flex justify-between items-center py-3">
+              <div className="flex justify-between items-center py-3" style={{ borderBottom: '1px solid rgba(200,170,110,0.07)' }}>
                 <span className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>Código</span>
                 <span className="font-condensed text-lg font-black" style={{ color: '#C8AA6E' }}>{grupo.codigo}</span>
               </div>
+
+              {/* PARTICIPANTES */}
+              <div className="pt-3 pb-1">
+                <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{ color: 'rgba(210,185,130,0.6)' }}>
+                  Participantes
+                </div>
+                <div className="flex flex-col gap-2">
+                  {(grupo.miembros || []).map((uid: string) => (
+                    <div key={uid} className="flex items-center gap-3 py-2 px-3 rounded-xl"
+                      style={{ background: 'rgba(200,170,110,0.04)', border: '1px solid rgba(200,170,110,0.08)' }}>
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center font-condensed font-black text-xs flex-shrink-0"
+                        style={{ background: uid === grupo.creadorId ? 'linear-gradient(135deg,#C8AA6E,#8B6914)' : 'rgba(200,170,110,0.15)', color: uid === grupo.creadorId ? '#0d0d1a' : 'rgba(210,185,130,0.8)' }}>
+                        {(participantes[uid] || 'J')[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1 text-sm font-semibold" style={{ color: uid === user?.uid ? '#C8AA6E' : '#F5F5F0' }}>
+                        {participantes[uid] || 'Jugador'}
+                        {uid === grupo.creadorId && <span className="ml-1 text-xs" style={{ color: 'rgba(200,170,110,0.6)' }}>👑</span>}
+                        {uid === user?.uid && uid !== grupo.creadorId && <span className="ml-1 text-xs" style={{ color: 'rgba(200,170,110,0.5)' }}>(vos)</span>}
+                      </div>
+                      {esCreador && uid !== grupo.creadorId && (
+                        <button onClick={() => setShowConfirmarExpulsar(uid)}
+                          className="text-xs px-2 py-1 rounded-lg font-bold"
+                          style={{ background: 'rgba(232,25,44,0.08)', border: '1px solid rgba(232,25,44,0.2)', color: '#E8192C' }}>
+                          Expulsar
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* SALIR DEL GRUPO — solo para no creadores */}
+              {!esCreador && (
+                <button onClick={() => setShowConfirmarSalir(true)}
+                  className="w-full py-3 rounded-xl font-condensed font-black text-base mt-4"
+                  style={{ background: 'rgba(232,25,44,0.08)', border: '1px solid rgba(232,25,44,0.25)', color: '#E8192C' }}>
+                  🚪 SALIR DEL GRUPO
+                </button>
+              )}
+
               {esCreador && (
                 <button onClick={() => setShowEliminar(true)}
                   className="w-full py-3 rounded-xl font-condensed font-black text-base mt-4"
@@ -395,6 +478,7 @@ export default function GrupoMundialDashboard() {
 
       </div>
 
+      {/* MODAL ELIMINAR GRUPO */}
       {showEliminar && (
         <div className="fixed inset-0 flex items-center justify-center px-5" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 999 }}>
           <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.2)' }}>
@@ -409,6 +493,56 @@ export default function GrupoMundialDashboard() {
               {eliminando ? 'ELIMINANDO...' : '🗑️ SÍ, ELIMINAR'}
             </button>
             <button onClick={() => setShowEliminar(false)}
+              className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
+              style={{ background: 'transparent', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
+              CANCELAR
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SALIR DEL GRUPO */}
+      {showConfirmarSalir && (
+        <div className="fixed inset-0 flex items-center justify-center px-5" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 999 }}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.2)' }}>
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-3">🚪</div>
+              <div className="font-condensed text-xl font-black mb-2" style={{ color: '#C8AA6E' }}>Salir del grupo</div>
+              <p className="text-xs" style={{ color: 'rgba(210,185,130,0.7)', lineHeight: '1.7' }}>
+                ¿Seguro que querés salir de <b style={{ color: '#F5F5F0' }}>{grupo.nombre}</b>? Tus jugadas se mantendrán pero ya no podrás acceder al grupo.
+              </p>
+            </div>
+            <button onClick={salirDelGrupo} disabled={saliendo}
+              className="w-full py-3 rounded-xl font-condensed font-black text-base mb-2"
+              style={{ background: '#E8192C', color: 'white', opacity: saliendo ? 0.7 : 1 }}>
+              {saliendo ? 'SALIENDO...' : '🚪 SÍ, SALIR'}
+            </button>
+            <button onClick={() => setShowConfirmarSalir(false)}
+              className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
+              style={{ background: 'transparent', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
+              CANCELAR
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EXPULSAR MIEMBRO */}
+      {showConfirmarExpulsar && (
+        <div className="fixed inset-0 flex items-center justify-center px-5" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 999 }}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.2)' }}>
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-3">⚠️</div>
+              <div className="font-condensed text-xl font-black mb-2" style={{ color: '#E8192C' }}>Expulsar jugador</div>
+              <p className="text-xs" style={{ color: 'rgba(210,185,130,0.7)', lineHeight: '1.7' }}>
+                ¿Seguro que querés expulsar a <b style={{ color: '#F5F5F0' }}>{participantes[showConfirmarExpulsar]}</b> del grupo?
+              </p>
+            </div>
+            <button onClick={() => expulsarMiembro(showConfirmarExpulsar)} disabled={expulsando}
+              className="w-full py-3 rounded-xl font-condensed font-black text-base mb-2"
+              style={{ background: '#E8192C', color: 'white', opacity: expulsando ? 0.7 : 1 }}>
+              {expulsando ? 'EXPULSANDO...' : 'SÍ, EXPULSAR'}
+            </button>
+            <button onClick={() => setShowConfirmarExpulsar(null)}
               className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
               style={{ background: 'transparent', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
               CANCELAR
