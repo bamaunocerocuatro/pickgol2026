@@ -1,21 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '../../../lib/firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+
+const getDb = () => {
+  if (!getApps().length) {
+    initializeApp({
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }),
+    });
+  }
+  return getFirestore();
+};
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { grupoId, userId } = body;
-
-    console.log('eliminar-grupo llamado', { grupoId, userId });
+    const { grupoId, userId } = await req.json();
+    console.log('eliminar-grupo v2', { grupoId, userId });
 
     if (!grupoId || !userId) {
       return NextResponse.json({ ok: false, error: 'Faltan datos' }, { status: 400 });
     }
 
+    const db = getDb();
     const grupoRef = db.collection('grupos_mundial').doc(grupoId);
     const grupoSnap = await grupoRef.get();
-
-    console.log('grupo existe:', grupoSnap.exists);
 
     if (!grupoSnap.exists) {
       return NextResponse.json({ ok: false, error: 'Grupo no encontrado' }, { status: 404 });
@@ -42,10 +53,10 @@ export async function POST(req: NextRequest) {
     batch.delete(grupoRef);
     await batch.commit();
 
-    console.log('grupo eliminado ok');
+    console.log('eliminado ok');
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    console.error('Error eliminar-grupo:', e.message, e.stack);
+    console.error('Error:', e.message);
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
   }
 }
