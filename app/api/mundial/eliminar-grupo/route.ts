@@ -3,23 +3,12 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
 const getDb = () => {
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-  console.log('KEY DIAGNOSTICS:', {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    keyLength: privateKey?.length,
-    hasRealNewlines: privateKey?.includes('\n'),
-    hasLiteralBackslashN: privateKey?.includes('\\n'),
-    keyStart: privateKey?.substring(0, 30),
-    keyEnd: privateKey?.substring((privateKey?.length || 0) - 30),
-  });
-
   if (!getApps().length) {
     initializeApp({
       credential: cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
       }),
     });
   }
@@ -29,7 +18,6 @@ const getDb = () => {
 export async function POST(req: NextRequest) {
   try {
     const { grupoId, userId } = await req.json();
-    console.log('eliminar-grupo v3', { grupoId, userId });
 
     if (!grupoId || !userId) {
       return NextResponse.json({ ok: false, error: 'Faltan datos' }, { status: 400 });
@@ -64,10 +52,9 @@ export async function POST(req: NextRequest) {
     batch.delete(grupoRef);
     await batch.commit();
 
-    console.log('eliminado ok');
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    console.error('Error:', e.message);
+    console.error('Error eliminar-grupo:', e.message);
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
   }
 }

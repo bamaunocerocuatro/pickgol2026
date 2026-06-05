@@ -1,12 +1,8 @@
 import * as admin from 'firebase-admin';
 
 if (!admin.apps.length) {
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-  console.log('key type:', typeof privateKey);
-  console.log('key length:', privateKey?.length);
-  console.log('has real newlines:', privateKey?.includes('\n'));
-  console.log('has literal backslash n:', privateKey?.includes('\\n'));
-  
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
   admin.initializeApp({
     credential: admin.credential.cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
