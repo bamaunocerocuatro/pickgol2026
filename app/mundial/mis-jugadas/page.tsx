@@ -37,19 +37,11 @@ export default function MisJugadasMundial() {
   const cargarJugadas = async () => {
     setCargando(true);
     try {
-      const q1 = query(
-        collection(db, 'jugadas_mundial'),
-        where('userId', '==', user.uid),
-        where('tipo', '==', 'mundial2026')
-      );
+      const q1 = query(collection(db, 'jugadas_mundial'), where('userId', '==', user.uid), where('tipo', '==', 'mundial2026'));
       const snap1 = await getDocs(q1);
       setJugadasGrupos(snap1.docs.map(d => ({ id: d.id, ...d.data() })));
 
-      const q2 = query(
-        collection(db, 'jugadas_comunitarias_mundial'),
-        where('userId', '==', user.uid),
-        where('tipo', '==', 'mundial2026')
-      );
+      const q2 = query(collection(db, 'jugadas_comunitarias_mundial'), where('userId', '==', user.uid), where('tipo', '==', 'mundial2026'));
       const snap2 = await getDocs(q2);
       setJugadasComunitarias(snap2.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (e) {}
@@ -68,6 +60,12 @@ export default function MisJugadasMundial() {
     setEliminando(null);
   };
 
+  const completarBorrador = (j: any, esComunitaria: boolean) => {
+    const base = `/mundial/jugada/crear?borrador=${j.id}`;
+    const conGrupo = j.grupoId ? `${base}&grupo=${j.grupoId}` : base;
+    router.push(conGrupo);
+  };
+
   const formatFecha = (dateStr: string) => {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleDateString('es-AR', {
@@ -78,10 +76,7 @@ export default function MisJugadasMundial() {
 
   if (loading) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-5xl mb-3">🏆</div>
-        <p className="text-sm" style={{ color: 'rgba(210,185,130,0.65)' }}>Cargando...</p>
-      </div>
+      <div className="text-center"><div className="text-5xl mb-3">🏆</div><p className="text-sm" style={{ color: 'rgba(210,185,130,0.65)' }}>Cargando...</p></div>
     </main>
   );
 
@@ -90,7 +85,6 @@ export default function MisJugadasMundial() {
   return (
     <main className="min-h-screen bg-[#020810] max-w-md mx-auto pb-20">
 
-      {/* HEADER */}
       <div style={{ background: 'linear-gradient(160deg,#0d0d1a,#1a1a2e,#16213e)', borderBottom: '1px solid rgba(200,170,110,0.2)' }} className="px-4 pt-4 pb-5">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={() => router.push('/mundial')}
@@ -135,24 +129,29 @@ export default function MisJugadasMundial() {
         {/* JUGADAS DE GRUPOS */}
         {!cargando && jugadasGrupos.length > 0 && (
           <>
-            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3"
-              style={{ color: 'rgba(210,185,130,0.6)' }}>
+            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{ color: 'rgba(210,185,130,0.6)' }}>
               Grupos privados · {jugadasGrupos.length} jugada{jugadasGrupos.length !== 1 ? 's' : ''}
             </div>
             {jugadasGrupos.map((j) => (
               <div key={j.id} className="rounded-2xl mb-3 overflow-hidden"
-                style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.15)' }}>
+                style={{ background: '#0D1B3E', border: j.borrador ? '1px solid rgba(255,179,0,0.3)' : '1px solid rgba(200,170,110,0.15)' }}>
 
                 <div className="px-4 py-3 flex items-center justify-between cursor-pointer"
                   onClick={() => setJugadaAbierta(jugadaAbierta === j.id ? null : j.id)}>
                   <div className="flex-1">
-                    <div className="font-condensed text-base font-black" style={{ color: '#C8AA6E' }}>{j.nombre}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-condensed text-base font-black" style={{ color: '#C8AA6E' }}>{j.nombre}</div>
+                      {j.borrador && (
+                        <span className="text-xs px-2 py-0.5 rounded-lg font-bold"
+                          style={{ background: 'rgba(255,179,0,0.12)', color: '#FFB300' }}>📝 Borrador</span>
+                      )}
+                    </div>
                     <div className="text-xs mt-0.5" style={{ color: 'rgba(210,185,130,0.6)' }}>
                       Mundial 2026 · {j.creadoEn?.toDate ? formatFecha(j.creadoEn.toDate().toISOString()) : ''}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="font-condensed text-xl font-black" style={{ color: '#C8AA6E' }}>{j.puntos || 0} pts</div>
+                    {!j.borrador && <div className="font-condensed text-xl font-black" style={{ color: '#C8AA6E' }}>{j.puntos || 0} pts</div>}
                     <span style={{ color: 'rgba(210,185,130,0.45)' }}>{jugadaAbierta === j.id ? '▲' : '▼'}</span>
                   </div>
                 </div>
@@ -160,17 +159,22 @@ export default function MisJugadasMundial() {
                 {jugadaAbierta === j.id && (
                   <div style={{ borderTop: '1px solid rgba(200,170,110,0.1)' }}>
 
-                    {/* BOTONES EDITAR/ELIMINAR */}
                     {!bloqueado && (
                       <div className="px-4 py-3 flex gap-2" style={{ borderBottom: '1px solid rgba(200,170,110,0.1)' }}>
-                        <button
-                          onClick={() => router.push(`/mundial/jugada/editar?jugada=${j.id}`)}
-                          className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm"
-                          style={{ background: 'rgba(200,170,110,0.1)', border: '1px solid rgba(200,170,110,0.25)', color: '#C8AA6E' }}>
-                          ✏️ Editar
-                        </button>
-                        <button
-                          onClick={() => setConfirmarEliminar(j.id)}
+                        {j.borrador ? (
+                          <button onClick={() => completarBorrador(j, false)}
+                            className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm"
+                            style={{ background: 'rgba(255,179,0,0.12)', border: '1px solid rgba(255,179,0,0.3)', color: '#FFB300' }}>
+                            ✏️ Completar jugada
+                          </button>
+                        ) : (
+                          <button onClick={() => router.push(`/mundial/jugada/editar?jugada=${j.id}`)}
+                            className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm"
+                            style={{ background: 'rgba(200,170,110,0.1)', border: '1px solid rgba(200,170,110,0.25)', color: '#C8AA6E' }}>
+                            ✏️ Editar
+                          </button>
+                        )}
+                        <button onClick={() => setConfirmarEliminar(j.id)}
                           className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm"
                           style={{ background: 'rgba(232,25,44,0.08)', border: '1px solid rgba(232,25,44,0.25)', color: '#E8192C' }}>
                           🗑️ Eliminar
@@ -178,10 +182,9 @@ export default function MisJugadasMundial() {
                       </div>
                     )}
 
-                    {j.variables && j.variablesMeta && (
+                    {!j.borrador && j.variables && j.variablesMeta && (
                       <div className="px-4 py-3">
-                        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2"
-                          style={{ color: 'rgba(210,185,130,0.6)' }}>Variables</div>
+                        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(210,185,130,0.6)' }}>Variables</div>
                         {j.variablesMeta.map((v: any) => (
                           <div key={v.key} className="flex justify-between items-center py-1.5"
                             style={{ borderBottom: '1px solid rgba(200,170,110,0.06)' }}>
@@ -194,10 +197,9 @@ export default function MisJugadasMundial() {
                       </div>
                     )}
 
-                    {j.predicciones && j.predicciones.length > 0 && (
+                    {!j.borrador && j.predicciones && j.predicciones.length > 0 && (
                       <div className="px-4 py-3" style={{ borderTop: '1px solid rgba(200,170,110,0.1)' }}>
-                        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2"
-                          style={{ color: 'rgba(210,185,130,0.6)' }}>
+                        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(210,185,130,0.6)' }}>
                           Predicciones ({j.predicciones.length} partidos)
                         </div>
                         {j.predicciones.map((p: any, i: number) => (
@@ -215,7 +217,16 @@ export default function MisJugadasMundial() {
                       </div>
                     )}
 
-                    {j.grupoId && (
+                    {j.borrador && (
+                      <div className="px-4 py-3">
+                        <div className="rounded-xl p-3 flex gap-2" style={{ background: 'rgba(255,179,0,0.06)', border: '1px solid rgba(255,179,0,0.2)' }}>
+                          <span>💾</span>
+                          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Jugada guardada como borrador. Completá los partidos para confirmarla.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {!j.borrador && j.grupoId && (
                       <div className="px-4 py-3" style={{ borderTop: '1px solid rgba(200,170,110,0.1)' }}>
                         <button onClick={() => router.push(`/mundial/grupo/${j.grupoId}`)}
                           className="w-full py-2 rounded-xl font-condensed font-bold text-sm"
@@ -234,39 +245,48 @@ export default function MisJugadasMundial() {
         {/* JUGADAS COMUNITARIAS */}
         {!cargando && jugadasComunitarias.length > 0 && (
           <>
-            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3 mt-2"
-              style={{ color: 'rgba(210,185,130,0.6)' }}>
+            <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3 mt-2" style={{ color: 'rgba(210,185,130,0.6)' }}>
               Prode Comunitario
             </div>
             {jugadasComunitarias.map((j) => (
               <div key={j.id} className="rounded-2xl mb-3 overflow-hidden"
-                style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.15)' }}>
+                style={{ background: '#0D1B3E', border: j.borrador ? '1px solid rgba(255,179,0,0.3)' : '1px solid rgba(200,170,110,0.15)' }}>
                 <div className="px-4 py-3 flex items-center justify-between cursor-pointer"
                   onClick={() => setJugadaAbierta(jugadaAbierta === j.id ? null : j.id)}>
                   <div className="flex-1">
-                    <div className="font-condensed text-base font-black" style={{ color: '#C8AA6E' }}>🌍 Prode Comunitario</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-condensed text-base font-black" style={{ color: '#C8AA6E' }}>🌍 Prode Comunitario</div>
+                      {j.borrador && (
+                        <span className="text-xs px-2 py-0.5 rounded-lg font-bold"
+                          style={{ background: 'rgba(255,179,0,0.12)', color: '#FFB300' }}>📝 Borrador</span>
+                      )}
+                    </div>
                     <div className="text-xs mt-0.5" style={{ color: 'rgba(210,185,130,0.6)' }}>Mundial 2026 · Todos contra todos</div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="font-condensed text-xl font-black" style={{ color: '#C8AA6E' }}>{j.puntos || 0} pts</div>
+                    {!j.borrador && <div className="font-condensed text-xl font-black" style={{ color: '#C8AA6E' }}>{j.puntos || 0} pts</div>}
                     <span style={{ color: 'rgba(210,185,130,0.45)' }}>{jugadaAbierta === j.id ? '▲' : '▼'}</span>
                   </div>
                 </div>
 
                 {jugadaAbierta === j.id && (
                   <div style={{ borderTop: '1px solid rgba(200,170,110,0.1)' }}>
-
-                    {/* BOTONES EDITAR/ELIMINAR COMUNITARIA */}
                     {!bloqueado && (
                       <div className="px-4 py-3 flex gap-2" style={{ borderBottom: '1px solid rgba(200,170,110,0.1)' }}>
-                        <button
-                          onClick={() => router.push(`/mundial/jugada/editar?jugada=${j.id}&comunitaria=1`)}
-                          className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm"
-                          style={{ background: 'rgba(200,170,110,0.1)', border: '1px solid rgba(200,170,110,0.25)', color: '#C8AA6E' }}>
-                          ✏️ Editar
-                        </button>
-                        <button
-                          onClick={() => setConfirmarEliminar(j.id)}
+                        {j.borrador ? (
+                          <button onClick={() => completarBorrador(j, true)}
+                            className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm"
+                            style={{ background: 'rgba(255,179,0,0.12)', border: '1px solid rgba(255,179,0,0.3)', color: '#FFB300' }}>
+                            ✏️ Completar jugada
+                          </button>
+                        ) : (
+                          <button onClick={() => router.push(`/mundial/jugada/editar?jugada=${j.id}&comunitaria=1`)}
+                            className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm"
+                            style={{ background: 'rgba(200,170,110,0.1)', border: '1px solid rgba(200,170,110,0.25)', color: '#C8AA6E' }}>
+                            ✏️ Editar
+                          </button>
+                        )}
+                        <button onClick={() => setConfirmarEliminar(j.id)}
                           className="flex-1 py-2 rounded-xl font-condensed font-bold text-sm"
                           style={{ background: 'rgba(232,25,44,0.08)', border: '1px solid rgba(232,25,44,0.25)', color: '#E8192C' }}>
                           🗑️ Eliminar
@@ -274,10 +294,18 @@ export default function MisJugadasMundial() {
                       </div>
                     )}
 
-                    {j.predicciones && j.predicciones.length > 0 && (
+                    {j.borrador && (
                       <div className="px-4 py-3">
-                        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2"
-                          style={{ color: 'rgba(210,185,130,0.6)' }}>
+                        <div className="rounded-xl p-3 flex gap-2" style={{ background: 'rgba(255,179,0,0.06)', border: '1px solid rgba(255,179,0,0.2)' }}>
+                          <span>💾</span>
+                          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>Jugada guardada como borrador. Completá los partidos para confirmarla.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {!j.borrador && j.predicciones && j.predicciones.length > 0 && (
+                      <div className="px-4 py-3">
+                        <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(210,185,130,0.6)' }}>
                           Predicciones ({j.predicciones.length} partidos)
                         </div>
                         {j.predicciones.map((p: any, i: number) => (
@@ -300,15 +328,11 @@ export default function MisJugadasMundial() {
             ))}
           </>
         )}
-
       </div>
 
-      {/* MODAL CONFIRMAR ELIMINAR */}
       {confirmarEliminar && (
-        <div className="fixed inset-0 flex items-center justify-center px-5"
-          style={{ background: 'rgba(0,0,0,0.85)', zIndex: 999 }}>
-          <div className="w-full max-w-sm rounded-2xl p-6"
-            style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.2)' }}>
+        <div className="fixed inset-0 flex items-center justify-center px-5" style={{ background: 'rgba(0,0,0,0.85)', zIndex: 999 }}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: '#0D1B3E', border: '1px solid rgba(200,170,110,0.2)' }}>
             <div className="text-center mb-4">
               <div className="text-4xl mb-3">⚠️</div>
               <div className="font-condensed text-xl font-black mb-2" style={{ color: '#E8192C' }}>Eliminar jugada</div>
@@ -316,11 +340,7 @@ export default function MisJugadasMundial() {
                 Esta acción es <b style={{ color: '#F5F5F0' }}>irreversible</b>. Se eliminará la jugada y todas sus predicciones.
               </p>
             </div>
-            <button
-              onClick={() => {
-                const esComunitaria = jugadasComunitarias.some(j => j.id === confirmarEliminar);
-                eliminarJugada(confirmarEliminar, esComunitaria);
-              }}
+            <button onClick={() => { const esComunitaria = jugadasComunitarias.some(j => j.id === confirmarEliminar); eliminarJugada(confirmarEliminar, esComunitaria); }}
               disabled={!!eliminando}
               className="w-full py-3 rounded-xl font-condensed font-black text-base mb-2"
               style={{ background: '#E8192C', color: 'white', opacity: eliminando ? 0.7 : 1 }}>
@@ -335,7 +355,6 @@ export default function MisJugadasMundial() {
         </div>
       )}
 
-      {/* BOTTOM NAV */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md flex py-2 pb-3"
         style={{ background: 'rgba(6,13,31,0.98)', borderTop: '1px solid rgba(200,170,110,0.1)' }}>
         <div className="flex-1 flex flex-col items-center gap-1 cursor-pointer" onClick={() => router.push('/mundial')}>

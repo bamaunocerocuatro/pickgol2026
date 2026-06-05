@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '../../../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { useSearchParams } from 'next/navigation';
 
 const PAISES_MUNDIAL = [
@@ -81,6 +81,7 @@ function CrearJugadaMundialForm() {
   const [grupo, setGrupo] = useState<any>(null);
   const [nombre, setNombre] = useState('');
   const [guardando, setGuardando] = useState(false);
+  const [guardandoBorrador, setGuardandoBorrador] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1);
   const [variables, setVariables] = useState<any[]>(VARIABLES_DEFAULT);
@@ -89,8 +90,10 @@ function CrearJugadaMundialForm() {
   const [predicciones, setPredicciones] = useState<Record<string, { local: string; visitante: string }>>({});
   const [cargandoPartidos, setCargandoPartidos] = useState(false);
   const [verificandoPago, setVerificandoPago] = useState(false);
+  const [borradorId, setBorradorId] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const grupoId = searchParams.get('grupo');
+  const borradorParam = searchParams.get('borrador');
 
   const bloqueado = new Date() >= FECHA_BLOQUEO;
 
@@ -114,10 +117,35 @@ function CrearJugadaMundialForm() {
           }
         } catch (e) {}
       }
+      // Cargar borrador si existe
+      if (borradorParam) {
+        try {
+          const coleccion = grupoId ? 'jugadas_mundial' : 'jugadas_comunitarias_mundial';
+          const bSnap = await getDoc(doc(db, coleccion, borradorParam));
+          if (bSnap.exists()) {
+            const bData = bSnap.data() as any;
+            setBorradorId(borradorParam);
+            setNombre(bData.nombre || '');
+            setRespuestas(bData.variables || {});
+            // Cargar predicciones del borrador
+            if (bData.predicciones?.length > 0) {
+              const predMap: Record<string, { local: string; visitante: string }> = {};
+              bData.predicciones.forEach((p: any, i: number) => {
+                predMap[i] = {
+                  local: p.golesLocalPredichos !== undefined ? String(p.golesLocalPredichos) : '',
+                  visitante: p.golesVisitantePredichos !== undefined ? String(p.golesVisitantePredichos) : '',
+                };
+              });
+              setPredicciones(predMap);
+            }
+            setStep(3);
+          }
+        } catch (e) {}
+      }
       setLoading(false);
     });
     return () => unsub();
-  }, [grupoId]);
+  }, [grupoId, borradorParam]);
 
   useEffect(() => {
     if (!loading && step === 3) cargarPartidos();
@@ -130,9 +158,13 @@ function CrearJugadaMundialForm() {
       const data = await res.json();
       const porJugar = (data.partidos || []).filter((p: any) => p.estado === 'NS');
       setPartidos(porJugar);
-      const init: Record<string, { local: string; visitante: string }> = {};
-      porJugar.forEach((_: any, i: number) => { init[i] = { local: '', visitante: '' }; });
-      setPredicciones(init);
+      setPredicciones(prev => {
+        const init: Record<string, { local: string; visitante: string }> = {};
+        porJugar.forEach((_: any, i: number) => {
+          init[i] = prev[i] || { local: '', visitante: '' };
+        });
+        return init;
+      });
     } catch (e) { setPartidos([]); }
     setCargandoPartidos(false);
   };
@@ -146,14 +178,15 @@ function CrearJugadaMundialForm() {
         ? query(collection(db, coleccion), where('userId', '==', user.uid), where('grupoId', '==', grupoId))
         : query(collection(db, coleccion), where('userId', '==', user.uid));
       const snap = await getDocs(filtro);
-      const jugadasExistentes = snap.docs.length;
+      // No contar borradores como jugadas usadas
+      const jugadasExistentes = snap.docs.filter(d => !d.data().borrador).length;
       const jugadasGratis = userData?.jugadasMundialGratis ?? 1;
       if (jugadasExistentes < jugadasGratis) { setVerificandoPago(false); return { ok: true }; }
       const jugadasPagas = userData?.jugadasMundialPagas ?? 0;
       const jugadasUsadas = jugadasExistentes - jugadasGratis;
       if (jugadasUsadas < jugadasPagas) { setVerificandoPago(false); return { ok: true }; }
       setVerificandoPago(false);
-      return { ok: false, motivo: 'Sin jugadas disponibles. Comprá una jugada extra o activá Plus.' };
+      return { ok: false, motivo: 'Sin jugadas disponibles.' };
     } catch (e) {
       setVerificandoPago(false);
       return { ok: true };
@@ -189,9 +222,61 @@ function CrearJugadaMundialForm() {
 
   const handleSiguienteStep1 = async () => {
     if (!validarStep1()) return;
-    const { ok, motivo } = await puedeCrear();
-    if (!ok) { router.push(`/mundial/comprar-jugada${grupoId ? `?grupo=${grupoId}` : ''}`); return; }
+    if (!borradorId) {
+      const { ok } = await puedeCrear();
+      if (!ok) { router.push(`/mundial/comprar-jugada${grupoId ? `?grupo=${grupoId}` : ''}`); return; }
+    }
     setStep(2);
+  };
+
+  const guardarBorrador = async () => {
+    setGuardandoBorrador(true);
+    setError('');
+    try {
+      const variablesGuardadas: Record<string, any> = {};
+      variables.forEach(v => {
+        if (v.tipo === 'numero') variablesGuardadas[v.key] = parseInt(respuestas[v.key] || '0');
+        else variablesGuardadas[v.key] = respuestas[v.key] || '';
+      });
+      const prediccionesGuardadas = partidos.map((p: any, i: number) => ({
+        id: p.id, local: p.local, visitante: p.visitante, fecha: p.fecha,
+        golesLocalPredichos: predicciones[i]?.local !== '' ? parseInt(predicciones[i]?.local || '0') : null,
+        golesVisitantePredichos: predicciones[i]?.visitante !== '' ? parseInt(predicciones[i]?.visitante || '0') : null,
+        puntos: 0,
+      }));
+      const coleccion = grupoId ? 'jugadas_mundial' : 'jugadas_comunitarias_mundial';
+      if (borradorId) {
+        await updateDoc(doc(db, coleccion, borradorId), {
+          nombre: nombre.trim(),
+          variables: variablesGuardadas,
+          variablesMeta: variables,
+          predicciones: prediccionesGuardadas,
+          borrador: true,
+          actualizadoEn: serverTimestamp(),
+        });
+      } else {
+        const docRef = await addDoc(collection(db, coleccion), {
+          nombre: nombre.trim(),
+          grupoId: grupoId || null,
+          userId: user.uid,
+          userEmail: user.email,
+          variables: variablesGuardadas,
+          variablesMeta: variables,
+          predicciones: prediccionesGuardadas,
+          puntos: 0,
+          pagado: false,
+          pagadoInterno: false,
+          tipo: 'mundial2026',
+          borrador: true,
+          creadoEn: serverTimestamp(),
+        });
+        setBorradorId(docRef.id);
+      }
+      router.push('/mundial/mis-jugadas');
+    } catch (e: any) {
+      setError(`Error al guardar: ${e.message}`);
+    }
+    setGuardandoBorrador(false);
   };
 
   const guardarJugada = async () => {
@@ -209,21 +294,34 @@ function CrearJugadaMundialForm() {
         else variablesGuardadas[v.key] = respuestas[v.key];
       });
       const coleccion = grupoId ? 'jugadas_mundial' : 'jugadas_comunitarias_mundial';
-      const docRef = await addDoc(collection(db, coleccion), {
-        nombre: nombre.trim(),
-        grupoId: grupoId || null,
-        userId: user.uid,
-        userEmail: user.email,
-        variables: variablesGuardadas,
-        variablesMeta: variables,
-        predicciones: prediccionesGuardadas,
-        puntos: 0,
-        pagado: false,
-        pagadoInterno: false,
-        tipo: 'mundial2026',
-        creadoEn: serverTimestamp(),
-      });
-      router.push(`/mundial/jugada-creada?jugada=${docRef.id}${grupoId ? `&grupo=${grupoId}` : ''}`);
+      if (borradorId) {
+        await updateDoc(doc(db, coleccion, borradorId), {
+          nombre: nombre.trim(),
+          variables: variablesGuardadas,
+          variablesMeta: variables,
+          predicciones: prediccionesGuardadas,
+          borrador: false,
+          actualizadoEn: serverTimestamp(),
+        });
+        router.push(`/mundial/jugada-creada?jugada=${borradorId}${grupoId ? `&grupo=${grupoId}` : ''}`);
+      } else {
+        const docRef = await addDoc(collection(db, coleccion), {
+          nombre: nombre.trim(),
+          grupoId: grupoId || null,
+          userId: user.uid,
+          userEmail: user.email,
+          variables: variablesGuardadas,
+          variablesMeta: variables,
+          predicciones: prediccionesGuardadas,
+          puntos: 0,
+          pagado: false,
+          pagadoInterno: false,
+          tipo: 'mundial2026',
+          borrador: false,
+          creadoEn: serverTimestamp(),
+        });
+        router.push(`/mundial/jugada-creada?jugada=${docRef.id}${grupoId ? `&grupo=${grupoId}` : ''}`);
+      }
     } catch (e: any) {
       setError(`Error: ${e.message}`);
     }
@@ -266,40 +364,33 @@ function CrearJugadaMundialForm() {
   );
 
   const PaisSelect = ({ varKey }: { varKey: string }) => {
-  const [abierto, setAbierto] = useState(false);
-  const seleccionado = PAISES_MUNDIAL.find(p => p.nombre === respuestas[varKey]);
-
-  return (
-    <div className="relative">
-      <div
-        onClick={() => setAbierto(!abierto)}
-        className="w-full rounded-xl px-4 py-3 text-sm cursor-pointer flex items-center justify-between"
-        style={{ background: respuestas[varKey] ? 'rgba(200,170,110,0.08)' : 'rgba(200,170,110,0.04)', border: respuestas[varKey] ? '1px solid rgba(200,170,110,0.35)' : '1px solid rgba(200,170,110,0.15)', color: respuestas[varKey] ? '#F5F5F0' : 'rgba(210,185,130,0.4)' }}>
-        <span>{seleccionado ? `${seleccionado.flag} ${seleccionado.nombre}` : 'Seleccioná un país'}</span>
-        <span style={{ color: 'rgba(210,185,130,0.4)' }}>{abierto ? '▲' : '▼'}</span>
-      </div>
-      {abierto && (
-        <div className="absolute left-0 right-0 rounded-xl overflow-y-auto z-50 mt-1"
-          style={{ background: '#16213e', border: '1px solid rgba(200,170,110,0.35)', maxHeight: '220px' }}>
-          {PAISES_MUNDIAL.map(p => (
-            <div
-              key={p.nombre}
-              onClick={() => { setRespuesta(varKey, p.nombre); setAbierto(false); }}
-              className="px-4 py-2.5 cursor-pointer text-sm flex items-center gap-2"
-              style={{
-                background: respuestas[varKey] === p.nombre ? 'rgba(200,170,110,0.15)' : 'rgba(200,170,110,0.02)',
-                color: respuestas[varKey] === p.nombre ? '#C8AA6E' : '#F5F5F0',
-                borderBottom: '1px solid rgba(200,170,110,0.06)',
-              }}>
-              <span className="text-lg">{p.flag}</span>
-              <span>{p.nombre}</span>
-            </div>
-          ))}
+    const [abierto, setAbierto] = useState(false);
+    const seleccionado = PAISES_MUNDIAL.find(p => p.nombre === respuestas[varKey]);
+    return (
+      <div className="relative">
+        <div onClick={() => setAbierto(!abierto)}
+          className="w-full rounded-xl px-4 py-3 text-sm cursor-pointer flex items-center justify-between"
+          style={{ background: respuestas[varKey] ? 'rgba(200,170,110,0.08)' : 'rgba(200,170,110,0.04)', border: respuestas[varKey] ? '1px solid rgba(200,170,110,0.35)' : '1px solid rgba(200,170,110,0.15)', color: respuestas[varKey] ? '#F5F5F0' : 'rgba(210,185,130,0.4)' }}>
+          <span>{seleccionado ? `${seleccionado.flag} ${seleccionado.nombre}` : 'Seleccioná un país'}</span>
+          <span style={{ color: 'rgba(210,185,130,0.4)' }}>{abierto ? '▲' : '▼'}</span>
         </div>
-      )}
-    </div>
-  );
-};
+        {abierto && (
+          <div className="absolute left-0 right-0 rounded-xl overflow-y-auto z-50 mt-1"
+            style={{ background: '#16213e', border: '1px solid rgba(200,170,110,0.35)', maxHeight: '220px' }}>
+            {PAISES_MUNDIAL.map(p => (
+              <div key={p.nombre}
+                onClick={() => { setRespuesta(varKey, p.nombre); setAbierto(false); }}
+                className="px-4 py-2.5 cursor-pointer text-sm flex items-center gap-2"
+                style={{ background: respuestas[varKey] === p.nombre ? 'rgba(200,170,110,0.15)' : 'rgba(200,170,110,0.02)', color: respuestas[varKey] === p.nombre ? '#C8AA6E' : '#F5F5F0', borderBottom: '1px solid rgba(200,170,110,0.06)' }}>
+                <span className="text-lg">{p.flag}</span>
+                <span>{p.nombre}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderVariable = (v: any) => {
     if (v.tipo === 'numero') return (
@@ -334,6 +425,12 @@ function CrearJugadaMundialForm() {
           <span className="text-xs" style={{ color: 'rgba(210,185,130,0.6)' }}>
             {grupo ? <b style={{ color: 'rgba(210,185,130,0.85)' }}>{grupo.nombre}</b> : 'Nueva jugada Mundial'}
           </span>
+          {borradorId && (
+            <span className="ml-auto text-xs px-2 py-1 rounded-lg font-bold"
+              style={{ background: 'rgba(255,179,0,0.12)', color: '#FFB300' }}>
+              📝 Borrador
+            </span>
+          )}
         </div>
         <h1 className="font-condensed text-3xl font-black mb-1" style={{ color: '#C8AA6E' }}>🏆 Crear Jugada</h1>
         <p className="text-xs mb-4" style={{ color: 'rgba(210,185,130,0.65)' }}>Mundial 2026 · Paso {step} de 4</p>
@@ -506,10 +603,16 @@ function CrearJugadaMundialForm() {
                 <p className="text-xs font-semibold" style={{ color: '#E8192C' }}>{error}</p>
               </div>
             )}
+
             <button onClick={() => { if (validarStep3()) setStep(4); }}
               className="w-full py-3 rounded-xl font-condensed font-black text-lg mb-3"
               style={{ background: '#C8AA6E', color: '#0d0d1a' }}>
               SIGUIENTE →
+            </button>
+            <button onClick={guardarBorrador} disabled={guardandoBorrador}
+              className="w-full py-3 rounded-xl font-condensed font-bold text-sm mb-3"
+              style={{ background: 'rgba(255,179,0,0.08)', border: '1px solid rgba(255,179,0,0.3)', color: '#FFB300', opacity: guardandoBorrador ? 0.7 : 1 }}>
+              {guardandoBorrador ? 'GUARDANDO...' : '💾 GUARDAR Y CONTINUAR DESPUÉS'}
             </button>
             <button onClick={() => setStep(2)} className="w-full py-3 rounded-xl font-condensed font-bold text-sm"
               style={{ background: 'rgba(200,170,110,0.02)', border: '1px solid rgba(200,170,110,0.2)', color: 'rgba(210,185,130,0.75)' }}>
