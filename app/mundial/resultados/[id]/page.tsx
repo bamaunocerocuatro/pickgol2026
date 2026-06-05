@@ -6,12 +6,63 @@ import { auth, db } from '../../../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
+const PAISES_MUNDIAL = [
+  { nombre: 'Alemania', flag: '🇩🇪' },
+  { nombre: 'Arabia Saudita', flag: '🇸🇦' },
+  { nombre: 'Argelia', flag: '🇩🇿' },
+  { nombre: 'Argentina', flag: '🇦🇷' },
+  { nombre: 'Australia', flag: '🇦🇺' },
+  { nombre: 'Austria', flag: '🇦🇹' },
+  { nombre: 'Bélgica', flag: '🇧🇪' },
+  { nombre: 'Bosnia y Herzegovina', flag: '🇧🇦' },
+  { nombre: 'Brasil', flag: '🇧🇷' },
+  { nombre: 'Cabo Verde', flag: '🇨🇻' },
+  { nombre: 'Canadá', flag: '🇨🇦' },
+  { nombre: 'Colombia', flag: '🇨🇴' },
+  { nombre: 'Corea del Sur', flag: '🇰🇷' },
+  { nombre: 'Costa de Marfil', flag: '🇨🇮' },
+  { nombre: 'Croacia', flag: '🇭🇷' },
+  { nombre: 'Curazao', flag: '🇨🇼' },
+  { nombre: 'Ecuador', flag: '🇪🇨' },
+  { nombre: 'Egipto', flag: '🇪🇬' },
+  { nombre: 'Escocia', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' },
+  { nombre: 'España', flag: '🇪🇸' },
+  { nombre: 'Estados Unidos', flag: '🇺🇸' },
+  { nombre: 'Francia', flag: '🇫🇷' },
+  { nombre: 'Ghana', flag: '🇬🇭' },
+  { nombre: 'Haití', flag: '🇭🇹' },
+  { nombre: 'Inglaterra', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { nombre: 'Irán', flag: '🇮🇷' },
+  { nombre: 'Irak', flag: '🇮🇶' },
+  { nombre: 'Japón', flag: '🇯🇵' },
+  { nombre: 'Jordania', flag: '🇯🇴' },
+  { nombre: 'Marruecos', flag: '🇲🇦' },
+  { nombre: 'México', flag: '🇲🇽' },
+  { nombre: 'Noruega', flag: '🇳🇴' },
+  { nombre: 'Nueva Zelanda', flag: '🇳🇿' },
+  { nombre: 'Países Bajos', flag: '🇳🇱' },
+  { nombre: 'Panamá', flag: '🇵🇦' },
+  { nombre: 'Paraguay', flag: '🇵🇾' },
+  { nombre: 'Portugal', flag: '🇵🇹' },
+  { nombre: 'Qatar', flag: '🇶🇦' },
+  { nombre: 'República Checa', flag: '🇨🇿' },
+  { nombre: 'República Democrática del Congo', flag: '🇨🇩' },
+  { nombre: 'Senegal', flag: '🇸🇳' },
+  { nombre: 'Sudáfrica', flag: '🇿🇦' },
+  { nombre: 'Suecia', flag: '🇸🇪' },
+  { nombre: 'Suiza', flag: '🇨🇭' },
+  { nombre: 'Túnez', flag: '🇹🇳' },
+  { nombre: 'Turquía', flag: '🇹🇷' },
+  { nombre: 'Uruguay', flag: '🇺🇾' },
+  { nombre: 'Uzbekistán', flag: '🇺🇿' },
+];
+
 const VARIABLES_MUNDIAL_DEFAULT = [
-  { key: 'campeon', label: '¿Quién fue el campeón del mundo?', tipo: 'texto' },
-  { key: 'subcampeon', label: '¿Quién fue el subcampeón del mundo?', tipo: 'texto' },
+  { key: 'campeon', label: '¿Quién fue el campeón del mundo?', tipo: 'pais' },
+  { key: 'subcampeon', label: '¿Quién fue el subcampeón del mundo?', tipo: 'pais' },
   { key: 'goleador', label: '¿Quién fue el goleador del mundial? (solo apellido, no cuenta definición por penales)', tipo: 'texto' },
-  { key: 'vallaInvicta', label: '¿Qué país tuvo la valla menos vencida?', tipo: 'texto' },
-  { key: 'masGoleador', label: '¿Cuál fue el país más goleador?', tipo: 'texto' },
+  { key: 'vallaInvicta', label: '¿Qué país tuvo la valla menos vencida?', tipo: 'pais' },
+  { key: 'masGoleador', label: '¿Cuál fue el país más goleador?', tipo: 'pais' },
   { key: 'golesMax', label: '¿Cuántos goles tuvo el partido con más goles? (no cuenta definición por penales)', tipo: 'numero' },
   { key: 'penales', label: '¿Cuántos penales hubo en toda la competencia? (no cuenta definición por penales)', tipo: 'numero' },
   { key: 'golAntes3', label: '¿Hubo un gol antes del min 3 en algún partido de la competencia?', tipo: 'sino' },
@@ -163,6 +214,50 @@ export default function CargarResultadosMundial() {
     </div>
   );
 
+  const PaisSelect = ({ varKey }: { varKey: string }) => {
+    const [abierto, setAbierto] = useState(false);
+    const seleccionado = PAISES_MUNDIAL.find(p => p.nombre === valoresVariables[varKey]);
+    return (
+      <div className="relative">
+        <div onClick={() => setAbierto(!abierto)}
+          className="w-full rounded-xl px-4 py-3 text-sm cursor-pointer flex items-center justify-between"
+          style={{ background: valoresVariables[varKey] ? 'rgba(200,170,110,0.08)' : 'rgba(200,170,110,0.04)', border: valoresVariables[varKey] ? '1px solid rgba(200,170,110,0.35)' : '1px solid rgba(200,170,110,0.15)', color: valoresVariables[varKey] ? '#F5F5F0' : 'rgba(210,185,130,0.4)' }}>
+          <span>{seleccionado ? `${seleccionado.flag} ${seleccionado.nombre}` : 'Seleccioná un país'}</span>
+          <span style={{ color: 'rgba(210,185,130,0.4)' }}>{abierto ? '▲' : '▼'}</span>
+        </div>
+        {abierto && (
+          <div className="absolute left-0 right-0 rounded-xl overflow-y-auto z-50 mt-1"
+            style={{ background: '#16213e', border: '1px solid rgba(200,170,110,0.35)', maxHeight: '220px' }}>
+            {PAISES_MUNDIAL.map(p => (
+              <div key={p.nombre}
+                onClick={() => { setValor(varKey, p.nombre); setAbierto(false); }}
+                className="px-4 py-2.5 cursor-pointer text-sm flex items-center gap-2"
+                style={{ background: valoresVariables[varKey] === p.nombre ? 'rgba(200,170,110,0.15)' : 'rgba(200,170,110,0.02)', color: valoresVariables[varKey] === p.nombre ? '#C8AA6E' : '#F5F5F0', borderBottom: '1px solid rgba(200,170,110,0.06)' }}>
+                <span className="text-lg">{p.flag}</span>
+                <span>{p.nombre}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderVariable = (v: any) => {
+    if (v.tipo === 'numero') return (
+      <input type="number" value={valoresVariables[v.key] || ''} onChange={(e) => setValor(v.key, e.target.value)}
+        placeholder="0" className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+        style={{ background: 'rgba(200,170,110,0.05)', border: valoresVariables[v.key] ? '1px solid rgba(200,170,110,0.4)' : '1px solid rgba(200,170,110,0.15)', color: '#F5F5F0' }} />
+    );
+    if (v.tipo === 'sino') return <YN varKey={v.key} />;
+    if (v.tipo === 'pais') return <PaisSelect varKey={v.key} />;
+    return (
+      <input type="text" value={valoresVariables[v.key] || ''} onChange={(e) => setValor(v.key, e.target.value)}
+        placeholder="Escribí el valor real..." className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+        style={{ background: 'rgba(200,170,110,0.05)', border: valoresVariables[v.key] ? '1px solid rgba(200,170,110,0.4)' : '1px solid rgba(200,170,110,0.15)', color: '#F5F5F0' }} />
+    );
+  };
+
   if (loading) return (
     <main className="min-h-screen bg-[#020810] flex items-center justify-center">
       <div className="text-center"><div className="text-5xl mb-3">🏆</div><p className="text-sm" style={{ color: 'rgba(210,185,130,0.65)' }}>Cargando...</p></div>
@@ -187,7 +282,6 @@ export default function CargarResultadosMundial() {
 
       <div className="px-4 py-4">
 
-        {/* MODO */}
         <div className="flex gap-2 mb-4">
           <div onClick={() => setSoloVariables(false)}
             className="flex-1 rounded-xl px-3 py-3 text-center cursor-pointer text-xs font-bold"
@@ -201,7 +295,6 @@ export default function CargarResultadosMundial() {
           </div>
         </div>
 
-        {/* VARIABLES FINALES */}
         {soloVariables && (
           <>
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{ color: 'rgba(210,185,130,0.6)' }}>
@@ -214,23 +307,12 @@ export default function CargarResultadosMundial() {
             {variables.map((v) => (
               <div key={v.key} className="mb-4">
                 <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{ color: 'rgba(210,185,130,0.65)' }}>{v.label}</label>
-                {v.tipo === 'numero' ? (
-                  <input type="number" value={valoresVariables[v.key] || ''} onChange={(e) => setValor(v.key, e.target.value)}
-                    placeholder="0" className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-                    style={{ background: 'rgba(200,170,110,0.05)', border: valoresVariables[v.key] ? '1px solid rgba(200,170,110,0.4)' : '1px solid rgba(200,170,110,0.15)', color: '#F5F5F0' }} />
-                ) : v.tipo === 'sino' ? (
-                  <YN varKey={v.key} />
-                ) : (
-                  <input type="text" value={valoresVariables[v.key] || ''} onChange={(e) => setValor(v.key, e.target.value)}
-                    placeholder="Escribí el valor real..." className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-                    style={{ background: 'rgba(200,170,110,0.05)', border: valoresVariables[v.key] ? '1px solid rgba(200,170,110,0.4)' : '1px solid rgba(200,170,110,0.15)', color: '#F5F5F0' }} />
-                )}
+                {renderVariable(v)}
               </div>
             ))}
           </>
         )}
 
-        {/* PARTIDOS */}
         {!soloVariables && (
           <>
             <div className="font-condensed text-xs font-bold tracking-widest uppercase mb-3" style={{ color: 'rgba(210,185,130,0.6)' }}>
